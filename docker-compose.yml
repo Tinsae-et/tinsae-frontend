@@ -1,0 +1,16 @@
+# Starts the frontend for local development: docker compose up
+# The backend runs separately from the tinsae-backend repo.
+
+services:
+  frontend:
+    build:
+      context: .
+      target: dev
+    command: npm run dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
