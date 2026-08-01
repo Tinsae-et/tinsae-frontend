@@ -1,94 +1,72 @@
-import { getProducts, type ProductQuery } from "@/lib/api";
-import { ProductGrid, PRODUCTS_PAGE_SIZE } from "@/components/products/product-grid";
-import { Icon } from "@/components/tinsae/icon";
-import { Pill } from "@/components/tinsae/pill";
+import { Suspense } from "react";
+import { getCategories, getProducts } from "@/lib/api";
+import { ProductsBrowser } from "@/components/products/products-browser";
+import { ProductCardSkeleton } from "@/components/products/product-card";
+import { PRODUCTS_PAGE_SIZE } from "@/components/products/product-grid";
+import { filtersFromSearchParams, filtersToProductQuery } from "@/lib/filters";
+import { NAV_CATEGORIES } from "@/lib/nav-categories";
 
 export const metadata = {
   title: "Browse listings — Tinsae",
   description: "Electronics from verified shops across Bole, Addis Ababa.",
 };
 
-type SearchParams = Promise<{ q?: string; category?: string }>;
+export const dynamic = "force-dynamic";
+
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 export default async function ProductsPage({ searchParams }: { searchParams: SearchParams }) {
-  const { q, category } = await searchParams;
-  const query: ProductQuery = { q, category };
+  const sp = await searchParams;
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(sp)) {
+    if (typeof value === "string") params.set(key, value);
+  }
 
-  const data = await getProducts({ ...query, pageSize: PRODUCTS_PAGE_SIZE }).catch(() => null);
+  // The URL is the single source of truth: parse it into filters, server-render
+  // the first page, and let the client take over for subsequent changes.
+  const filters = filtersFromSearchParams(params);
+  const [data, categories] = await Promise.all([
+    getProducts({ ...filtersToProductQuery(filters), pageSize: PRODUCTS_PAGE_SIZE }).catch(
+      () => null,
+    ),
+    getCategories().catch(() => null),
+  ]);
+
+  const initial = data ? { products: data.results, total: data.count } : null;
+  const categoryOptions =
+    categories && categories.results.length > 0
+      ? categories.results.map((c) => ({ slug: c.slug, name: c.name }))
+      : NAV_CATEGORIES.map((c) => ({ slug: c.slug, name: c.label }));
 
   return (
-    <main className="mx-auto max-w-[1240px] px-6 py-10 lg:py-14">
-      <header className="mb-8">
-        <p className="text-tn-red mb-3 text-[13px] font-bold tracking-[0.10em] uppercase">
-          {q ? "Search results" : category ? "Category" : "Browse"}
-        </p>
-        <h1 className="text-tn-ink text-[30px] leading-[1.05] font-extrabold tracking-[-0.03em] sm:text-[40px]">
-          {q ? `“${q}”` : category ? category.replace(/-/g, " ") : "All listings in Bole"}
-        </h1>
-        {data && (
-          <p className="text-tn-mute font-tn-mono mt-3 text-[13px] tracking-wide">
-            {data.count} {data.count === 1 ? "listing" : "listings"}
-          </p>
-        )}
-      </header>
-
-      {!data ? (
-        <ErrorState />
-      ) : data.results.length === 0 ? (
-        <EmptyState q={q} category={category} />
-      ) : (
-        <ProductGrid initialProducts={data.results} totalCount={data.count} query={query} />
-      )}
+    <main>
+      <Suspense fallback={<PageSkeleton />}>
+        <ProductsBrowser categories={categoryOptions} initial={initial} />
+      </Suspense>
     </main>
   );
 }
 
-function ErrorState() {
+function PageSkeleton() {
   return (
-    <div
-      role="alert"
-      className="border-tn-hair rounded-2xl border border-dashed px-6 py-16 text-center"
-    >
-      <span className="bg-tn-red-soft text-tn-red mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl">
-        <Icon name="pulse" size={26} />
-      </span>
-      <h2 className="text-tn-ink text-lg font-extrabold">Couldn&rsquo;t reach the marketplace</h2>
-      <p className="text-tn-mute mx-auto mt-2 max-w-sm text-sm leading-relaxed">
-        The listings service isn&rsquo;t responding right now. This is usually temporary — try
-        again in a moment.
-      </p>
-      <div className="mt-6 flex justify-center">
-        <Pill kind="outline" size="md" href="/products">
-          Try again
-        </Pill>
+    <div>
+      <div className="border-b border-tn-hair2">
+        <div className="mx-auto max-w-[1240px] px-6 pt-6 pb-7 lg:px-7">
+          <div className="bg-tn-hair2 h-3 w-40 animate-pulse rounded" />
+          <div className="bg-tn-hair2 mt-5 h-11 w-64 max-w-full animate-pulse rounded" />
+          <div className="bg-tn-hair2 mt-3 h-3 w-24 animate-pulse rounded" />
+        </div>
+      </div>
+      <div className="mx-auto flex max-w-[1240px] items-start gap-[26px] px-6 py-7 lg:px-7">
+        <div className="hidden w-[268px] shrink-0 lg:block">
+          <div className="bg-tn-hair2 h-96 animate-pulse rounded-[18px]" />
+        </div>
+        <div className="grid min-w-0 flex-1 grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 lg:gap-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <ProductCardSkeleton key={i} />
+          ))}
+        </div>
       </div>
     </div>
   );
 }
-
-function EmptyState({ q, category }: { q?: string; category?: string }) {
-  return (
-    <div className="border-tn-hair rounded-2xl border border-dashed px-6 py-16 text-center">
-      <span className="bg-tn-paper text-tn-mute mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl">
-        <Icon name="search" size={26} />
-      </span>
-      <h2 className="text-tn-ink text-lg font-extrabold">
-        {q ? `No listings match “${q}”` : "No listings here yet"}
-      </h2>
-      <p className="text-tn-mute mx-auto mt-2 max-w-sm text-sm leading-relaxed">
-        {q || category
-          ? "Try a broader search, or browse everything verified shops in Bole have listed."
-          : "Listings appear as soon as verified shops publish their stock."}
-      </p>
-      {(q || category) && (
-        <div className="mt-6 flex justify-center">
-          <Pill kind="solid" size="md" iconAfter="arrow" href="/products">
-            Browse all listings
-          </Pill>
-        </div>
-      )}
-    </div>
-  );
-}
-
-export const dynamic = "force-dynamic";

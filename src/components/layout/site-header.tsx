@@ -27,6 +27,8 @@ function Logo() {
 
 // The search field is the product's primary action. Submitting navigates to
 // /products?q=...; pressing "/" anywhere focuses it; Escape blurs it.
+// Matches the shared-kit nav search (design_handoff_search): search icon,
+// placeholder, red circular search button — no scope chip / kbd hint.
 function SearchField({
   autoFocus,
   onSubmitted,
@@ -54,15 +56,10 @@ function SearchField({
     >
       <div
         className={cn(
-          "border-tn-hair flex h-11 items-center gap-2.5 rounded-full border-[1.5px] bg-white pr-1.5 pl-3.5 transition-[border-color,box-shadow] duration-150",
+          "border-tn-hair flex h-11 items-center gap-2.5 rounded-full border-[1.5px] bg-white pl-4 pr-1.5 transition-[border-color,box-shadow] duration-150",
           focused && "border-tn-red shadow-[0_0_0_4px_#FFF1EB]",
         )}
       >
-        <span className="border-tn-hair flex shrink-0 items-center gap-1.5 border-r pr-3">
-          <Icon name="pin" size={15} className="text-tn-red" />
-          <span className="text-tn-ink2 text-[13px] font-bold whitespace-nowrap">Bole</span>
-          <Icon name="chevd" size={13} className="text-tn-mute" />
-        </span>
         <Icon name="search" size={17} className="text-tn-mute shrink-0" />
         <input
           ref={inputRef}
@@ -71,21 +68,16 @@ function SearchField({
           onChange={(e) => setQ(e.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          placeholder="Search iPhone, MacBook, a shop…"
+          placeholder="Search verified shops & products in Bole"
           aria-label="Search products"
           className="text-tn-ink placeholder:text-tn-mute min-w-0 flex-1 bg-transparent text-[14.5px] font-medium outline-none"
         />
-        {!q && !autoFocus && (
-          <kbd className="font-tn-mono text-tn-mute border-tn-hair hidden shrink-0 rounded-md border bg-tn-paper px-1.5 py-0.5 text-[11px] font-semibold sm:block">
-            /
-          </kbd>
-        )}
         <button
           type="submit"
           aria-label="Search"
           className="bg-tn-red hover:bg-tn-red-dark inline-flex size-[34px] shrink-0 items-center justify-center rounded-full text-white transition-colors"
         >
-          <Icon name="arrow" size={17} />
+          <Icon name="search" size={17} />
         </button>
       </div>
     </form>

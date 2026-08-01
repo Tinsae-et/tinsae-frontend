@@ -29,7 +29,10 @@ export type IconName =
   | "box"
   | "spec"
   | "building"
-  | "bolt";
+  | "bolt"
+  | "plus"
+  | "minus"
+  | "sliders";
 
 type IconProps = {
   name: IconName;
@@ -242,6 +245,24 @@ export function Icon({ name, size = 18, className, strokeWidth = 1.6 }: IconProp
       return (
         <svg {...stroke}>
           <path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" />
+        </svg>
+      );
+    case "plus":
+      return (
+        <svg {...stroke}>
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+      );
+    case "minus":
+      return (
+        <svg {...stroke}>
+          <path d="M5 12h14" />
+        </svg>
+      );
+    case "sliders":
+      return (
+        <svg {...stroke}>
+          <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" />
         </svg>
       );
   }
