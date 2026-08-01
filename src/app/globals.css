@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-sans: var(--font-jakarta), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), monospace;
+  --font-heading: var(--font-jakarta), system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -46,6 +46,82 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* ── Tinsae design tokens ──────────────────────────────────────────
+   Ported from the Claude Design project "tinsae" (buyer/Home v2).
+   The `V` palette from tinsae-home-v2.jsx is the buyer-facing one:
+   whiter and cleaner than the shared marketplace tokens. */
+@theme {
+  --color-tn-ink: #0b0b0b;
+  --color-tn-ink2: #3a3a38;
+  --color-tn-mute: #76746e;
+  --color-tn-paper: #f7f6f2;
+  --color-tn-hair: #eceae3;
+  --color-tn-hair2: #f2f0ea;
+  --color-tn-red: #cc3000;
+  --color-tn-red-dark: #a82500;
+  --color-tn-red-soft: #fff1eb;
+  --color-tn-green: #1f8a5b;
+  --color-tn-green-soft: #e8f5ee;
+  --color-tn-verified: #22a06b;
+  --color-tn-warn: #b8741f;
+  --color-tn-stale: #9a9a95;
+  --color-tn-telegram: #229ed9;
+
+  --font-tn-sans: var(--font-jakarta), system-ui, sans-serif;
+  --font-tn-mono: var(--font-jetbrains), monospace;
+  --font-tn-amh: var(--font-ethiopic), sans-serif;
+}
+
+/* ── Design motion ─────────────────────────────────────────
+   Ported from tinsae-home-v2.jsx: tnRise (entrance), tnSwap
+   (eyebrow word), tnOrbit/tnOrbitR (ring), tnFloat (center).
+   Reduced-motion users get a static, fully-rendered hero. */
+@keyframes tnOrbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes tnOrbitR {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+@keyframes tnFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+@keyframes tnRise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes tnSwap {
+  from {
+    transform: translateY(90%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-orbit],
+  .tn-rise,
+  .tn-word {
+    animation: none !important;
+  }
 }
 
 :root {
