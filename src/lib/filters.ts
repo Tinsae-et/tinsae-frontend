@@ -1,0 +1,137 @@
+import type { ProductQuery } from "./api";
+
+// Single source of truth for the /products search & filter state.
+// Every value round-trips through the URL so results are shareable, linkable,
+// and survive refresh / back-button. Matches design_handoff_search/README.md.
+
+export type SortKey = "fresh" | "price-asc" | "price-desc" | "response";
+
+export type SearchFilters = {
+  q?: string;
+  category?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  verifiedOnly?: boolean;
+  /** "Confirmed stock" — backend `freshness=1` (confirmed within 30 days). */
+  freshness?: boolean;
+  /**
+   * Demo facets (design's Brand / Condition / Neighborhood groups). The backend
+   * doesn't filter on these yet — toggling them re-queries and round-trips the
+   * URL, but results only change once a facets endpoint lands (TIN-16/18).
+   */
+  brands: string[];
+  conditions: string[];
+  neighborhoods: string[];
+  sort: SortKey;
+  /** 1-based page. Reset to 1 whenever a non-page filter changes. */
+  page?: number;
+};
+
+export const DEFAULT_FILTERS: SearchFilters = {
+  sort: "fresh",
+  brands: [],
+  conditions: [],
+  neighborhoods: [],
+};
+
+// Sort map per the design: Freshest first (default) = -last_confirmed_at;
+// price asc/desc; "Response rate" has no backend field yet → falls back to the
+// API default ordering.
+const SORT_TO_ORDERING: Record<SortKey, string | undefined> = {
+  fresh: "-last_confirmed_at",
+  "price-asc": "price",
+  "price-desc": "-price",
+  response: undefined,
+};
+
+export const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: "fresh", label: "Freshest first" },
+  { value: "price-asc", label: "Price: low → high" },
+  { value: "price-desc", label: "Price: high → low" },
+  { value: "response", label: "Response rate" },
+];
+
+const SORT_KEYS: SortKey[] = SORT_OPTIONS.map((o) => o.value);
+
+export function filtersToSearchParams(f: SearchFilters): URLSearchParams {
+  const p = new URLSearchParams();
+  if (f.q) p.set("q", f.q);
+  if (f.category) p.set("category", f.category);
+  if (f.minPrice !== undefined) p.set("min_price", String(f.minPrice));
+  if (f.maxPrice !== undefined) p.set("max_price", String(f.maxPrice));
+  if (f.verifiedOnly) p.set("verified_only", "1");
+  if (f.freshness) p.set("freshness", "1");
+  if (f.page && f.page > 1) p.set("page", String(f.page));
+  if (f.sort && f.sort !== "fresh") p.set("sort", f.sort);
+  if (f.brands?.length) p.set("brand", f.brands.join(","));
+  if (f.conditions?.length) p.set("condition", f.conditions.join(","));
+  if (f.neighborhoods?.length) p.set("neighborhood", f.neighborhoods.join(","));
+  return p;
+}
+
+function parseNum(v: string | null): number | undefined {
+  if (!v) return undefined;
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? n : undefined;
+}
+
+function parseList(v: string | null): string[] {
+  return v ? v.split(",").map((x) => x.trim()).filter(Boolean) : [];
+}
+
+export function filtersFromSearchParams(params: URLSearchParams): SearchFilters {
+  const sort = params.get("sort");
+  return {
+    q: params.get("q")?.trim() || undefined,
+    category: params.get("category") || undefined,
+    minPrice: parseNum(params.get("min_price")),
+    maxPrice: parseNum(params.get("max_price")),
+    verifiedOnly: params.get("verified_only") === "1",
+    freshness: params.get("freshness") === "1",
+    brands: parseList(params.get("brand")),
+    conditions: parseList(params.get("condition")),
+    neighborhoods: parseList(params.get("neighborhood")),
+    sort: (SORT_KEYS as string[]).includes(sort ?? "") ? (sort as SortKey) : "fresh",
+    page: parseNum(params.get("page")) || 1,
+  };
+}
+
+/** The API query for a filter set (page included — applied by the data hook). */
+export function filtersToProductQuery(f: SearchFilters): ProductQuery {
+  return {
+    q: f.q,
+    category: f.category,
+    minPrice: f.minPrice,
+    maxPrice: f.maxPrice,
+    verifiedOnly: f.verifiedOnly,
+    freshOnly: f.freshness,
+    // Demo facets: sent to the API for forward-compat; the backend ignores them
+    // until the facets endpoint exists.
+    brand: f.brands.length ? f.brands.join(",") : undefined,
+    condition: f.conditions.length ? f.conditions.join(",") : undefined,
+    neighborhood: f.neighborhoods.length ? f.neighborhoods.join(",") : undefined,
+    ordering: SORT_TO_ORDERING[f.sort],
+    page: f.page && f.page > 1 ? f.page : undefined,
+  };
+}
+
+/** Stable string key used to detect changes (refetches the result list). */
+export function filtersKey(f: SearchFilters): string {
+  return filtersToSearchParams({ ...f, page: undefined }).toString();
+}
+
+/** Number of applied facets, excluding page (used for the mobile filter badge). */
+export function activeFilterCount(f: SearchFilters): number {
+  let n = 0;
+  if (f.q) n++;
+  if (f.category) n++;
+  if (f.minPrice !== undefined) n++;
+  if (f.maxPrice !== undefined) n++;
+  if (f.verifiedOnly) n++;
+  if (f.freshness) n++;
+  if (f.brands?.length) n++;
+  if (f.conditions?.length) n++;
+  if (f.neighborhoods?.length) n++;
+  if (f.sort !== "fresh") n++;
+  return n;
+}

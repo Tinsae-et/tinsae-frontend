@@ -37,6 +37,10 @@ export type ProductQuery = {
   verifiedOnly?: boolean;
   /** Backend-defined: only products confirmed within the last 30 days. */
   freshOnly?: boolean;
+  /** Demo facets — sent for forward-compat; the backend ignores them for now. */
+  brand?: string;
+  condition?: string;
+  neighborhood?: string;
 };
 
 function productSearchParams(query: ProductQuery): URLSearchParams {
@@ -50,6 +54,9 @@ function productSearchParams(query: ProductQuery): URLSearchParams {
   if (query.maxPrice !== undefined) params.set("max_price", String(query.maxPrice));
   if (query.verifiedOnly) params.set("verified_only", "1");
   if (query.freshOnly) params.set("freshness", "1");
+  if (query.brand) params.set("brand", query.brand);
+  if (query.condition) params.set("condition", query.condition);
+  if (query.neighborhood) params.set("neighborhood", query.neighborhood);
   return params;
 }
 

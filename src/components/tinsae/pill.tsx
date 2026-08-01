@@ -30,6 +30,7 @@ export function Pill({
   icon,
   iconAfter,
   href,
+  onClick,
   children,
   className,
 }: {
@@ -37,19 +38,32 @@ export function Pill({
   size?: PillSize;
   icon?: IconName;
   iconAfter?: IconName;
-  href: string;
+  href?: string;
+  onClick?: () => void;
   children: React.ReactNode;
   className?: string;
 }) {
+  const classes = cn(
+    "inline-flex items-center justify-center gap-2 rounded-full font-bold tracking-[-0.01em] whitespace-nowrap transition-[transform,box-shadow,background] duration-150 hover:-translate-y-px",
+    kinds[kind],
+    sizes[size],
+    className,
+  );
+
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={classes}>
+        {icon && <Icon name={icon} size={size === "lg" ? 18 : 17} />}
+        {children}
+        {iconAfter && <Icon name={iconAfter} size={size === "lg" ? 16 : 15} />}
+      </button>
+    );
+  }
+
   return (
     <Link
-      href={href}
-      className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-full font-bold tracking-[-0.01em] whitespace-nowrap transition-[transform,box-shadow,background] duration-150 hover:-translate-y-px",
-        kinds[kind],
-        sizes[size],
-        className,
-      )}
+      href={href ?? "#"}
+      className={classes}
     >
       {icon && <Icon name={icon} size={size === "lg" ? 18 : 17} />}
       {children}
