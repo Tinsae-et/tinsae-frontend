@@ -1,7 +1,7 @@
 # tinsae-frontend
 
-Frontend for **Tinsae** — a local product-discovery marketplace.
-Next.js 15 (App Router) + TypeScript + Tailwind CSS + shadcn/ui, containerized with Docker.
+Frontend for **Tinsae** — a verified electronics marketplace for Bole, Addis Ababa.
+Next.js 16 (App Router) + TypeScript + Tailwind CSS + shadcn/ui, containerized with Docker.
 
 ## Prerequisites
 
@@ -11,7 +11,7 @@ You only need these installed on your machine:
 - **Git**
 
 Node.js runs **inside the container** — you do not need it installed on your host.
-(Installing Node locally is optional and only helps your editor's autocomplete.)
+(Installing Node locally is optional; Next.js requires Node ≥ 20.9 if you run it on the host.)
 
 ## Important: the backend must be running
 
@@ -22,6 +22,14 @@ make sure the backend is running and healthy:
 # in the tinsae-backend repo:
 docker compose up
 # verify: curl http://localhost:8000/api/health/  ->  {"status":"ok","database":"ok"}
+```
+
+To see real product data, seed the catalog (products need `last_confirmed_at` set to appear as fresh):
+
+```bash
+# in the tinsae-backend repo (inside its container):
+docker compose exec backend python manage.py seed_catalog
+docker compose exec backend python manage.py seed_shop_data
 ```
 
 The two repos run independently. Clone both side by side:
@@ -45,8 +53,16 @@ docker compose up --build
 
 The app is then live at **http://localhost:3000**.
 
-You should see the **Tinsae — System Status** page showing the backend and
-database as `ok`, confirming the frontend can reach the backend.
+You should see the **Tinsae home page**: the marketing landing (hero, categories,
+freshest listings), with a header that lets you search and browse.
+
+## Routes
+
+| Route         | What it is                                                                 |
+|---------------|----------------------------------------------------------------------------|
+| `/`           | Home / landing — hero, browse-by-category, top shops, freshest listings grid, trust & explainer sections |
+| `/products`   | Browse all listings — responsive product grid with skeletons, empty state, and infinite scroll. Supports `?category=<slug>`, `?q=<search>` |
+| `/health`     | Backend system-status check (old status page)                              |
 
 ## How it runs
 
@@ -64,25 +80,45 @@ Docker setup changes.
 Settings come from environment variables (see `.env.example`). The real
 `.env.local` is git-ignored and must never be committed.
 
-| Variable              | Purpose                          | Local value             |
-|-----------------------|----------------------------------|-------------------------|
-| `NEXT_PUBLIC_API_URL` | Base URL of the backend API      | `http://localhost:8000` |
+| Variable              | Purpose                                       | Local value             |
+|-----------------------|-----------------------------------------------|-------------------------|
+| `NEXT_PUBLIC_API_URL` | Backend API base URL for **browser** code     | `http://localhost:8000` |
+| `API_INTERNAL_URL`    | Backend API base URL for **server-side** code (Docker only) | `http://host.docker.internal:8000` |
 
-The `NEXT_PUBLIC_` prefix means the value is available to browser-side code.
+The `NEXT_PUBLIC_` prefix makes a value available to browser-side code.
+
+**Why `API_INTERNAL_URL`?** The dev server runs *inside* the frontend container,
+so `localhost` there is the container itself — it can't reach the backend on
+the host. The compose file maps `host.docker.internal` to the host gateway and
+sets `API_INTERNAL_URL`, which `src/lib/api.ts` uses for server-side (SSR)
+fetches. The browser keeps using `NEXT_PUBLIC_API_URL` (`localhost:8000` works
+from the user's machine). For this to work, the backend's dev settings must
+allow the `host.docker.internal` host (it does in `config/settings/dev.py`).
 
 ## Project structure
+
+```
 src/
-├── app/            App Router pages (page.tsx = home / status page)
-│   ├── layout.tsx
-│   └── globals.css
+├── app/
+│   ├── layout.tsx       root layout (fonts, metadata, header + footer)
+│   ├── page.tsx         home / landing page
+│   ├── products/        browse-all page (grid + infinite scroll)
+│   ├── health/          backend status check
+│   ├── icon.svg         tab/favicon (Tinsae mark)
+│   └── globals.css      Tailwind theme + Tinsae design tokens
 ├── components/
-│   └── ui/         shadcn/ui components (card, etc.)
+│   ├── home/            landing sections (hero, categories, shops, freshest…)
+│   ├── layout/          site header (nav, mega-menu, drawer) + footer
+│   ├── products/        product card, grid, infinite scroll
+│   ├── tinsae/          design-system primitives (pill, icon, badge, placeholder)
+│   └── ui/              shadcn/ui components
 └── lib/
-├── api.ts      central backend API helper
-└── utils.ts    shadcn utility helper
-Dockerfile          multi-stage image (dev + prod targets)
-docker-compose.yml  frontend service for local development
-components.json      shadcn/ui configuration
+    ├── api.ts           backend API client (dual-context base URL)
+    ├── format.ts        ETB money + freshness helpers
+    ├── nav-categories.ts
+    ├── types.ts         backend API types
+    └── utils.ts         shadcn utility helper
+```
 
 ## Common commands
 
@@ -104,9 +140,13 @@ styled freely. Example: `npx shadcn@latest add button`.
 
 ## Troubleshooting
 
-- **Status page shows "Could not reach the backend"** — the backend isn't
-  running, or CORS isn't allowing this origin. Start the backend, and ensure its
-  `.env` has `CORS_ALLOWED_ORIGINS=http://localhost:3000`.
+- **Home page shows empty product sections / "No confirmed listings"** — the
+  backend isn't seeded, or no product has `last_confirmed_at` within the last
+  30 days. Run the seed commands above.
+- **Server-rendered data fails but the browser works (Docker)** — the container
+  can't reach the backend; `API_INTERNAL_URL` / `host.docker.internal` isn't set
+  up (see Configuration), or the backend's `ALLOWED_HOSTS` doesn't include
+  `host.docker.internal`.
 - **Port 3000 already in use** — another app is using it. Stop that app, or
   change the host port in `docker-compose.yml` (e.g. `"3001:3000"`).
 - **Module not found errors on start** — the container's `node_modules` was

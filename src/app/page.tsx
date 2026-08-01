@@ -1,56 +1,40 @@
-"use client";
+import { getProducts } from "@/lib/api";
+import type { Product } from "@/lib/types";
+import { Hero } from "@/components/home/hero";
+import { BrowseCategories } from "@/components/home/browse-categories";
+import { TopShops } from "@/components/home/top-shops";
+import { FreshListings } from "@/components/home/fresh-listings";
+import { Features } from "@/components/home/features";
+import { HowItWorks } from "@/components/home/how-it-works";
+import { StatBand } from "@/components/home/stat-band";
+import { ShopBand } from "@/components/home/shop-band";
+import { FinalCTA } from "@/components/home/final-cta";
 
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getHealth } from "@/lib/api";
+export default async function Home() {
+  // The landing page must render even with the backend down, so the fetch
+  // degrades to empty rather than throwing the whole route.
+  const products = await getProducts({
+    // `freshness` excludes NULL last_confirmed_at, which matters: ordering by
+    // -last_confirmed_at alone would sort never-confirmed rows to the top in
+    // Postgres (NULLs first on DESC) — the opposite of "freshest".
+    freshOnly: true,
+    ordering: "-last_confirmed_at",
+    pageSize: 5,
+  }).catch(() => null);
 
-type Health = { status: string; database: string };
-
-export default function Home() {
-  const [health, setHealth] = useState<Health | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getHealth()
-      .then((data) => setHealth(data))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, []);
+  const freshest: Product[] = products?.results ?? [];
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-8">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Tinsae — System Status</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading && <p className="text-muted-foreground">Checking backend…</p>}
-
-          {error && (
-            <p className="text-red-600">
-              Could not reach the backend: {error}
-            </p>
-          )}
-
-          {health && (
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span>Backend</span>
-                <span className="font-medium text-green-600">
-                  {health.status}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Database</span>
-                <span className="font-medium text-green-600">
-                  {health.database}
-                </span>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+    <main>
+      <Hero />
+      <BrowseCategories />
+      <TopShops />
+      <FreshListings products={freshest} />
+      <Features />
+      <HowItWorks />
+      <StatBand />
+      <ShopBand />
+      <FinalCTA />
     </main>
   );
 }

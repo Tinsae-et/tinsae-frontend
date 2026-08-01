@@ -12,5 +12,12 @@ services:
       - /app/node_modules
     ports:
       - "3000:3000"
+    # The dev server runs inside this container, so "localhost" is the container
+    # itself — it can't reach the backend on the host. Map host.docker.internal
+    # to the host gateway and point server-side fetches at it (see src/lib/api.ts).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      API_INTERNAL_URL: http://host.docker.internal:8000
     env_file:
       - .env.local
