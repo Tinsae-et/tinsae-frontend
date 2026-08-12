@@ -32,15 +32,16 @@ function ProductCardInner({
   onSave: () => void;
 }) {
   const fresh = freshness(product.last_confirmed_at);
-  const image = product.images.find((i) => i.is_primary) ?? product.images[0];
-  const inStock = fresh.tone === "fresh";
+  const statusTone = product.confirmation_status ? (product.confirmation_status as FreshnessTone) : fresh.tone;
+  const image = product.image || null;
+  const inStock = statusTone === "fresh";
 
   return (
     <article className="border-tn-hair flex flex-col overflow-hidden rounded-[18px] border bg-white transition-[transform,box-shadow,border-color] duration-150 hover:-translate-y-[3px] hover:border-[#E0DDD4] hover:shadow-[0_18px_44px_rgba(11,11,11,0.09)]">
       <div className="bg-tn-paper relative aspect-square">
         {image ? (
           <Image
-            src={image.url}
+            src={image}
             alt={product.title}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
@@ -97,7 +98,7 @@ function ProductCardInner({
             <span className="truncate">{product.shop_name}</span>
           </span>
           <span className="font-tn-mono text-tn-mute flex shrink-0 items-center gap-1.5 text-xs">
-            <span className={cn("size-1.5 rounded-full", TONE_DOT[fresh.tone])} />
+            <span className={cn("size-1.5 rounded-full", TONE_DOT[statusTone])} />
             {fresh.age}
           </span>
         </div>
@@ -115,13 +116,14 @@ export function ProductCard({ product }: { product: Product }) {
 export function ProductRow({ product }: { product: Product }) {
   const [saved, setSaved] = useState(false);
   const fresh = freshness(product.last_confirmed_at);
-  const image = product.images.find((i) => i.is_primary) ?? product.images[0];
+  const statusTone = product.confirmation_status ? (product.confirmation_status as FreshnessTone) : fresh.tone;
+  const image = product.image || null;
 
   return (
     <div className="border-tn-hair flex items-center gap-[18px] rounded-[18px] border bg-white p-3.5 transition-[transform,box-shadow,border-color] duration-150 hover:-translate-y-[3px] hover:border-[#E0DDD4] hover:shadow-[0_18px_44px_rgba(11,11,11,0.09)]">
       <div className="bg-tn-paper relative h-[92px] w-[92px] shrink-0 overflow-hidden rounded-xl">
         {image ? (
-          <Image src={image.url} alt={product.title} fill sizes="92px" className="object-cover" />
+          <Image src={image} alt={product.title} fill sizes="92px" className="object-cover" />
         ) : (
           <ProdPlaceholder kind={kindForSlug(product.category?.slug)} />
         )}
@@ -154,7 +156,7 @@ export function ProductRow({ product }: { product: Product }) {
           {formatETB(product.price)}
         </p>
         <p className="font-tn-mono text-tn-mute mt-1 flex items-center justify-end gap-1.5 text-[11.5px]">
-          <span className={cn("size-1.5 rounded-full", TONE_DOT[fresh.tone])} />
+          <span className={cn("size-1.5 rounded-full", TONE_DOT[statusTone])} />
           {fresh.age}
         </p>
       </div>
