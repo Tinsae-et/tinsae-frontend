@@ -37,12 +37,8 @@ const product: Product = {
     shop_name: "Kuriftu Mobile",
     shop_verified: true,
     category: null,
-    images: [
-        { id: 1, url: "/file.svg", is_primary: true, display_order: 1 },
-        { id: 2, url: "/file.svg", is_primary: false, display_order: 2 },
-        { id: 3, url: "/file.svg", is_primary: false, display_order: 3 },
-        { id: 4, url: "/file.svg", is_primary: false, display_order: 4 },
-    ],
+    image: "/file.svg",
+    confirmation_status: "fresh",
     last_confirmed_at: null,
     slug: "iphone-15pro",
     specs: {
@@ -57,6 +53,12 @@ const product: Product = {
         sim: "Nano + eSIM"
     }
 }
+const images:ProductImage[] = [
+    { id: 1, url: "/file.svg", is_primary: true, display_order: 1 },
+    { id: 2, url: "/file.svg", is_primary: false, display_order: 2 },
+    { id: 3, url: "/file.svg", is_primary: false, display_order: 3 },
+    { id: 4, url: "/file.svg", is_primary: false, display_order: 4 },
+]
 
 function goToPage(page: number) {
     console.log(page)
@@ -153,7 +155,7 @@ function ProductDetail() {
             <div className="flex flex-col gap-4">
                 <div className="grid lg:grid-cols-2 sm:grid-cols-1 gap-2">
                     <div className="grid gird-cols-4 p-2 gap-2">
-                        <ImageGallary images={product.images} />
+                        <ImageGallary images={images} />
                     </div>
 
                     <div className="flex flex-col p-2 gap-3">
