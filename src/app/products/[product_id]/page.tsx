@@ -8,6 +8,8 @@ import { ShopRow } from "@/components/shops/shop-row";
 import { formatETB } from "@/lib/format";
 import Image from "next/image";
 import { useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 const SHOPROWS: {
     n: string;
@@ -150,119 +152,133 @@ function Specification({ name, value }: { name: string, value: string }) {
 }
 
 function ProductDetail() {
+    const searchParams = useSearchParams();
+
+    const category = searchParams.get("category") ?? "phones"
     return (
-        <div className="px-10">
-            <div className="flex flex-col gap-4">
-                <div className="grid lg:grid-cols-2 sm:grid-cols-1 gap-2">
-                    <div className="grid gird-cols-4 p-2 gap-2">
-                        <ImageGallary images={images} />
-                    </div>
-
-                    <div className="flex flex-col p-2 gap-3">
-                        <div className="flex gap-2">
-                            <span className="text-green-600 rounded-full bg-green-100 px-4 py-1 font-semibold flex items-center gap-1 text-sm">
-                                <Icon name="check" className="size-5" />
-                                3 shops confirmed today
-                            </span>
-                            <span className="text-gray-900 bg-gray-200 rounded-full px-4 py-1 font-semibold flex items-center gap-3">
-                                <Icon name="bolt" />
-                                Trending #2
-                            </span>
+        <div className="lg:flex w-full justify-center px-[28px]">
+            <div className="max-w-[1200px]">
+                <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-[7px] text-[12.5px] font-semibold">
+                    <Link href="/" className="text-tn-mute">Home</Link>
+                    <Icon name="chevron" size={11} className="text-[#B7B5AD]" />
+                    <Link href="/products" className="text-tn-mute">{category}</Link>
+                    <Icon name="chevron" size={11} className="text-[#B7B5AD]" />
+                    <Link href="/products" className="text-tn-mute">apple</Link>
+                    <Icon name="chevron" size={11} className="text-[#B7B5AD]" />
+                    <Link href="/products" className="text-tn-mute">{product.title}</Link>
+                </nav>
+                <div className="flex flex-col gap-4">
+                    <div className="grid lg:grid-cols-2 sm:grid-cols-1 gap-2">
+                        <div className="grid gird-cols-4 p-2 gap-2">
+                            <ImageGallary images={images} />
                         </div>
 
-                        <div className="flex flex-col gap-2">
-                            <span className="text-gray-800 font-semibold">APPLE</span>
-                            <h1 className="font-bold text-5xl">{product.title} <span className="text-gray-500">256GB</span></h1>
-                            <span className="font-semibold text-lg">{product.description}</span>
-                        </div>
-
-                        <div className="flex justify-between border border-gray-300 p-4 rounded-2xl bg-gray-50">
-                            <div className="flex flex-col items-bottom pt-5">
-                                <span className="text-red-700 text-xs font-bold ">LOWEST PRICE</span>
-                                <h1 className="text-red-600 text-4xl font-bold">{formatETB(138900)}</h1>
-                                <p className="text-gray-700 font-semibold text-sm">across <span className="font-bold text-gray-800">5 verified shops</span> spread 5.8%</p>
+                        <div className="flex flex-col p-2 gap-3">
+                            <div className="flex gap-2">
+                                <span className="text-green-600 rounded-full bg-green-100 px-4 py-1 font-semibold flex items-center gap-1 text-sm">
+                                    <Icon name="check" className="size-5" />
+                                    3 shops confirmed today
+                                </span>
+                                <span className="text-gray-900 bg-gray-200 rounded-full px-4 py-1 font-semibold flex items-center gap-3">
+                                    <Icon name="bolt" />
+                                    Trending #2
+                                </span>
                             </div>
-                            <div className="flex flex-col gap-3">
-                                <button className="text-white bg-red-500 p-3 rounded-full font-bold hover:shadow-lg hover:scale-[101%] hover:cursor-pointer flex items-center gap-2 text-sm"><Icon name="tg" /> Contact best shop</button>
-                                <button className="border border-gray-300 p-3 hover:border-gray-900 hover:shadow hover:cursor-pointer rounded-full font-bold shadow bg-white flex items-center gap-2"><Icon name="heart" /> Save to wishlist</button>
-                            </div>
-                        </div>
 
-                        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4 font-sans select-none">
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center gap-2 text-gray-900 font-bold text-sm sm:text-base">
-                                    <Icon name="clock" />
-                                    <span>Stock freshness · last 24h</span>
+                            <div className="flex flex-col gap-2">
+                                <span className="text-gray-800 font-semibold">APPLE</span>
+                                <h1 className="font-bold text-5xl">{product.title} <span className="text-gray-500">256GB</span></h1>
+                                <span className="font-semibold text-lg">{product.description}</span>
+                            </div>
+
+                            <div className="flex justify-between border border-gray-300 p-4 rounded-2xl bg-gray-50">
+                                <div className="flex flex-col items-bottom pt-5">
+                                    <span className="text-red-700 text-xs font-bold ">LOWEST PRICE</span>
+                                    <h1 className="text-red-600 text-4xl font-bold">{formatETB(138900)}</h1>
+                                    <p className="text-gray-700 font-semibold text-sm">across <span className="font-bold text-gray-800">5 verified shops</span> spread 5.8%</p>
                                 </div>
-                                <span className="text-xs sm:text-sm text-gray-400 font-normal">5 of 5 responded</span>
+                                <div className="flex flex-col gap-3">
+                                    <button className="text-white bg-red-500 p-3 rounded-full font-bold hover:shadow-lg hover:scale-[101%] hover:cursor-pointer flex items-center gap-2 text-sm"><Icon name="tg" /> Contact best shop</button>
+                                    <button className="border border-gray-300 p-3 hover:border-gray-900 hover:shadow hover:cursor-pointer rounded-full font-bold shadow bg-white flex items-center gap-2"><Icon name="heart" /> Save to wishlist</button>
+                                </div>
                             </div>
-                            <StockFreshness />
-                        </div>
 
-                        <div>
-                            <span className="font-bold text-2sm">Key specifications</span>
-                            <div className="grid grid-cols-3 gap-1">
+                            <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4 font-sans select-none">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-2 text-gray-900 font-bold text-sm sm:text-base">
+                                        <Icon name="clock" />
+                                        <span>Stock freshness · last 24h</span>
+                                    </div>
+                                    <span className="text-xs sm:text-sm text-gray-400 font-normal">5 of 5 responded</span>
+                                </div>
+                                <StockFreshness />
+                            </div>
+
+                            <div>
+                                <span className="font-bold text-2sm">Key specifications</span>
+                                <div className="grid grid-cols-3 gap-1">
+                                    {
+                                        Object.entries(product.specs).map(([name, value]) => (
+                                            <Specification key={name} name={name} value={String(value)} />
+                                        ))
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div className="flex justify-between">
+                            <div>
+                                <h1 className="font-bold text-3xl">Available at 5 verified shops</h1>
+                                <span className="text-gray-500 ">Sorted by lowest price all reconfirmed within 24 hours</span>
+                            </div>
+                            <div className="flex items-center gap-3 ">
+                                <div className="border border-gray-300 py-2 px-4 rounded-full ">
+                                    <span className="font-bold">Sort: </span>
+                                    <select name="" id="" className="font-bold">
+                                        <option value="price">Price</option>
+                                        <option value="">Freshness</option>
+                                    </select>
+                                </div>
+
+                                <button className="border border-gray-300 py-2 px-4 rounded-full font-bold flex items-center gap-2"><Icon name="filter" />Filter</button>
+                            </div>
+                        </div>
+                        <div className="my-2 flex flex-col gap-3">
+                            <div className="min-w-[500px] overflow-x-scroll flex flex-col gap-3">
                                 {
-                                    Object.entries(product.specs).map(([name, value]) => (
-                                        <Specification key={name} name={name} value={String(value)} />
+                                    SHOPROWS.map(r => (
+                                        <ShopRow key={r.n} shop={r} />
                                     ))
                                 }
                             </div>
-                        </div>
-                    </div>
-                </div>
-                <div>
-                    <div className="flex justify-between">
-                        <div>
-                            <h1 className="font-bold text-3xl">Available at 5 verified shops</h1>
-                            <span className="text-gray-500 ">Sorted by lowest price all reconfirmed within 24 hours</span>
-                        </div>
-                        <div className="flex items-center gap-3 ">
-                            <div className="border border-gray-300 py-2 px-4 rounded-full ">
-                                <span className="font-bold">Sort: </span>
-                                <select name="" id="" className="font-bold">
-                                    <option value="price">Price</option>
-                                    <option value="">Freshness</option>
-                                </select>
+                            <div className="bg-gray-100 p-3 rounded-xl flex items-center gap-2">
+                                <Icon name="shield" className="text-green-500" />
+                                <p className="text-sm">
+                                    All shops are <span className="font-bold">verified by Tinsae.</span>
+                                    Stock is reconfirmed daily via Telegram. Tinsae does not handle payment-visit the hsop to inspect and complete your purchase.
+                                </p>
                             </div>
-
-                            <button className="border border-gray-300 py-2 px-4 rounded-full font-bold flex items-center gap-2"><Icon name="filter" />Filter</button>
                         </div>
                     </div>
-                    <div className="my-2 flex flex-col gap-3">
-                        <div className="min-w-[500px] overflow-x-scroll flex flex-col gap-3">
-                            {
-                                SHOPROWS.map(r => (
-                                    <ShopRow key={r.n} shop={r} />
-                                ))
-                            }
-                        </div>
-                        <div className="bg-gray-100 p-3 rounded-xl flex items-center gap-2">
-                            <Icon name="shield" className="text-green-500" />
-                            <p className="text-sm">
-                                All shops are <span className="font-bold">verified by Tinsae.</span>
-                                Stock is reconfirmed daily via Telegram. Tinsae does not handle payment-visit the hsop to inspect and complete your purchase.
-                            </p>
+
+                    <div className="mt-10">
+                        <h2 className="font-bold text-3xl">Similar phones</h2>
+                        <div className="py-4">
+                            <ProductGrid
+                                products={products}
+                                total={4}
+                                loading={false}
+                                error={null}
+                                page={1}
+                                view={"grid"}
+                                onPageChange={goToPage}
+                                onRetry={retry}
+                            />
                         </div>
                     </div>
                 </div>
-
-                <div className="mt-10">
-                    <h2 className="font-bold text-3xl">Similar phones</h2>
-                    <div className="py-4">
-                        <ProductGrid
-                            products={products}
-                            total={4}
-                            loading={false}
-                            error={null}
-                            page={1}
-                            view={"grid"}
-                            onPageChange={goToPage}
-                            onRetry={retry}
-                        />
-                    </div>
-                </div>
-            </div>
+            </div>`
         </div>
     )
 }
