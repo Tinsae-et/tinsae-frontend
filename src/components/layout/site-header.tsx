@@ -288,16 +288,18 @@ export function SiteHeader() {
               <p className="text-tn-mute mt-6 mb-2 text-[10.5px] font-extrabold tracking-[0.09em] uppercase">
                 More
               </p>
-              {["How it works", "Verified shops", "Map view", "For shop owners"].map((label) => (
-                <Link
-                  key={label}
-                  href="/products"
-                  onClick={() => setDrawerOpen(false)}
-                  className="border-tn-hair2 text-tn-ink2 block border-b py-3 text-[15px] font-semibold"
-                >
-                  {label}
-                </Link>
-              ))}
+              {(["How it works", "Verified shops", "Map view", "For shop owners"] as const).map(
+                (label) => (
+                  <Link
+                    key={label}
+                    href={label === "How it works" ? "/how-it-works" : "/products"}
+                    onClick={() => setDrawerOpen(false)}
+                    className="border-tn-hair2 text-tn-ink2 block border-b py-3 text-[15px] font-semibold"
+                  >
+                    {label}
+                  </Link>
+                ),
+              )}
             </div>
 
             <div className="border-tn-hair flex flex-col gap-2.5 border-t px-5 py-4">
