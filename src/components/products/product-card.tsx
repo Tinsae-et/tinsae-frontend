@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Icon } from "@/components/tinsae/icon";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
@@ -38,7 +39,7 @@ function ProductCardInner({
 
   return (
     <article className="border-tn-hair flex flex-col overflow-hidden rounded-[18px] border bg-white transition-[transform,box-shadow,border-color] duration-150 hover:-translate-y-[3px] hover:border-[#E0DDD4] hover:shadow-[0_18px_44px_rgba(11,11,11,0.09)]">
-      <div className="bg-tn-paper relative aspect-square">
+      <Link href={`/products/${product.id}/`} className="bg-tn-paper relative aspect-square">
         {image ? (
           <Image
             src={image}
@@ -73,7 +74,7 @@ function ProductCardInner({
         >
           <Icon name="heart" size={15} className={saved ? "text-tn-red" : ""} />
         </button>
-      </div>
+      </Link>
 
       <div className="px-[18px] pt-4 pb-[18px]">
         <p className="text-tn-mute truncate text-[10.5px] font-bold tracking-[0.06em] uppercase">
