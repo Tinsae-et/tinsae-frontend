@@ -26,12 +26,7 @@ const SHOPROWS: {
         { n: "Gada Trading", loc: "Bole · Rwanda", p: 147000, fresh: 22, aging: true, c: "#2D4A5E" },
     ];
 
-const products: Product[] = [
-    { id: 1, title: "Iphone 15 Pro", description: "new iphone", price: "145000", currency: "ETB", shop_name: "Gada Trading", shop_verified: true, category: null, images: [], last_confirmed_at: null, slug: "slug", specs: {} },
-    { id: 2, title: "Iphone 15 Pro", description: "new iphone", price: "145000", currency: "ETB", shop_name: "Gada Trading", shop_verified: true, category: null, images: [], last_confirmed_at: null, slug: "slug", specs: {} },
-    { id: 3, title: "Iphone 15 Pro", description: "new iphone", price: "145000", currency: "ETB", shop_name: "Gada Trading", shop_verified: true, category: null, images: [], last_confirmed_at: null, slug: "slug", specs: {} },
-    { id: 4, title: "Iphone 15 Pro", description: "new iphone", price: "145000", currency: "ETB", shop_name: "Gada Trading", shop_verified: true, category: null, images: [], last_confirmed_at: null, slug: "slug", specs: {} },
-]
+const products: Product[] = []
 
 const product: Product = {
     id: 1,
