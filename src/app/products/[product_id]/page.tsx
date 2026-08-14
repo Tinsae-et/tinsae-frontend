@@ -1,7 +1,7 @@
 "use client"
 
 import { Icon } from "@/components/tinsae/icon"
-import { Product, ProductImage } from "@/lib/types";
+import type { Product, ProductImage } from "@/lib/types";
 import { ProdPlaceholder } from "@/components/tinsae/prod-placeholder";
 import { ProductGrid } from "@/components/products/product-grid";
 import { ShopRow } from "@/components/shops/shop-row";
