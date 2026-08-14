@@ -27,10 +27,10 @@ const SHOPROWS: {
     ];
 
 const products: Product[] = [
-    { id: 1, title: "Iphone 15 Pro", description: "new iphone", price: "145000", currency: "ETB", shop_name: "Gada Trading", shop_verified: true, category: null, images: [{ id: 1, url: "/file.svg", is_primary: true, display_order: 1 }], last_confirmed_at: null, slug: "slug", specs: {} },
-    { id: 2, title: "Iphone 15 Pro", description: "new iphone", price: "145000", currency: "ETB", shop_name: "Gada Trading", shop_verified: true, category: null, images: [{ id: 1, url: "/file.svg", is_primary: true, display_order: 1 }], last_confirmed_at: null, slug: "slug", specs: {} },
-    { id: 3, title: "Iphone 15 Pro", description: "new iphone", price: "145000", currency: "ETB", shop_name: "Gada Trading", shop_verified: true, category: null, images: [{ id: 1, url: "/file.svg", is_primary: true, display_order: 1 }], last_confirmed_at: null, slug: "slug", specs: {} },
-    { id: 4, title: "Iphone 15 Pro", description: "new iphone", price: "145000", currency: "ETB", shop_name: "Gada Trading", shop_verified: true, category: null, images: [{ id: 1, url: "/file.svg", is_primary: true, display_order: 1 }], last_confirmed_at: null, slug: "slug", specs: {} },
+    { id: 1, title: "Iphone 15 Pro", description: "new iphone", price: "145000", currency: "ETB", shop_name: "Gada Trading", shop_verified: true, category: null, images: [], last_confirmed_at: null, slug: "slug", specs: {} },
+    { id: 2, title: "Iphone 15 Pro", description: "new iphone", price: "145000", currency: "ETB", shop_name: "Gada Trading", shop_verified: true, category: null, images: [], last_confirmed_at: null, slug: "slug", specs: {} },
+    { id: 3, title: "Iphone 15 Pro", description: "new iphone", price: "145000", currency: "ETB", shop_name: "Gada Trading", shop_verified: true, category: null, images: [], last_confirmed_at: null, slug: "slug", specs: {} },
+    { id: 4, title: "Iphone 15 Pro", description: "new iphone", price: "145000", currency: "ETB", shop_name: "Gada Trading", shop_verified: true, category: null, images: [], last_confirmed_at: null, slug: "slug", specs: {} },
 ]
 
 const product: Product = {
