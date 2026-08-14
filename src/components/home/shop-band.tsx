@@ -40,7 +40,7 @@ export function ShopBand() {
               Morning! Still have <span className="text-[#FFB69E]">iPhone 15 Pro 256GB</span> in
               stock?
             </p>
-            <p className="bg-tn-red max-w-[70%] self-end rounded-xl px-3 py-2.5 text-white">
+            <p className="bg-tn-red max-w-[70%] self-end rounded-xl px-3 py-2.5 text-whitebg-tn-red max-w-[70%] self-end rounded-xl px-3 py-2.5 text-white">
               ✅ Yes · 3 units · 142,500
             </p>
             <p className="text-tn-green max-w-[88%] self-start rounded-xl bg-[#262626] px-3 py-2.5">
