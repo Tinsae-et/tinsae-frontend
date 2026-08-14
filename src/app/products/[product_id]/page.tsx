@@ -208,7 +208,7 @@ function ProductDetail() {
                             <div className="grid grid-cols-3 gap-1">
                                 {
                                     Object.entries(product.specs).map(([name, value]) => (
-                                        <Specification key={name} name={name} value={value} />
+                                        <Specification key={name} name={name} value={String(value)} />
                                     ))
                                 }
                             </div>
