@@ -9,7 +9,7 @@ const Howit = () => {
                 <div className="grid lg:grid-cols-2 gap-4">
                     <div className=" flex flex-col gap-5">
                         <h1 className="font-bold text-5xl">Stock you can trust, before you  <span className="text-red-600">cross town.</span></h1>
-                        <p className="text-lg text-gray-700">Tinsae is verified electronics marketplace for Addis. Every shop is checkd in person, and every listing is reconfrimed in stock - so the price you see is the one that's actually on the shelf.</p>
+                        <p className="text-lg text-gray-700">Tinsae is verified electronics marketplace for Addis. Every shop is checkd in person, and every listing is reconfrimed in stock - so the price you see is the one that&apos;s actually on the shelf.</p>
                         <div className="flex gap-4 ">
                             <Pill kind="solid" size="lg" iconAfter="arrow" href="/products">Start browsing</Pill>
                             <Pill kind="outline" size="lg" icon="tg" href="#">List your shop</Pill>
@@ -163,7 +163,7 @@ const Howit = () => {
                             <Icon name="bolt" className="text-orange-600 " size={30}/>
                         </div>
                         <h1 className="font-bold text-xl my-2">Confirmed every morning </h1>
-                        <p className="text-gray-500 text-sm" >Shop re-confirm what's in stock through our Telegram bot daily. A freshness dot shows exactly how recent each listing is exatly how recent each listing is — stale ones drop off.</p>
+                        <p className="text-gray-500 text-sm" >Shop re-confirm what&apos;s  in stock through our Telegram bot daily. A freshness dot shows exactly how recent each listing is exatly how recent each listing is — stale ones drop off.</p>
                         
                     </div>
 
@@ -205,7 +205,7 @@ const Howit = () => {
                             </div>
                         </div>
                         <p className=" font-tn-mono text-red-500 text-sm">02</p>
-                        <p className="text-xl font-bold">Check it's confirmed</p>
+                        <p className="text-xl font-bold">Check it&apos;s confirmed</p>
                         <p className="text-sm text-gray-400">The freshness dot tells you when the shop last confirmed stock—hours. not weeks </p>
                     </div>
 
@@ -287,7 +287,7 @@ const Howit = () => {
                                 <div className=" flex items-center justify-center bg-green-900 p-1 size-4 rounded-full">
                                     <div  className="bg-green-600 size-2 rounded-full"></div>
                             </div>
-                            <p className="text-gray-500">Buyers now see a green dot . "1h ago"</p>
+                            <p className="text-gray-500">Buyers now see a green dot . &quot;1h ago&quot;</p>
                         </div>
 
                     </div>
@@ -351,7 +351,7 @@ const Howit = () => {
             </div>
             <div className="flex flex-col gap-3 items-center justify-center pt-20">
                 <h1 className="font-bold text-orange-600 text-sm">WHERE WE STAND</h1>
-                <h1 className="font-bold text-4xl">What Tinsae is - and isn't.</h1>
+                <h1 className="font-bold text-4xl">What Tinsae is - and isn&apos;t.</h1>
             </div>
             <div className="flex flex-col grid grid-cols-2 gap-4">
                 <div className="border bg-green-100 rounded-xl p-4 pt-7 ">
@@ -401,7 +401,7 @@ const Howit = () => {
                     <div className="flex flex-col bg-orange-600 rounded-xl items-center justify-center p-6 pb-20 m-5 gap-2">
                         <h1 className="font-tn-amh self-center text-white font-bold text-9xl ">ትንሳኤ</h1>
                         <h1 className="text-white text-sm">T I N S A E</h1>
-                        <h1 className="italic text-white">"rising"</h1>
+                        <h1 className="italic text-white">&quot;rising&quot;</h1>
                     </div>
                     
                 </div>
@@ -409,8 +409,8 @@ const Howit = () => {
                 <div className="flex flex-col gap-5 p-4">
                     <h1 className="text-red-500 text-sm font-bold">WHY WE BUILT IT</h1>
                     <h1 className="font-bold text-4xl">Bole runs on trust between people. We just make it visible.</h1>
-                    <p className="text-sm text-gray-600">Addis already has hundreds of honest electronics shops. What it lacked was a way to prove it before you spend an afternoon in traffic - a shared. public record of who's real and what's actually in stock</p>
-                    <p className="text-gray-400" ><span className="font-bold">Tinsae</span> — Amharic for <span className="italic">"rising"</span> —is that record. We verify the shops.the bot keeps them honest about stock, and you keep buying in person, the way Addis has always done business done business. We never touch the money. We just make the trust legible.</p>
+                    <p className="text-sm text-gray-600">Addis already has hundreds of honest electronics shops. What it lacked was a way to prove it before you spend an afternoon in traffic - a shared. public record of who&apos;s real and what&apos;s actually in stock</p>
+                    <p className="text-gray-400" ><span className="font-bold">Tinsae</span> — Amharic for <span className="italic">&quot;rising&quot;</span> —is that record. We verify the shops.the bot keeps them honest about stock, and you keep buying in person, the way Addis has always done business done business. We never touch the money. We just make the trust legible.</p>
                     <div className="gap-2">
                         <button className="text-white bg-black py-2 px-3 rounded-full pr-4 text-xs font-bold mt-3 mr-3">Meet the verified shops →</button> <button className="text-xs font-bold border rounded-full py-2 px-2 bg-gray-100">How verification works</button>
                     </div>
