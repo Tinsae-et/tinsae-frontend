@@ -2,7 +2,6 @@
 
 import { Icon } from "@/components/tinsae/icon"
 import { Product, ProductImage } from "@/lib/types";
-import file from "../../../../public/file.svg"
 import { ProdPlaceholder } from "@/components/tinsae/prod-placeholder";
 import { ProductGrid } from "@/components/products/product-grid";
 import { ShopRow } from "@/components/shops/shop-row";
@@ -28,10 +27,10 @@ const SHOPROWS: {
     ];
 
 const products: Product[] = [
-    { id: 1, title: "Iphone 15 Pro", description: "new iphone", price: "145000", currency: "ETB", shop_name: "Gada Trading", shop_verified: true, category: null, images: [{ id: 1, url: file, is_primary: true, display_order: 1 }], last_confirmed_at: null, slug: "slug", specs: {} },
-    { id: 2, title: "Iphone 15 Pro", description: "new iphone", price: "145000", currency: "ETB", shop_name: "Gada Trading", shop_verified: true, category: null, images: [{ id: 1, url: file, is_primary: true, display_order: 1 }], last_confirmed_at: null, slug: "slug", specs: {} },
-    { id: 3, title: "Iphone 15 Pro", description: "new iphone", price: "145000", currency: "ETB", shop_name: "Gada Trading", shop_verified: true, category: null, images: [{ id: 1, url: file, is_primary: true, display_order: 1 }], last_confirmed_at: null, slug: "slug", specs: {} },
-    { id: 4, title: "Iphone 15 Pro", description: "new iphone", price: "145000", currency: "ETB", shop_name: "Gada Trading", shop_verified: true, category: null, images: [{ id: 1, url: file, is_primary: true, display_order: 1 }], last_confirmed_at: null, slug: "slug", specs: {} },
+    { id: 1, title: "Iphone 15 Pro", description: "new iphone", price: "145000", currency: "ETB", shop_name: "Gada Trading", shop_verified: true, category: null, images: [{ id: 1, url: "/file.svg", is_primary: true, display_order: 1 }], last_confirmed_at: null, slug: "slug", specs: {} },
+    { id: 2, title: "Iphone 15 Pro", description: "new iphone", price: "145000", currency: "ETB", shop_name: "Gada Trading", shop_verified: true, category: null, images: [{ id: 1, url: "/file.svg", is_primary: true, display_order: 1 }], last_confirmed_at: null, slug: "slug", specs: {} },
+    { id: 3, title: "Iphone 15 Pro", description: "new iphone", price: "145000", currency: "ETB", shop_name: "Gada Trading", shop_verified: true, category: null, images: [{ id: 1, url: "/file.svg", is_primary: true, display_order: 1 }], last_confirmed_at: null, slug: "slug", specs: {} },
+    { id: 4, title: "Iphone 15 Pro", description: "new iphone", price: "145000", currency: "ETB", shop_name: "Gada Trading", shop_verified: true, category: null, images: [{ id: 1, url: "/file.svg", is_primary: true, display_order: 1 }], last_confirmed_at: null, slug: "slug", specs: {} },
 ]
 
 const product: Product = {
@@ -44,10 +43,10 @@ const product: Product = {
     shop_verified: true,
     category: null,
     images: [
-        { id: 1, url: file, is_primary: true, display_order: 1 },
-        { id: 2, url: file, is_primary: false, display_order: 2 },
-        { id: 3, url: file, is_primary: false, display_order: 3 },
-        { id: 4, url: file, is_primary: false, display_order: 4 },
+        { id: 1, url: "/file.svg", is_primary: true, display_order: 1 },
+        { id: 2, url: "/file.svg", is_primary: false, display_order: 2 },
+        { id: 3, url: "/file.svg", is_primary: false, display_order: 3 },
+        { id: 4, url: "/file.svg", is_primary: false, display_order: 4 },
     ],
     last_confirmed_at: null,
     slug: "iphone-15pro",
@@ -87,7 +86,7 @@ function ImageGallary({ images }: { images: ProductImage[] }) {
                     {imageId} / {images.length}
                 </span>
                 <ProdPlaceholder kind="phone" />
-                <Image src={mainImage.url} alt={mainImage.url} />
+                <Image src={mainImage.url} alt={mainImage.url} width={10} height={10}/>
                 
             </div>
 
@@ -100,7 +99,7 @@ function ImageGallary({ images }: { images: ProductImage[] }) {
                             className={`rounded-2xl border-[4px] hover:scale-101 hover:cursor-pointer flex items-center justify-center bg-[linear-gradient(180deg,#16110F_0%,#050505_100%)] ${image.id === imageId ? "border-orange-400" : ""
                                 }`}
                         >
-                            <Image src={image.url} alt="image" className="w-full" />
+                            <Image src={image.url} alt="image" className="w-full" height={10} width={10} />
                         </button>
                     ))
                 }
