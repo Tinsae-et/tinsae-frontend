@@ -39,7 +39,7 @@ export default function NotFound(){
 
                 <p className="w-[420px] flex items-center text-center text-gray-600">
                     The listing you are looking for may have sold, moved, or never existed.
-                    Let's get you back to something that's confirmed in stock.
+                    Let&apos;s get you back to something that&apos;s confirmed in stock.
                 </p>
 
                 <div className="border-tn-hair flex h-11 items-center gap-2.5 rounded-2xl border-[1.5px] bg-white pl-1 w-[401px] overflow-hidden ">

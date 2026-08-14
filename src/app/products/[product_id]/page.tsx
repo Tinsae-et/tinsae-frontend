@@ -87,9 +87,8 @@ function ImageGallary({ images }: { images: ProductImage[] }) {
                     {imageId} / {images.length}
                 </span>
                 <ProdPlaceholder kind="phone" />
-                {
-                    //<Image src={mainImage.url} alt={mainImage.url} />
-                }
+                <Image src={mainImage.url} alt={mainImage.url} />
+                
             </div>
 
             <div className="grid grid-cols-4 row-span-1 gap-2">
@@ -145,7 +144,7 @@ function StockFreshness() {
     )
 }
 
-function Specification({ name, value }: { name: string, value: any }) {
+function Specification({ name, value }: { name: string, value: string }) {
     return (
         <div className="flex flex-col bg-gray-100 rounded-lg p-2 mx-2 my-1 hover:shadow">
             <span className="text-sm font-bold text-gray-500 uppercase">{name}</span>
