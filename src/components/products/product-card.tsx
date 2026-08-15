@@ -39,7 +39,7 @@ function ProductCardInner({
 
   return (
     <article className="border-tn-hair flex flex-col overflow-hidden rounded-[18px] border bg-white transition-[transform,box-shadow,border-color] duration-150 hover:-translate-y-[3px] hover:border-[#E0DDD4] hover:shadow-[0_18px_44px_rgba(11,11,11,0.09)]">
-      <Link href={`/products/${product.id}/`} className="bg-tn-paper relative aspect-square">
+      <Link href={`/products/${product.id}/?category=${product.category?.name}&title=${product?.title}`} className="bg-tn-paper relative aspect-square">
         {image ? (
           <Image
             src={image}

@@ -155,6 +155,7 @@ function ProductDetail() {
     const searchParams = useSearchParams();
 
     const category = searchParams.get("category") ?? "phones"
+    const title = searchParams.get("title")
     return (
         <div className="lg:flex w-full justify-center px-[28px]">
             <div className="max-w-[1200px]">
@@ -163,9 +164,9 @@ function ProductDetail() {
                     <Icon name="chevron" size={11} className="text-[#B7B5AD]" />
                     <Link href="/products" className="text-tn-mute">{category}</Link>
                     <Icon name="chevron" size={11} className="text-[#B7B5AD]" />
-                    <Link href="/products" className="text-tn-mute">apple</Link>
+                    <Link href="/products" className="text-tn-mute">{title}</Link>
                     <Icon name="chevron" size={11} className="text-[#B7B5AD]" />
-                    <Link href="/products" className="text-tn-mute">{product.title}</Link>
+                    <Link href="/products" className="text-tn-mute">{title}</Link>
                 </nav>
                 <div className="flex flex-col gap-4">
                     <div className="grid lg:grid-cols-2 sm:grid-cols-1 gap-2">
