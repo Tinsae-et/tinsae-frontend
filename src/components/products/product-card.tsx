@@ -39,18 +39,20 @@ function ProductCardInner({
 
   return (
     <article className="border-tn-hair flex flex-col overflow-hidden rounded-[18px] border bg-white transition-[transform,box-shadow,border-color] duration-150 hover:-translate-y-[3px] hover:border-[#E0DDD4] hover:shadow-[0_18px_44px_rgba(11,11,11,0.09)]">
-      <Link href={`/products/${product.id}/?category=${product.category?.name}&title=${product?.title}`} className="bg-tn-paper relative aspect-square">
-        {image ? (
-          <Image
-            src={image}
-            alt={product.title}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-            className="object-cover"
-          />
-        ) : (
-          <ProdPlaceholder kind={kindForSlug(product.category?.slug)} />
-        )}
+      <div className="bg-tn-paper relative aspect-square">
+        <Link href={`/products/${product.id}/?category=${product.category?.name}&title=${product?.title}`}>
+          {image ? (
+            <Image
+              src={image}
+              alt={product.title}
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+              className="object-cover"
+            />
+          ) : (
+            <ProdPlaceholder kind={kindForSlug(product.category?.slug)} />
+          )}
+        </Link>
 
         <span
           className={cn(
@@ -74,7 +76,7 @@ function ProductCardInner({
         >
           <Icon name="heart" size={15} className={saved ? "text-tn-red" : ""} />
         </button>
-      </Link>
+      </div>
 
       <div className="px-[18px] pt-4 pb-[18px]">
         <p className="text-tn-mute truncate text-[10.5px] font-bold tracking-[0.06em] uppercase">
