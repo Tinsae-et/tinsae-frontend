@@ -34,25 +34,32 @@ function ProductCardInner({
 }) {
   const fresh = freshness(product.last_confirmed_at);
   const statusTone = product.confirmation_status ? (product.confirmation_status as FreshnessTone) : fresh.tone;
-  const image = product.image || null;
+  const image = product.images?.[0]?.url || null;
   const inStock = statusTone === "fresh";
 
+  const detailHref = `/products/${product.slug}`;
+
   return (
-    <article className="border-tn-hair flex flex-col overflow-hidden rounded-[18px] border bg-white transition-[transform,box-shadow,border-color] duration-150 hover:-translate-y-[3px] hover:border-[#E0DDD4] hover:shadow-[0_18px_44px_rgba(11,11,11,0.09)]">
+    <article className="border-tn-hair group relative flex flex-col overflow-hidden rounded-[18px] border bg-white transition-[transform,box-shadow,border-color] duration-150 hover:-translate-y-[3px] hover:border-[#E0DDD4] hover:shadow-[0_18px_44px_rgba(11,11,11,0.09)]">
+      {/* stretched link: the whole card navigates to the detail page */}
+      <Link
+        href={detailHref}
+        aria-label={product.title}
+        className="absolute inset-0 z-[1]"
+      />
+
       <div className="bg-tn-paper relative aspect-square">
-        <Link href={`/products/${product.id}/?category=${product.category?.name}&title=${product?.title}`}>
-          {image ? (
-            <Image
-              src={image}
-              alt={product.title}
-              fill
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-              className="object-cover"
-            />
-          ) : (
-            <ProdPlaceholder kind={kindForSlug(product.category?.slug)} />
-          )}
-        </Link>
+        {image ? (
+          <Image
+            src={image}
+            alt={product.title}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+            className="object-cover"
+          />
+        ) : (
+          <ProdPlaceholder kind={kindForSlug(product.category?.slug)} />
+        )}
 
         <span
           className={cn(
@@ -70,9 +77,10 @@ function ProductCardInner({
           aria-label={saved ? "Unsave" : "Save"}
           onClick={(e) => {
             e.stopPropagation();
+            e.preventDefault();
             onSave();
           }}
-          className="bg-white/95 text-tn-ink2 absolute top-3 right-3 inline-flex size-8 items-center justify-center rounded-[10px] shadow-[0_2px_8px_rgba(11,11,11,0.06)] transition-colors"
+          className="bg-white/95 text-tn-ink2 absolute top-3 right-3 z-10 inline-flex size-8 items-center justify-center rounded-[10px] shadow-[0_2px_8px_rgba(11,11,11,0.06)] transition-colors"
         >
           <Icon name="heart" size={15} className={saved ? "text-tn-red" : ""} />
         </button>
@@ -120,10 +128,17 @@ export function ProductRow({ product }: { product: Product }) {
   const [saved, setSaved] = useState(false);
   const fresh = freshness(product.last_confirmed_at);
   const statusTone = product.confirmation_status ? (product.confirmation_status as FreshnessTone) : fresh.tone;
-  const image = product.image || null;
+  const image = product.images?.[0]?.url || null;
 
   return (
-    <div className="border-tn-hair flex items-center gap-[18px] rounded-[18px] border bg-white p-3.5 transition-[transform,box-shadow,border-color] duration-150 hover:-translate-y-[3px] hover:border-[#E0DDD4] hover:shadow-[0_18px_44px_rgba(11,11,11,0.09)]">
+    <div className="border-tn-hair group relative flex items-center gap-[18px] rounded-[18px] border bg-white p-3.5 transition-[transform,box-shadow,border-color] duration-150 hover:-translate-y-[3px] hover:border-[#E0DDD4] hover:shadow-[0_18px_44px_rgba(11,11,11,0.09)]">
+      {/* stretched link: the whole row navigates to the detail page */}
+      <Link
+        href={`/products/${product.slug}`}
+        aria-label={product.title}
+        className="absolute inset-0 z-[1]"
+      />
+
       <div className="bg-tn-paper relative h-[92px] w-[92px] shrink-0 overflow-hidden rounded-xl">
         {image ? (
           <Image src={image} alt={product.title} fill sizes="92px" className="object-cover" />
@@ -134,8 +149,12 @@ export function ProductRow({ product }: { product: Product }) {
           type="button"
           aria-pressed={saved}
           aria-label={saved ? "Unsave" : "Save"}
-          onClick={() => setSaved((s) => !s)}
-          className="bg-white/95 text-tn-ink2 absolute top-1.5 right-1.5 inline-flex size-7 items-center justify-center rounded-lg shadow-[0_2px_8px_rgba(11,11,11,0.06)]"
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setSaved((s) => !s);
+          }}
+          className="bg-white/95 text-tn-ink2 absolute top-1.5 right-1.5 z-10 inline-flex size-7 items-center justify-center rounded-lg shadow-[0_2px_8px_rgba(11,11,11,0.06)]"
         >
           <Icon name="heart" size={14} className={saved ? "text-tn-red" : ""} />
         </button>

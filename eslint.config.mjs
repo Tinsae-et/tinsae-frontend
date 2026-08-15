@@ -12,10 +12,6 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Read-only design reference exported from the Claude Design project.
-    // Not application code — it targets React 18 UMD + Babel standalone.
-    "design_handoff_home/**",
-    "design_handoff_search/**",
   ]),
 ]);
 
