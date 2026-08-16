@@ -34,8 +34,8 @@ export type Product = {
   shop_name: string;
   shop_verified: boolean;
   category: Category | null;
-  /** Single image URL string ("" when unset). */
-  image: string;
+  /** Ordered product images (primary first); empty when unset. */
+  images: ProductImage[];
   /** Backend confirmation status: "fresh" | "stale" | null (never confirmed). */
   confirmation_status?: "fresh" | "stale" | string | null;
   /** Nullable — a product may never have been confirmed in stock. */

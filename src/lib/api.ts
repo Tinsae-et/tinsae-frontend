@@ -103,3 +103,18 @@ export async function getCategories(init?: RequestInit): Promise<Paginated<Categ
   }
   return res.json();
 }
+
+/**
+ * Single listing detail — ProductViewSet looks products up by `slug`
+ * (catalog/views.py: lookup_field = "slug").
+ */
+export async function getProduct(slug: string, init?: RequestInit): Promise<Product> {
+  const res = await fetch(`${CATALOG}/products/${encodeURIComponent(slug)}/`, {
+    cache: "no-store",
+    ...init,
+  });
+  if (!res.ok) {
+    throw new Error(`Could not load product (${res.status})`);
+  }
+  return res.json();
+}
