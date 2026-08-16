@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Tinsae — Asset Sheet</title>
+<link rel="stylesheet" href="tokens/tinsae-tokens.css"/>
+<link rel="stylesheet" href="fonts/fonts.css"/>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:var(--tn-paper);font-family:var(--tn-font);color:var(--tn-ink);-webkit-font-smoothing:antialiased}
+a{color:var(--tn-red);text-decoration:none}a:hover{color:var(--tn-red-dark)}
+.wrap{max-width:1180px;margin:0 auto;padding:48px 28px 80px}
+header{border-bottom:1px solid var(--tn-hair);padding-bottom:26px;margin-bottom:40px}
+h1{font-size:40px;font-weight:800;letter-spacing:-.035em;margin:0}
+.sub{font-size:15px;color:var(--tn-mute);margin-top:9px;max-width:560px;line-height:1.5}
+h2{font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tn-red);margin:0 0 16px}
+section{margin-bottom:52px}
+.card{background:#fff;border:1px solid var(--tn-hair);border-radius:var(--tn-r-panel);padding:24px}
+.iconGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+.ic{display:flex;flex-direction:column;align-items:center;gap:9px;padding:14px 6px;border:1px solid var(--tn-hair2);border-radius:var(--tn-r-md);background:#fff}
+.ic svg{color:var(--tn-ink)}
+.ic span{font-family:var(--tn-mono);font-size:10.5px;color:var(--tn-mute)}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.sw{border:1px solid var(--tn-hair);border-radius:var(--tn-r-md);overflow:hidden;background:#fff}
+.sw i{display:block;height:58px}
+.sw b{display:block;padding:9px 11px 2px;font-size:12.5px;font-weight:700}
+.sw code{display:block;padding:0 11px 10px;font-family:var(--tn-mono);font-size:11px;color:var(--tn-mute)}
+.logos{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.lg{border:1px solid var(--tn-hair);border-radius:var(--tn-r-lg);overflow:hidden;background:#fff}
+.lg .box{height:104px;display:flex;align-items:center;justify-content:center;padding:20px}
+.lg .box img{max-width:100%;max-height:100%}
+.lg p{margin:0;padding:10px 13px;border-top:1px solid var(--tn-hair2);font-family:var(--tn-mono);font-size:10.5px;color:var(--tn-mute);word-break:break-all}
+.type{display:flex;flex-direction:column;gap:20px}
+.tRow{display:flex;align-items:baseline;gap:20px;flex-wrap:wrap;padding-bottom:18px;border-bottom:1px solid var(--tn-hair2)}
+.tRow:last-child{border:0;padding:0}
+.tLab{width:150px;flex-shrink:0;font-family:var(--tn-mono);font-size:11px;color:var(--tn-mute);letter-spacing:.04em}
+.files{display:grid;gap:1px;background:var(--tn-hair);border:1px solid var(--tn-hair);border-radius:var(--tn-r-lg);overflow:hidden}
+.f{background:#fff;display:flex;gap:14px;align-items:baseline;padding:13px 17px;flex-wrap:wrap}
+.f code{font-family:var(--tn-mono);font-size:12.5px;font-weight:600;min-width:250px}
+.f span{font-size:13px;color:var(--tn-mute);flex:1}
+.fresh{display:flex;gap:12px;flex-wrap:wrap}
+.fr{flex:1 1 190px;border:1px solid var(--tn-hair);border-radius:var(--tn-r-lg);padding:15px 17px;background:#fff}
+.fr .dot{display:inline-block;width:9px;height:9px;border-radius:99px;margin-right:8px}
+.fr b{font-size:14px;font-weight:800}
+.fr em{display:block;margin-top:6px;font-family:var(--tn-mono);font-size:11.5px;color:var(--tn-mute);font-style:normal}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>Asset sheet</h1>
+<p class="sub">Everything in <code style="font-family:var(--tn-mono);font-size:13px">/assets</code>, rendered from the real files. Read <a href="README.md">README.md</a> for how to wire each one up.</p>
+</header>
+
+<section>
+<h2>Files</h2>
+<div class="files">
+<div class="f"><code>fonts/fonts.css</code><span>The three typefaces. Import first.</span></div>
+<div class="f"><code>tokens/tinsae-tokens.css</code><span>All <code>--tn-*</code> custom properties + shared hover behaviours.</span></div>
+<div class="f"><code>tokens/tinsae-tokens.json</code><span>Same values for Tailwind / JS.</span></div>
+<div class="f"><code>tokens/freshness.ts</code><span>The one stock-freshness rule + <code>ETB()</code>. Import everywhere.</span></div>
+<div class="f"><code>icons/Icon.tsx</code><span>47 icons as a React component.</span></div>
+<div class="f"><code>icons/tinsae-icons.svg</code><span>Same set as a sprite — <code>&lt;use href="#tn-shield"/&gt;</code></span></div>
+<div class="f"><code>icons/svg/*.svg</code><span>One file per icon.</span></div>
+<div class="f"><code>logo/*.svg</code><span>15 finalised logo files.</span></div>
+</div>
+</section>
+
+<section>
+<h2>Freshness — the core rule</h2>
+<div class="fresh">
+<div class="fr"><b><span class="dot" style="background:var(--tn-green)"></span>In stock</b><em>≤ 6h · buy with confidence</em></div>
+<div class="fr"><b><span class="dot" style="background:var(--tn-amber)"></span>Aging</b><em>7–24h · message first</em></div>
+<div class="fr"><b><span class="dot" style="background:var(--tn-stale)"></span>Hidden</b><em>&gt; 24h · dropped from buyer views</em></div>
+</div>
+</section>
+
+<section>
+<h2>Type</h2>
+<div class="card type">
+<div class="tRow"><span class="tLab">Plus Jakarta 800</span><span style="font-size:34px;font-weight:800;letter-spacing:-.03em">Verified shops, confirmed daily</span></div>
+<div class="tRow"><span class="tLab">Plus Jakarta 500</span><span style="font-size:16px;font-weight:500;color:var(--tn-ink-2)">Compare prices across verified local shops, then buy in person.</span></div>
+<div class="tRow"><span class="tLab">JetBrains Mono 600</span><span style="font-family:var(--tn-mono);font-size:22px;font-weight:600;color:var(--tn-red)">ETB 142,500</span><span style="font-family:var(--tn-mono);font-size:13px;color:var(--tn-mute)">2,840 listings · 96% · ~3.4h</span></div>
+<div class="tRow"><span class="tLab">Noto Sans Ethiopic 700</span><span style="font-family:var(--tn-amharic);font-size:30px;font-weight:700;color:var(--tn-red)">ትንሳኤ</span><span style="font-size:12.5px;color:var(--tn-mute)">wordmark and watermarks only</span></div>
+</div>
+</section>
+
+<section>
+<h2>Colour</h2>
+<div class="swatches">
+<div class="sw"><i style="background:#0B0B0B"></i><b>ink</b><code>#0B0B0B</code></div>
+<div class="sw"><i style="background:#3A3A38"></i><b>ink 2</b><code>#3A3A38</code></div>
+<div class="sw"><i style="background:#76746E"></i><b>mute</b><code>#76746E</code></div>
+<div class="sw"><i style="background:#F7F6F2"></i><b>paper</b><code>#F7F6F2</code></div>
+<div class="sw"><i style="background:#ECEAE3"></i><b>hairline</b><code>#ECEAE3</code></div>
+<div class="sw"><i style="background:#CC3000"></i><b>red · brand</b><code>#CC3000</code></div>
+<div class="sw"><i style="background:#A82500"></i><b>red dark</b><code>#A82500</code></div>
+<div class="sw"><i style="background:#FFF1EB"></i><b>red soft</b><code>#FFF1EB</code></div>
+<div class="sw"><i style="background:#1F8A5B"></i><b>green · verified</b><code>#1F8A5B</code></div>
+<div class="sw"><i style="background:#E8F5EE"></i><b>green soft</b><code>#E8F5EE</code></div>
+<div class="sw"><i style="background:#B8741F"></i><b>amber · aging</b><code>#B8741F</code></div>
+<div class="sw"><i style="background:#9A9A95"></i><b>stale</b><code>#9A9A95</code></div>
+<div class="sw"><i style="background:#229ED9"></i><b>telegram</b><code>#229ED9</code></div>
+<div class="sw"><i style="background:#E8A317"></i><b>star</b><code>#E8A317</code></div>
+</div>
+</section>
+
+<section>
+<h2>Logo</h2>
+<div class="logos">
+<div class="lg"><div class="box" style="background:#CC3000"><img src="logo/tinsae-logo-orange.svg" alt="Tinsae primary logo"/></div><p>tinsae-logo-orange.svg</p></div>
+<div class="lg"><div class="box" style="background:#0B0B0B"><img src="logo/tinsae-logo-dark.svg" alt="Tinsae logo on dark"/></div><p>tinsae-logo-dark.svg</p></div>
+<div class="lg"><div class="box"><img src="logo/tinsae-logo-light.svg" alt="Tinsae logo on light"/></div><p>tinsae-logo-light.svg</p></div>
+<div class="lg"><div class="box" style="background:#CC3000"><img src="logo/tinsae-logo-tagline-orange.svg" alt="Tinsae logo with tagline"/></div><p>tinsae-logo-tagline-orange.svg</p></div>
+<div class="lg"><div class="box"><img src="logo/tinsae-logo-tagline.svg" alt="Tinsae logo with tagline on light"/></div><p>tinsae-logo-tagline.svg</p></div>
+<div class="lg"><div class="box" style="background:#CC3000"><img src="logo/tinsae-mark-white.svg" alt="Tinsae mark, white"/></div><p>tinsae-mark-white.svg</p></div>
+<div class="lg"><div class="box"><img src="logo/tinsae-mark.svg" alt="Tinsae mark"/></div><p>tinsae-mark.svg</p></div>
+<div class="lg"><div class="box"><img src="logo/tinsae-app-icon.svg" alt="Tinsae app icon"/></div><p>tinsae-app-icon.svg</p></div>
+</div>
+</section>
+
+<section>
+<h2>Icons · 47</h2>
+<div class="card"><div class="iconGrid" id="icons"></div></div>
+</section>
+</div>
+
+<script>
+const NAMES = ['search','filter','sort','sliders','heart','check','plus','minus','back','arrow','chevron','chevd','ellipsis','menu','pin','clock','shield','bolt','eye','bell','msg','tg','star','tag','spec','box','grid','rows','gallery','trash','edit','logout','pulse','home','user','building','phone','laptop','audio','tablet','plug','camera','share','car','shirt','sofa','wrench'];
+fetch('icons/tinsae-icons.svg').then(r=>r.text()).then(t=>{
+  const d=document.createElement('div');d.innerHTML=t;d.style.display='none';document.body.appendChild(d);
+  document.getElementById('icons').innerHTML=NAMES.map(n=>
+    '<div class="ic"><svg width="22" height="22"><use href="#tn-'+n+'"/></svg><span>'+n+'</span></div>').join('');
+});
+</script>
+</body>
+</html>

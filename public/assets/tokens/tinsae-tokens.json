@@ -1,0 +1,99 @@
+{
+  "color": {
+    "ink": "#0B0B0B",
+    "ink2": "#3A3A38",
+    "mute": "#76746E",
+    "white": "#FFFFFF",
+    "paper": "#F7F6F2",
+    "hair": "#ECEAE3",
+    "hair2": "#F2F0EA",
+    "hairHover": "#E0DDD4",
+    "red": "#CC3000",
+    "redDark": "#A82500",
+    "redSoft": "#FFF1EB",
+    "redEdge": "#FBD9C7",
+    "redLight": "#FF7A4D",
+    "redGlow": "#FFB69E",
+    "green": "#1F8A5B",
+    "greenSoft": "#E8F5EE",
+    "greenText": "#157049",
+    "greenEdge": "#CDE9DA",
+    "greenLight": "#7FD3AC",
+    "amber": "#B8741F",
+    "amberSoft": "#FBF0E2",
+    "amberText": "#8A5512",
+    "stale": "#9A9A95",
+    "telegram": "#229ED9",
+    "telegramSoft": "#E7F4FB",
+    "star": "#E8A317",
+    "starEmpty": "#E2DFD6"
+  },
+  "category": {
+    "phone": "#CC3000",
+    "laptop": "#1F8A5B",
+    "audio": "#2A6FDB",
+    "tablet": "#7A2EBF",
+    "camera": "#D9810A",
+    "accessories": "#0E7C86"
+  },
+  "shopIdentity": [
+    "#0F2A4D",
+    "#3B5742",
+    "#7A2E2E",
+    "#2D4A5E",
+    "#5A4A2E",
+    "#5A3E6E",
+    "#8A5A1E",
+    "#444A52"
+  ],
+  "fontFamily": {
+    "sans": [
+      "Plus Jakarta Sans",
+      "system-ui",
+      "sans-serif"
+    ],
+    "mono": [
+      "JetBrains Mono",
+      "ui-monospace",
+      "monospace"
+    ],
+    "amharic": [
+      "Noto Sans Ethiopic",
+      "sans-serif"
+    ]
+  },
+  "borderRadius": {
+    "xs": "6px",
+    "sm": "10px",
+    "md": "12px",
+    "lg": "14px",
+    "card": "16px",
+    "panel": "18px",
+    "xl": "20px",
+    "2xl": "24px",
+    "pill": "999px"
+  },
+  "boxShadow": {
+    "pillRed": "0 8px 22px rgba(204,48,0,0.26)",
+    "pillDark": "0 8px 22px rgba(11,11,11,0.18)",
+    "pillLight": "0 8px 22px rgba(11,11,11,0.12)",
+    "cardHover": "0 18px 44px rgba(11,11,11,0.09)",
+    "menu": "0 24px 60px rgba(11,11,11,0.18)",
+    "nav": "0 6px 24px rgba(11,11,11,0.05)",
+    "drawer": "-20px 0 60px rgba(11,11,11,0.2)",
+    "small": "0 2px 8px rgba(11,11,11,0.06)"
+  },
+  "freshness": {
+    "freshMaxHours": 6,
+    "agingMaxHours": 24,
+    "note": "<=6h green \"In stock\" · 7-24h amber \"Aging\" · >24h grey, hidden from buyers"
+  },
+  "layout": {
+    "content": 1240,
+    "contentNav": 1280,
+    "gutter": 28,
+    "navHeight": 72,
+    "navHeightScrolled": 64,
+    "stickyTop": 90
+  }
+}

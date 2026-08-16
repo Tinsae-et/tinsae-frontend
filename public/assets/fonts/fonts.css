@@ -1,0 +1,9 @@
+/* Tinsae typefaces. Development: this Google Fonts import is enough.
+   Production: self-host and subset — Noto Sans Ethiopic is large and is used
+   only for the wordmark and decorative watermarks. */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap');
+
+/* Roles
+   Plus Jakarta Sans — all UI and prose. 800 headings, 700 buttons/labels, 500/400 body.
+   JetBrains Mono   — EVERY number: prices, counts, stats, timestamps, percentages, IDs.
+   Noto Sans Ethiopic — the ትንሳኤ wordmark and watermarks ONLY. Never body copy. */

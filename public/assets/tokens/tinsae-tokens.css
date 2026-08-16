@@ -1,0 +1,71 @@
+/* Tinsae design tokens — canonical values (v2 system).
+   Source of truth: design_handoff_all/_shared/SHARED.md
+   Note: shared/tinsae-shared.jsx still carries older v1 values (#141414 ink,
+   #22A06B green, #FAFAF7 bg). These v2 values are the current ones. */
+:root{
+  /* ink & neutrals */
+  --tn-ink:#0B0B0B; --tn-ink-2:#3A3A38; --tn-mute:#76746E;
+  --tn-white:#FFFFFF; --tn-paper:#F7F6F2;
+  --tn-hair:#ECEAE3; --tn-hair-2:#F2F0EA; --tn-hair-hover:#E0DDD4;
+  --tn-breadcrumb-chev:#B7B5AD;
+
+  /* brand */
+  --tn-red:#CC3000; --tn-red-dark:#A82500; --tn-red-soft:#FFF1EB; --tn-red-edge:#FBD9C7;
+  --tn-red-light:#FF7A4D;   /* wordmark on dark grounds */
+  --tn-red-glow:#FFB69E;    /* accent text on dark grounds */
+
+  /* semantic: verification & stock freshness */
+  --tn-green:#1F8A5B; --tn-green-soft:#E8F5EE; --tn-green-text:#157049; --tn-green-edge:#CDE9DA;
+  --tn-green-light:#7FD3AC;  /* on dark grounds */
+  --tn-amber:#B8741F; --tn-amber-soft:#FBF0E2; --tn-amber-text:#8A5512;
+  --tn-amber-dark-bg:#D89A3C; /* on dark grounds */
+  --tn-stale:#9A9A95; --tn-stale-dark-bg:#8C8C86;
+
+  /* third-party */
+  --tn-telegram:#229ED9; --tn-telegram-soft:#E7F4FB;
+
+  /* rating */
+  --tn-star:#E8A317; --tn-star-empty:#E2DFD6;
+
+  /* category accents */
+  --tn-cat-phone:#CC3000; --tn-cat-laptop:#1F8A5B; --tn-cat-audio:#2A6FDB;
+  --tn-cat-tablet:#7A2EBF; --tn-cat-camera:#D9810A; --tn-cat-accessories:#0E7C86;
+
+  /* type */
+  --tn-font:'Plus Jakarta Sans', system-ui, sans-serif;
+  --tn-mono:'JetBrains Mono', ui-monospace, monospace;
+  --tn-amharic:'Noto Sans Ethiopic', sans-serif;
+
+  /* radius */
+  --tn-r-xs:6px; --tn-r-sm:10px; --tn-r-md:12px; --tn-r-lg:14px;
+  --tn-r-card:16px; --tn-r-panel:18px; --tn-r-xl:20px; --tn-r-2xl:24px; --tn-r-pill:999px;
+
+  /* shadow */
+  --tn-sh-pill-red:0 8px 22px rgba(204,48,0,0.26);
+  --tn-sh-pill-dark:0 8px 22px rgba(11,11,11,0.18);
+  --tn-sh-pill-light:0 8px 22px rgba(11,11,11,0.12);
+  --tn-sh-card-hover:0 18px 44px rgba(11,11,11,0.09);
+  --tn-sh-menu:0 24px 60px rgba(11,11,11,0.18);
+  --tn-sh-nav:0 6px 24px rgba(11,11,11,0.05);
+  --tn-sh-drawer:-20px 0 60px rgba(11,11,11,0.2);
+  --tn-sh-small:0 2px 8px rgba(11,11,11,0.06);
+  --tn-ring-focus:0 0 0 4px #FFF1EB;
+
+  /* layout */
+  --tn-content:1240px; --tn-content-nav:1280px; --tn-gutter:28px;
+  --tn-nav-h:72px; --tn-nav-h-scrolled:64px; --tn-sticky-top:90px;
+
+  /* motion */
+  --tn-ease:cubic-bezier(.2,.7,.3,1);
+  --tn-t-fast:.14s; --tn-t-card:.16s; --tn-t-nav:.2s;
+}
+
+/* Shared behaviours */
+.tn-card{transition:transform var(--tn-t-card) ease,box-shadow var(--tn-t-card) ease,border-color var(--tn-t-card) ease}
+.tn-card:hover{transform:translateY(-3px);box-shadow:var(--tn-sh-card-hover);border-color:var(--tn-hair-hover)}
+.tn-pill{transition:transform var(--tn-t-fast) ease,box-shadow var(--tn-t-fast) ease,background var(--tn-t-fast) ease}
+.tn-pill:hover{transform:translateY(-1px)}
+.tn-num{font-family:var(--tn-mono);font-weight:600;font-variant-numeric:tabular-nums}
+.tn-hide-scroll::-webkit-scrollbar{display:none}
+.tn-hide-scroll{scrollbar-width:none}
+@media (prefers-reduced-motion:reduce){.tn-card,.tn-pill{transition:none}.tn-card:hover,.tn-pill:hover{transform:none}}
