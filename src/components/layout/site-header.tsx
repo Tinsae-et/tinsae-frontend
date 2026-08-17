@@ -104,10 +104,11 @@ function BrowseMenu() {
       </button>
 
       {open && (
-        <div
-          role="menu"
-          className="absolute top-[50px] left-0 z-50 w-[520px] rounded-[18px] border border-tn-hair bg-white p-4 shadow-[0_26px_64px_rgba(11,11,11,0.18)]"
-        >
+        <div className="absolute top-full left-0 pt-2">
+          <div
+            role="menu"
+            className="w-[520px] rounded-[18px] border border-tn-hair bg-white p-4 shadow-[0_26px_64px_rgba(11,11,11,0.18)]"
+          >
           <p className="text-tn-mute mb-3 ml-1.5 text-[10.5px] font-extrabold tracking-[0.09em] uppercase">
             Shop by category
           </p>
@@ -151,6 +152,7 @@ function BrowseMenu() {
                 {label}
               </Link>
             ))}
+          </div>
           </div>
         </div>
       )}
