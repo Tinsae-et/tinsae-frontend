@@ -22,7 +22,11 @@ export function useProducts(query: ProductQuery, initial: InitialProducts) {
   const [page, setPage] = useState(query.page ?? 1);
 
   const queryKey = JSON.stringify(query);
-  const mounted = useRef(false);
+  // The query the currently displayed list was loaded for. Initialized to the
+  // first-render query, which matches the server-rendered `initial` list, so we
+  // refetch only when the query actually changes — not on the first mount or on
+  // StrictMode's simulated remount (refs survive it, so this stays in sync).
+  const loadedKey = useRef(queryKey);
 
   const fetchPage = useCallback(async () => {
     setLoading(true);
@@ -39,13 +43,10 @@ export function useProducts(query: ProductQuery, initial: InitialProducts) {
     }
   }, [query]);
 
-  // Refetch whenever the query changes (skip the first mount, which already has
-  // the server-rendered initial list).
+  // Refetch whenever the query changes.
   useEffect(() => {
-    if (!mounted.current) {
-      mounted.current = true;
-      return;
-    }
+    if (loadedKey.current === queryKey) return;
+    loadedKey.current = queryKey;
     fetchPage();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryKey]);

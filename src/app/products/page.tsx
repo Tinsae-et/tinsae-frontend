@@ -25,11 +25,25 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   // The URL is the single source of truth: parse it into filters, server-render
   // the first page, and let the client take over for subsequent changes.
   const filters = filtersFromSearchParams(params);
-  const [data, categories] = await Promise.all([
+  const [data, categories, priceBounds] = await Promise.all([
     getProducts({ ...filtersToProductQuery(filters), pageSize: PRODUCTS_PAGE_SIZE }).catch(
       () => null,
     ),
     getCategories().catch(() => null),
+    (async () => {
+      // True price bounds for the slider track, from the whole catalog — two
+      // tiny page_size=1 requests ordered by price. Unfiltered so the range
+      // covers the full market regardless of the current query.
+      const [min, max] = await Promise.all([
+        getProducts({ ordering: "price", pageSize: 1 }).catch(() => null),
+        getProducts({ ordering: "-price", pageSize: 1 }).catch(() => null),
+      ]);
+      const lo = Number(min?.results[0]?.price);
+      const hi = Number(max?.results[0]?.price);
+      return Number.isFinite(lo) && Number.isFinite(hi) && lo <= hi
+        ? { min: lo, max: hi }
+        : undefined;
+    })(),
   ]);
 
   const initial = data ? { products: data.results, total: data.count } : null;
@@ -41,7 +55,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   return (
     <main>
       <Suspense fallback={<PageSkeleton />}>
-        <ProductsBrowser categories={categoryOptions} initial={initial} />
+        <ProductsBrowser categories={categoryOptions} initial={initial} priceBounds={priceBounds} />
       </Suspense>
     </main>
   );

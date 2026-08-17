@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Icon } from "@/components/tinsae/icon";
 import { PriceSlider } from "./price-slider";
-import { type SearchFilters } from "@/lib/filters";
+import type { Product } from "@/lib/types";
+import { type FreshnessKey, type SearchFilters } from "@/lib/filters";
 import { cn } from "@/lib/utils";
 
 // The design's filter rail (design_handoff_search): collapsible groups with
@@ -88,19 +89,23 @@ const NEIGHBORHOODS: [string, number][] = [
   ["Bole · Medhanialem", 38],
   ["Bole · Olympia", 31],
 ];
-const FRESHNESS: [string, number][] = [
-  ["Confirmed today", 312],
-  ["Within 12 hrs", 418],
-  ["Within 24 hrs", 520],
+const FRESHNESS: [FreshnessKey, string, number][] = [
+  ["today", "Confirmed today", 312],
+  ["12h", "Within 12 hrs", 418],
+  ["24h", "Within 24 hrs", 520],
 ];
 
 export function FilterControls({
   filters,
   categories,
+  products,
+  bounds,
   onChange,
 }: {
   filters: SearchFilters;
   categories: CategoryOption[];
+  products: Product[];
+  bounds?: { min: number; max: number };
   onChange: (patch: Partial<SearchFilters>) => void;
 }) {
   const [open, setOpen] = useState<Record<string, boolean>>({
@@ -163,6 +168,8 @@ export function FilterControls({
 
       <Group open={open.price} onToggle={() => toggle("price")} title="Price (ETB)">
         <PriceSlider
+          products={products}
+          bounds={bounds}
           min={filters.minPrice}
           max={filters.maxPrice}
           onChange={(patch) => onChange(patch)}
@@ -188,13 +195,13 @@ export function FilterControls({
       </Group>
 
       <Group open={open.freshness} onToggle={() => toggle("freshness")} title="Stock freshness">
-        {FRESHNESS.map(([f, c]) => (
+        {FRESHNESS.map(([key, f, c]) => (
           <CheckRow
-            key={f}
+            key={key}
             label={f}
             count={c}
-            checked={!!filters.freshness}
-            onChange={(on) => onChange({ freshness: on || undefined })}
+            checked={filters.freshness === key}
+            onChange={(on) => onChange({ freshness: on ? key : undefined })}
           />
         ))}
       </Group>

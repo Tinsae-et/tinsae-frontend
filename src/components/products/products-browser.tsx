@@ -15,6 +15,7 @@ import {
   filtersFromSearchParams,
   filtersToProductQuery,
   filtersToSearchParams,
+  FRESHNESS_OPTIONS,
   type SearchFilters,
   type SortKey,
 } from "@/lib/filters";
@@ -22,9 +23,11 @@ import {
 export function ProductsBrowser({
   categories,
   initial,
+  priceBounds,
 }: {
   categories: { slug: string; name: string }[];
   initial: InitialProducts;
+  priceBounds?: { min: number; max: number };
 }) {
   const router = useRouter();
   const pathname = usePathname() ?? "/products";
@@ -82,7 +85,11 @@ export function ProductsBrowser({
     chips.push({ label: `From ETB ${filters.minPrice.toLocaleString("en-US")}`, clear: () => applyPatch({ minPrice: undefined }) });
   if (filters.maxPrice !== undefined)
     chips.push({ label: `Up to ETB ${filters.maxPrice.toLocaleString("en-US")}`, clear: () => applyPatch({ maxPrice: undefined }) });
-  if (filters.freshness) chips.push({ label: "Confirmed stock", clear: () => applyPatch({ freshness: undefined }) });
+  if (filters.freshness)
+    chips.push({
+      label: FRESHNESS_OPTIONS.find((o) => o.value === filters.freshness)?.label ?? "Confirmed stock",
+      clear: () => applyPatch({ freshness: undefined }),
+    });
   if (filters.verifiedOnly) chips.push({ label: "Verified only", clear: () => applyPatch({ verifiedOnly: undefined }) });
   if (filters.sort !== "fresh")
     chips.push({
@@ -217,6 +224,8 @@ export function ProductsBrowser({
         <FilterRail
           filters={filters}
           categories={categories}
+          products={products}
+          bounds={priceBounds}
           onChange={(patch) => applyPatch(patch)}
           onReset={clearAll}
         />
@@ -246,6 +255,8 @@ export function ProductsBrowser({
         onClose={() => setSheetOpen(false)}
         filters={filters}
         categories={categories}
+        products={products}
+        bounds={priceBounds}
         onApply={(draft) => navigate(filtersToSearchParams({ ...draft, page: undefined }), "push")}
         resultCount={total}
       />

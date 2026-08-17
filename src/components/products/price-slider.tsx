@@ -1,40 +1,108 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useDebouncedValue } from "@/hooks/use-debounce";
+import type { Product } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-// Price (ETB) group from the design: a 16-bar histogram with a dual-thumb range
-// slider synced to two editable inputs. Wired to min_price / max_price.
-// The histogram distribution is demo (the backend has no facets endpoint yet).
+// Price (ETB) group: a 16-bar histogram with a dual-thumb range slider synced
+// to two editable inputs, wired to min_price / max_price. The track bounds come
+// from the real catalog prices (`bounds`, computed server-side) so the range
+// reflects the market instead of a fixed cap; the histogram comes from the
+// current results.
 
-const HIST = [12, 18, 28, 42, 58, 82, 68, 52, 38, 30, 22, 18, 14, 11, 8, 5];
-const MIN = 0;
-const MAX = 250000;
-const STEP = 1000;
-const DEFAULT_LO = 50000;
-const DEFAULT_HI = 200000;
+const HIST_BUCKETS = 16;
+/** Sane fallback when we have neither server bounds nor any products yet. */
+const FALLBACK_MAX = 100000;
 
-function pct(value: number) {
-  return ((value - MIN) / (MAX - MIN)) * 100;
+/** Fallback bounds from the prices actually in the current results. */
+function boundsFromProducts(products: Product[]): { min: number; max: number } {
+  const prices = products
+    .map((p) => Number(p.price))
+    .filter((n) => Number.isFinite(n) && n >= 0);
+  if (prices.length === 0) return { min: 0, max: FALLBACK_MAX };
+  return { min: Math.min(...prices), max: Math.max(...prices) };
 }
-function valueAt(p: number) {
-  return Math.round(((p / 100) * (MAX - MIN) + MIN) / STEP) * STEP;
+
+/** 16 bars, heights scaled to the design's 5–88% range. */
+function buildHistogram(products: Product[], max: number): number[] {
+  const prices = products
+    .map((p) => Number(p.price))
+    .filter((n) => Number.isFinite(n) && n >= 0);
+  const buckets = Array<number>(HIST_BUCKETS).fill(0);
+  for (const p of prices) {
+    const idx = Math.min(HIST_BUCKETS - 1, Math.max(0, Math.floor((p / max) * HIST_BUCKETS)));
+    buckets[idx]++;
+  }
+  const peak = Math.max(...buckets, 1);
+  return buckets.map((c) => (c ? Math.max(5, Math.round((c / peak) * 82)) : 4));
+}
+
+function pct(value: number, min: number, max: number) {
+  return ((value - min) / Math.max(1, max - min)) * 100;
+}
+function valueAt(p: number, min: number, max: number, step: number) {
+  return Math.round(((p / 100) * Math.max(1, max - min) + min) / step) * step;
+}
+function stepFor(min: number, max: number) {
+  const range = max - min;
+  if (range <= 20_000) return 500;
+  if (range <= 100_000) return 1_000;
+  if (range <= 300_000) return 5_000;
+  return 10_000;
 }
 
 export function PriceSlider({
+  products,
+  bounds,
   min,
   max,
   onChange,
 }: {
+  products: Product[];
+  bounds?: { min: number; max: number };
   min?: number;
   max?: number;
   onChange: (patch: { minPrice?: number; maxPrice?: number }) => void;
 }) {
-  const [lo, setLo] = useState(min ?? DEFAULT_LO);
-  const [hi, setHi] = useState(max ?? DEFAULT_HI);
+  // Real bounds from the server (full catalog) when available, else whatever
+  // prices we can see right now.
+  const rawBounds = useMemo(
+    () => bounds ?? boundsFromProducts(products),
+    [bounds, products],
+  );
+  const step = useMemo(() => stepFor(rawBounds.min, rawBounds.max), [rawBounds]);
+  // Round the track ends out to whole steps so they land on clean numbers and
+  // leave a little headroom above the priciest listing.
+  const track = useMemo(
+    () => ({
+      min: Math.floor(rawBounds.min / step) * step,
+      max: Math.max(step, Math.ceil(rawBounds.max / step) * step),
+    }),
+    [rawBounds.min, rawBounds.max, step],
+  );
+  // The effective track stretches beyond the real catalog range to whatever
+  // max price the user typed in, so the slider adapts instead of pinning the
+  // thumb to the edge. Cleared back down when the max filter is removed.
+  const [extendedMax, setExtendedMax] = useState(() =>
+    max !== undefined ? Math.max(track.max, Math.ceil(max / step) * step) : track.max,
+  );
+  const extent = useMemo(
+    () => ({ min: track.min, max: Math.max(track.max, extendedMax) }),
+    [track.min, track.max, extendedMax],
+  );
+  const hist = useMemo(
+    () => buildHistogram(products, extent.max),
+    [products, extent.max],
+  );
+
+  const [lo, setLo] = useState(min ?? extent.min);
+  const [hi, setHi] = useState(max ?? extent.max);
   const trackRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<"lo" | "hi" | null>(null);
+  // The URL gets a price filter only once the user actually moves the slider
+  // or edits an input — before that the thumbs are visual defaults.
+  const interacted = useRef(false);
 
   // Keep in sync when the URL changes externally (back button) — render-phase
   // adjustment so the slider never lags the URL.
@@ -49,29 +117,67 @@ export function PriceSlider({
     if (max !== undefined) setHi(max);
   }
 
+  // When the track bounds change, keep the no-filter state at full range; with
+  // a filter active, leave the filter values alone (a value beyond the track is
+  // legal — its visual position just pins to the track edge).
+  const [prevTrack, setPrevTrack] = useState(track);
+  if (prevTrack.min !== track.min || prevTrack.max !== track.max) {
+    setPrevTrack(track);
+    if (min === undefined && max === undefined) {
+      setLo(track.min);
+      setHi(track.max);
+    }
+  }
+
   const debouncedLo = useDebouncedValue(lo, 300);
   const debouncedHi = useDebouncedValue(hi, 300);
 
   useEffect(() => {
+    if (!interacted.current) return;
     if (debouncedLo !== min) onChange({ minPrice: debouncedLo });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedLo]);
   useEffect(() => {
+    if (!interacted.current) return;
     if (debouncedHi !== max) onChange({ maxPrice: debouncedHi });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedHi]);
 
   function setPair(nextLo: number, nextHi: number) {
-    setLo(Math.min(nextLo, nextHi - STEP));
-    setHi(Math.max(nextHi, nextLo + STEP));
+    setLo(Math.max(extent.min, Math.min(nextLo, nextHi - step)));
+    setHi(Math.min(extent.max, Math.max(nextHi, nextLo + step)));
+  }
+
+  // Committing `undefined` (cleared input) removes the constraint entirely and
+  // drops the track back to the real catalog range. Typed values are allowed
+  // beyond the track (drag stays clamped to it), and the two bounds never
+  // cross.
+  function commitMin(v: number | undefined) {
+    if (v === undefined) {
+      onChange({ minPrice: undefined });
+      return;
+    }
+    interacted.current = true;
+    setLo(Math.max(0, Math.min(v, hi - step)));
+  }
+  function commitMax(v: number | undefined) {
+    if (v === undefined) {
+      setExtendedMax(track.max);
+      onChange({ maxPrice: undefined });
+      return;
+    }
+    interacted.current = true;
+    setHi(Math.max(v, lo + step));
+    setExtendedMax(Math.max(extendedMax, Math.ceil(v / step) * step));
   }
 
   function handleDrag(e: PointerEvent) {
-    const track = trackRef.current;
-    if (!track || !dragRef.current) return;
-    const rect = track.getBoundingClientRect();
+    const trackEl = trackRef.current;
+    if (!trackEl || !dragRef.current) return;
+    interacted.current = true;
+    const rect = trackEl.getBoundingClientRect();
     const p = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
-    const v = valueAt(p);
+    const v = valueAt(p, extent.min, extent.max, step);
     if (dragRef.current === "lo") setPair(v, hi);
     else setPair(lo, v);
   }
@@ -87,22 +193,33 @@ export function PriceSlider({
     window.removeEventListener("pointerup", endDrag);
   }
 
-  const loPct = pct(lo);
-  const hiPct = pct(hi);
-  const loIdx = Math.floor((loPct / 100) * HIST.length);
-  const hiIdx = Math.ceil((hiPct / 100) * HIST.length);
+  // Visual position — a value beyond the extent pins to the edge.
+  const loPct = Math.max(0, Math.min(100, pct(lo, extent.min, extent.max)));
+  const hiPct = Math.max(0, Math.min(100, pct(hi, extent.min, extent.max)));
+  const loIdx = Math.floor((loPct / 100) * hist.length);
+  const hiIdx = Math.ceil((hiPct / 100) * hist.length);
 
   const sliderProps = (which: "lo" | "hi", value: number) => ({
     role: "slider" as const,
     "aria-label": which === "lo" ? "Minimum price" : "Maximum price",
-    "aria-valuemin": MIN,
-    "aria-valuemax": MAX,
-    "aria-valuenow": value,
+    "aria-valuemin": extent.min,
+    "aria-valuemax": extent.max,
+    "aria-valuenow": Math.max(extent.min, Math.min(extent.max, value)),
     tabIndex: 0,
     onKeyDown: (e: React.KeyboardEvent) => {
-      const d = e.key === "ArrowRight" || e.key === "ArrowUp" ? STEP : e.key === "ArrowLeft" || e.key === "ArrowDown" ? -STEP : e.key === "Home" ? MIN - value : e.key === "End" ? MAX - value : 0;
+      const d =
+        e.key === "ArrowRight" || e.key === "ArrowUp"
+          ? step
+          : e.key === "ArrowLeft" || e.key === "ArrowDown"
+            ? -step
+            : e.key === "Home"
+              ? extent.min - value
+              : e.key === "End"
+                ? extent.max - value
+                : 0;
       if (!d) return;
       e.preventDefault();
+      interacted.current = true;
       if (which === "lo") setPair(value + d, hi);
       else setPair(lo, value + d);
     },
@@ -112,7 +229,7 @@ export function PriceSlider({
     <div>
       <div ref={trackRef} className="relative h-10 touch-none select-none">
         <div className="absolute inset-x-0 bottom-4 flex items-end gap-0.5">
-          {HIST.map((h, i) => (
+          {hist.map((h, i) => (
             <span
               key={i}
               className="w-full flex-1 rounded-[2px]"
@@ -148,16 +265,8 @@ export function PriceSlider({
       </div>
 
       <div className="flex gap-2">
-        <SliderInput
-          label="Min"
-          value={lo}
-          onCommit={(v) => setPair(v ?? DEFAULT_LO, hi)}
-        />
-        <SliderInput
-          label="Max"
-          value={hi}
-          onCommit={(v) => setPair(lo, v ?? DEFAULT_HI)}
-        />
+        <SliderInput label="Min" value={lo} onCommit={commitMin} />
+        <SliderInput label="Max" value={hi} onCommit={commitMax} />
       </div>
     </div>
   );

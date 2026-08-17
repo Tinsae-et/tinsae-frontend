@@ -6,14 +6,28 @@ import type { ProductQuery } from "./api";
 
 export type SortKey = "fresh" | "price-asc" | "price-desc" | "response";
 
+/** The stock-freshness threshold a buyer can pick (single-select, nested). */
+export type FreshnessKey = "today" | "12h" | "24h";
+
+export const FRESHNESS_OPTIONS: { value: FreshnessKey; label: string }[] = [
+  { value: "today", label: "Confirmed today" },
+  { value: "12h", label: "Within 12 hrs" },
+  { value: "24h", label: "Within 24 hrs" },
+];
+
+const FRESHNESS_KEYS: FreshnessKey[] = FRESHNESS_OPTIONS.map((o) => o.value);
+
 export type SearchFilters = {
   q?: string;
   category?: string;
   minPrice?: number;
   maxPrice?: number;
   verifiedOnly?: boolean;
-  /** "Confirmed stock" — backend `freshness=1` (confirmed within 30 days). */
-  freshness?: boolean;
+  /**
+   * "Confirmed stock" threshold — backend `freshness=1` (confirmed within 30
+   * days). Single-select: pick one window, or none.
+   */
+  freshness?: FreshnessKey;
   /**
    * Demo facets (design's Brand / Condition / Neighborhood groups). The backend
    * doesn't filter on these yet — toggling them re-queries and round-trips the
@@ -60,7 +74,12 @@ export function filtersToSearchParams(f: SearchFilters): URLSearchParams {
   if (f.minPrice !== undefined) p.set("min_price", String(f.minPrice));
   if (f.maxPrice !== undefined) p.set("max_price", String(f.maxPrice));
   if (f.verifiedOnly) p.set("verified_only", "1");
-  if (f.freshness) p.set("freshness", "1");
+  if (f.freshness) {
+    p.set("freshness", "1");
+    // Frontend-only: remembers which window was chosen (backend only knows
+    // "confirmed recently", so this doesn't affect results).
+    p.set("freshness_window", f.freshness);
+  }
   if (f.page && f.page > 1) p.set("page", String(f.page));
   if (f.sort && f.sort !== "fresh") p.set("sort", f.sort);
   if (f.brands?.length) p.set("brand", f.brands.join(","));
@@ -81,13 +100,20 @@ function parseList(v: string | null): string[] {
 
 export function filtersFromSearchParams(params: URLSearchParams): SearchFilters {
   const sort = params.get("sort");
+  const freshnessParam = params.get("freshness_window");
+  const freshness = (FRESHNESS_KEYS as string[]).includes(freshnessParam ?? "")
+    ? (freshnessParam as FreshnessKey)
+    : // Legacy/plain links: `freshness=1` alone defaults to the coarsest window.
+      params.get("freshness") === "1"
+      ? "today"
+      : undefined;
   return {
     q: params.get("q")?.trim() || undefined,
     category: params.get("category") || undefined,
     minPrice: parseNum(params.get("min_price")),
     maxPrice: parseNum(params.get("max_price")),
     verifiedOnly: params.get("verified_only") === "1",
-    freshness: params.get("freshness") === "1",
+    freshness,
     brands: parseList(params.get("brand")),
     conditions: parseList(params.get("condition")),
     neighborhoods: parseList(params.get("neighborhood")),
@@ -104,7 +130,7 @@ export function filtersToProductQuery(f: SearchFilters): ProductQuery {
     minPrice: f.minPrice,
     maxPrice: f.maxPrice,
     verifiedOnly: f.verifiedOnly,
-    freshOnly: f.freshness,
+    freshOnly: f.freshness !== undefined,
     // Demo facets: sent to the API for forward-compat; the backend ignores them
     // until the facets endpoint exists.
     brand: f.brands.length ? f.brands.join(",") : undefined,

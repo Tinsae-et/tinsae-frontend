@@ -1,5 +1,6 @@
 "use client";
 
+import type { Product } from "@/lib/types";
 import { type SearchFilters } from "@/lib/filters";
 import { FilterControls, type CategoryOption } from "./filter-controls";
 
@@ -8,11 +9,15 @@ import { FilterControls, type CategoryOption } from "./filter-controls";
 export function FilterRail({
   filters,
   categories,
+  products,
+  bounds,
   onChange,
   onReset,
 }: {
   filters: SearchFilters;
   categories: CategoryOption[];
+  products: Product[];
+  bounds?: { min: number; max: number };
   onChange: (patch: Partial<SearchFilters>) => void;
   onReset: () => void;
 }) {
@@ -29,7 +34,7 @@ export function FilterRail({
             Reset
           </button>
         </div>
-        <FilterControls filters={filters} categories={categories} onChange={onChange} />
+        <FilterControls filters={filters} categories={categories} products={products} bounds={bounds} onChange={onChange} />
       </div>
     </aside>
   );

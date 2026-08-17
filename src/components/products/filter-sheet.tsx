@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { Product } from "@/lib/types";
 import { DEFAULT_FILTERS, type SearchFilters } from "@/lib/filters";
 import { FilterControls, type CategoryOption } from "./filter-controls";
 
@@ -12,6 +13,8 @@ export function FilterSheet({
   onClose,
   filters,
   categories,
+  products,
+  bounds,
   onApply,
   resultCount,
 }: {
@@ -19,6 +22,8 @@ export function FilterSheet({
   onClose: () => void;
   filters: SearchFilters;
   categories: CategoryOption[];
+  products: Product[];
+  bounds?: { min: number; max: number };
   onApply: (filters: SearchFilters) => void;
   resultCount: number | undefined;
 }) {
@@ -60,6 +65,8 @@ export function FilterSheet({
           <FilterControls
             filters={draft}
             categories={categories}
+            products={products}
+            bounds={bounds}
             onChange={(patch) => setDraft((d) => ({ ...d, ...patch }))}
           />
         </div>
