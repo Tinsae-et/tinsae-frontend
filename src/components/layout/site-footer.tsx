@@ -40,7 +40,7 @@ export function SiteFooter() {
               {items.map((item) => (
                 <li key={item}>
                   <Link
-                    href={item === "Browse all" ? "/products" : "#"}
+                    href={item === "Browse all" ? "/products" : item === "How it works" ? "/how-it-works" : "#"}
                     className="text-tn-ink2 hover:text-tn-red text-sm transition-colors"
                   >
                     {item}
