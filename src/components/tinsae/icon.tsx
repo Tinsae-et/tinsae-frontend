@@ -34,7 +34,8 @@ export type IconName =
   | "minus"
   | "sliders"
   | "car"
-  | "msg";
+  | "msg"
+  | "back";
 
 type IconProps = {
   name: IconName;
@@ -270,10 +271,15 @@ export function Icon({ name, size = 18, className, strokeWidth = 1.6 }: IconProp
     case "car":
       return (
         <svg {...stroke}>
-          <path d="M5 15l1.5-4A2 2 0 018.4 9.5h7.2a2 2 0 011.9 1.5L19 15" />
-          <path d="M4.5 15.5H19.5V18H4.5z" />
-          <circle cx="8" cy="16.6" r="1.4" />
-          <circle cx="16" cy="16.6" r="1.4" />
+          <path d="M5 11l1.6-4.3A2 2 0 018.5 5.4h7a2 2 0 011.9 1.3L19 11M4 11h16a1 1 0 011 1v4h-2M5 16H3v-4a1 1 0 011-1M5 16v1.5M19 16v1.5M5 16h14" />
+          <circle cx="7.5" cy="16.5" r="1.6" />
+          <circle cx="16.5" cy="16.5" r="1.6" />
+        </svg>
+      );
+    case "back":
+      return (
+        <svg {...stroke}>
+          <path d="M15 5l-7 7 7 7" />
         </svg>
       );
     case "msg":

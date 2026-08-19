@@ -98,7 +98,7 @@ function BeforeAfter() {
                 )}
               >
                 {row.bad ? (
-                  <Icon name="close" size={11} strokeWidth={2.4} />
+                  <Icon name="back" size={11} strokeWidth={2.4} />
                 ) : (
                   <Icon name="car" size={12} />
                 )}
