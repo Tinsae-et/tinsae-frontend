@@ -22,9 +22,8 @@ const ethiopic = Noto_Sans_Ethiopic({
   weight: ["400", "600", "700"],
 });
 
-type Props = {}
 
-const layout = ({children}:{children:React.ReactNode}) => {
+const Layout = ({children}:{children:React.ReactNode}) => {
   return (
     <html
       lang="en"
@@ -36,4 +35,4 @@ const layout = ({children}:{children:React.ReactNode}) => {
     </html>
   )
 }
-export default layout
+export default Layout
