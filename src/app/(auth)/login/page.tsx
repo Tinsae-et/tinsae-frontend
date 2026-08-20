@@ -6,12 +6,12 @@ import { Icon } from "@/components/tinsae/icon"
 const Login =() =>{
     return(
         <div className="grid grid-cols-2 p">
-            <div className=" p-5 relative flex bg-[linear-gradient(45deg,theme(colors.amber.500)_-99%,theme(colors.black),theme(colors.amber.500)_190%)] text-white h-screen ">
+            <div className="hidden lg:flex lg:w  overflow-hidden p-5 relative flex bg-[linear-gradient(45deg,theme(colors.amber.500)_-99%,theme(colors.black),theme(colors.amber.500)_190%)] text-white h-screen ">
                 <h1 className="absolute top-5 left-5">ትንሳኤ Tinsae</h1>
                 <div className="flex flex-col mt-50  gap-3">
                     <h1 className="font-tn-mono text-xs text-gray-400">BOLE . ADDIS ABABA</h1>
-                    <h1 className="font-bold text-4xl">The verified way to buy electronics in Bole.</h1>
-                    <p className="text-sl text-gray-400">Compare live prices across verified shops, then message the seller on Telegram - no middlemen, no fake listings.</p>
+                    <h1 className="font-bold text-4xl">The verified way to buy <br /> electronics in Bole.</h1>
+                    <p className="text-sl text-gray-400">Compare live prices across verified shops, then message<br/> the seller on Telegram - no middlemen, no fake listings.</p>
                     <div className="flex gap-4">
                         <div>
                             <h1 className="font-tn-mono text-2xl">340+</h1>
@@ -47,7 +47,7 @@ const Login =() =>{
                 
             </div>
 
-            <div className="flex flex-col items-center justify-center gap-4">
+            <div className="flex p-6 flex-col items-center justify-center gap-4 lg:w-full">
                 <div className=" items-center justify-center">
                     <h1 className="font-bold text-xl">Well come back</h1>
                     <p className="text-sm text-gray-400">Sigin in to your seved listings.alerts and chats.</p>
@@ -75,7 +75,7 @@ const Login =() =>{
                     </div>
                     <div className="flex flex-col items-center">
                         <p className="text-gray-400 text-xs">New to Tinsae? <button className="text-orange-700 font-bold ">Create one free</button></p>
-                        <p className="text-gray-400 text-xs">By continuing you agree to Tinsae's <a href="" >Terms</a>&<a href="">Privacy Policy</a></p>
+                        <p className="text-gray-400 text-xs">By continuing you agree to Tinsae&apos;s <a href="" >Terms</a>&<a href="">Privacy Policy</a></p>
                     </div>
                 </div>
             </div>
