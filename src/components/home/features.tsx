@@ -10,8 +10,8 @@ const ITEMS: { icon: IconName; color: string; title: string; body: string }[] = 
   {
     icon: "shield",
     color: "#1F8A5B",
-    title: "Stock confirmed daily",
-    body: "Shops re-confirm inventory through our Telegram bot every morning. Stale listings drop off automatically.",
+    title: "Every listing is dated",
+    body: "Shops re-confirm inventory through our Telegram bot. You see when each listing was last confirmed, and ones that go quiet are flagged rather than hidden.",
   },
   {
     icon: "tg",

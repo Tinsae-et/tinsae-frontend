@@ -1,6 +1,6 @@
 const STEPS: [string, string, string][] = [
   ["01", "Search the product", "Type what you want. We show every verified shop carrying it, with live prices."],
-  ["02", "Check the freshness", "Each listing shows when the shop last confirmed it in stock — within hours, not weeks."],
+  ["02", "Check the freshness", "Each listing shows when the shop last confirmed it in stock, so you can see how current the price is."],
   ["03", "Contact on Telegram", "Reach the shop directly, ask questions, agree on a price and a time to come by."],
   ["04", "Visit and pay in person", "Walk in, inspect the item, complete the purchase. Tinsae stays out of the money."],
 ];
