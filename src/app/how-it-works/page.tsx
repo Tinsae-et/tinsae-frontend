@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 export const metadata = {
   title: "How it works — Tinsae",
   description:
-    "Every Tinsae listing is verified in person and re-confirmed in stock each morning. See how buyers find the right shop and how shop owners get ready-to-buy leads.",
+    "Every Tinsae listing is verified in person and carries the date its stock was last confirmed. See how buyers find the right shop and how shop owners get ready-to-buy leads.",
 };
 
 const SECTION = "mx-auto max-w-[1240px] px-6 lg:px-7";
@@ -178,8 +178,8 @@ function Hero() {
           </h1>
           <p className="text-tn-mute mt-6 max-w-[500px] text-[17px] leading-[1.55] font-medium sm:text-[18.5px]">
             Tinsae is a verified electronics marketplace for Addis. Every shop is checked in person,
-            and every listing is re-confirmed in stock — so the price you see is the one that&rsquo;s
-            actually on the shelf.
+            and every listing carries the date its stock was last confirmed — so you can judge how
+            current the price is.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <Pill kind="solid" size="lg" iconAfter="arrow" href="/products">
@@ -222,8 +222,8 @@ const PILLARS: { icon: IconName; color: string; tile: string; title: string; bod
     icon: "bolt",
     color: "text-tn-red",
     tile: "bg-tn-red/10",
-    title: "Confirmed every morning",
-    body: "Shops re-confirm what\u2019s in stock through our Telegram bot daily. A freshness dot shows exactly how recent each listing is — stale ones drop off.",
+    title: "Confirmed and timestamped",
+    body: "Shops re-confirm what\u2019s in stock through our Telegram bot. A freshness dot shows exactly how recent each listing is, and unconfirmed ones are flagged rather than hidden.",
   },
   {
     icon: "pin",
@@ -307,7 +307,7 @@ function Journey({
 
 const BUYER_STEPS: [string, IconName, string, string][] = [
   ["01", "search", "Search the product", "Type what you want. Every verified shop carrying it appears, sorted by price and freshness."],
-  ["02", "shield", "Check it\u2019s confirmed", "The freshness dot tells you when the shop last confirmed stock — hours, not weeks."],
+  ["02", "shield", "Check it\u2019s confirmed", "The freshness dot tells you exactly when the shop last confirmed stock."],
   ["03", "tg", "Contact on Telegram", "Message the shop directly. Ask questions, agree a price and a time to come by."],
   ["04", "pin", "Visit & pay in person", "Walk in, inspect the item, complete the purchase. Tinsae stays out of the money."],
 ];
@@ -315,15 +315,15 @@ const BUYER_STEPS: [string, IconName, string, string][] = [
 const OWNER_STEPS: [string, IconName, string, string][] = [
   ["01", "building", "Register your shop", "Claim an existing listing or create your storefront with hours, location and photos."],
   ["02", "shield", "Get verified", "We confirm your phone, documents and pay a quick visit to your store. Then the badge is yours."],
-  ["03", "tg", "Connect the bot", "Link Telegram and import your stock. One message each morning keeps every listing fresh."],
+  ["03", "tg", "Connect the bot", "Link Telegram and import your stock. A quick reply to the bot keeps every listing confirmed."],
   ["04", "msg", "Receive leads", "Ready-to-buy customers reach you directly — no commission, no payment handling, ever."],
 ];
 
 // ── The confirmation loop ─────────────────────────────────────────────
 const FRESHNESS: { dot: string; halo: string; label: string; body: string }[] = [
-  { dot: "bg-tn-green", halo: "shadow-[0_0_0_4px_#1f8a5b22]", label: "Green.", body: "Confirmed within 6 hours — buy with confidence" },
-  { dot: "bg-tn-warn", halo: "shadow-[0_0_0_4px_#b8741f22]", label: "Amber.", body: "6–24 hours old — likely fine, worth a quick message" },
-  { dot: "bg-tn-stale", halo: "shadow-[0_0_0_4px_#9a9a9522]", label: "Grey.", body: "Over a day — Tinsae quietly stops showing it" },
+  { dot: "bg-tn-green", halo: "shadow-[0_0_0_4px_#1f8a5b22]", label: "Green.", body: "Confirmed in the last few weeks — buy with confidence" },
+  { dot: "bg-tn-warn", halo: "shadow-[0_0_0_4px_#b8741f22]", label: "Amber.", body: "Nearing a month old — worth a quick message first" },
+  { dot: "bg-tn-stale", halo: "shadow-[0_0_0_4px_#9a9a9522]", label: "Grey.", body: "Over a month unconfirmed — check before you travel" },
 ];
 
 function ConfirmLoop() {
@@ -337,7 +337,7 @@ function ConfirmLoop() {
             <span className="text-tn-red">last confirmation.</span>
           </h2>
           <p className="text-tn-mute mt-4 max-w-[480px] text-base leading-[1.6]">
-            Each morning the bot asks shops one question: is this still in stock, at this price?
+            The bot asks shops one question: is this still in stock, at this price?
             Their reply timestamps the listing — and you see it as a freshness dot the moment you
             search.
           </p>
@@ -391,7 +391,7 @@ function ConfirmLoop() {
 // ── Principles · what Tinsae is / isn't ───────────────────────────────
 const IS_LIST = [
   "A directory of shops verified in person",
-  "A live, daily-confirmed price comparison",
+  "A price comparison with a confirmation date on every listing",
   "A direct line to the shop on Telegram",
   "Free to browse, with no markup on any price",
 ];
