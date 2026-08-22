@@ -217,7 +217,7 @@ export function ProductsBrowser({
           onReset={clearAll}
         />
 
-        <main className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1">
           {error && !loading ? (
             <ErrorState onRetry={retry} />
           ) : !loading && products.length === 0 ? (
@@ -234,7 +234,7 @@ export function ProductsBrowser({
               onRetry={retry}
             />
           )}
-        </main>
+        </div>
       </div>
 
       <FilterSheet

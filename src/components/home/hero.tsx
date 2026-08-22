@@ -45,7 +45,7 @@ export function Hero() {
             <Pill kind="solid" size="lg" iconAfter="arrow" href="/products">
               Start browsing
             </Pill>
-            <Pill kind="outline" size="lg" icon="tg" href="#">
+            <Pill kind="outline" size="lg" icon="tg" href="/signup">
               List your shop
             </Pill>
           </div>

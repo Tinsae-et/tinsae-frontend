@@ -1,11 +1,19 @@
 import Image from "next/image";
 import Link from "next/link";
 
+const FOOTER_LINKS: Record<string, string> = {
+  "How it works": "/how-it-works",
+  "Verified shops": "/products?verified_only=1",
+  "Browse all": "/products",
+  "List your shop": "/signup",
+  "Dashboard": "/dashboard",
+};
+
 const COLUMNS: [string, string[]][] = [
-  ["Buy", ["How it works", "Verified shops", "Trust & safety", "Browse all"]],
-  ["Sell", ["List your shop", "Pricing", "Dashboard", "Telegram bot"]],
-  ["Company", ["About", "Press", "Careers", "Contact"]],
-  ["Legal", ["Terms", "Privacy", "Returns"]],
+  ["Buy", ["How it works", "Verified shops", "Browse all"]],
+  ["Sell", ["List your shop", "Dashboard"]],
+  ["Company", ["About", "Contact"]],
+  ["Legal", ["Terms", "Privacy"]],
 ];
 
 export function SiteFooter() {
@@ -40,7 +48,7 @@ export function SiteFooter() {
               {items.map((item) => (
                 <li key={item}>
                   <Link
-                    href={item === "Browse all" ? "/products" : "#"}
+                    href={FOOTER_LINKS[item] ?? "#"}
                     className="text-tn-ink2 hover:text-tn-red text-sm transition-colors"
                   >
                     {item}

@@ -1,62 +1,108 @@
-import React from "react";
-import { Icon } from "@/components/tinsae/icon";
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
-import { IconName } from "@/components/tinsae/icon";
+import { useRouter } from "next/navigation";
+import { Icon, type IconName } from "@/components/tinsae/icon";
 
-type link = {
-    href: string,
-    text: string,
-    icon: IconName
+type QuickLinkItem = {
+  href: string;
+  label: string;
+  icon: IconName;
+};
+
+const QUICK_LINKS: QuickLinkItem[] = [
+  { href: "/", label: "Back to home", icon: "building" },
+  { href: "/products", label: "Browse listings", icon: "search" },
+  { href: "/products?verified_only=1", label: "Verified shops", icon: "shield" },
+  { href: "/how-it-works", label: "How it works", icon: "bolt" },
+];
+
+function QuickLink({ item }: { item: QuickLinkItem }) {
+  return (
+    <Link
+      href={item.href}
+      className="flex min-w-[200px] items-center gap-3 rounded-[14px] border border-tn-hair bg-white p-3.5 shadow-sm transition-[transform,box-shadow,border-color] duration-150 hover:-translate-y-px hover:border-[#E0DDD4] hover:shadow-[0_8px_20px_rgba(11,11,11,0.06)]"
+    >
+      <span className="bg-tn-paper inline-flex size-[38px] shrink-0 items-center justify-center rounded-[11px]">
+        <Icon name={item.icon} size={18} className="text-tn-ink" />
+      </span>
+      <span className="text-tn-ink text-sm font-extrabold tracking-[-0.01em]">{item.label}</span>
+      <Icon name="arrow" size={15} className="text-tn-red ml-auto" />
+    </Link>
+  );
 }
-const LINKS:link[] = [
-    {href:"/", text:"Back to home", icon: "building"},
-    {href:"/products", text:"Browse listings", icon: "search"},
-    {href:"/shops", text:"Verified shops", icon: "shield"},
-    {href:"/help", text:"Help center", icon: "sliders"},
-]
 
-function LinkComponent({link}:{link:link}){
-    return (
-        <Link href={link.href} className="bg-white p-3 rounded-lg outline flex items-center gap-3">
-            <span className="bg-gray-200 size-6 rounded flex items-center justify-center">
-                <Icon name={link.icon}/>
-            </span>
-            <span className="font-bold text-sm flex items-center gap-2">{link.text}<Icon name="arrow" className="text-red-500"/> </span>
-        </Link>
-    )
-}
+export default function NotFound() {
+  const [q, setQ] = useState("");
+  const router = useRouter();
 
+  function onSearch(e: React.FormEvent) {
+    e.preventDefault();
+    if (q.trim()) {
+      router.push(`/products?q=${encodeURIComponent(q.trim())}`);
+    } else {
+      router.push("/products");
+    }
+  }
 
-export default function NotFound(){
-    return (
-        <div className="bg-[linear-gradient(180deg,#ffeeee_0%,#ffffff_100%)] pt-10 bg-opacity-10 relative flex flex-col justify-center items-center gap-4 ">
-            <div className="z-1 flex flex-col justify-center items-center gap-4 p-6">
-                <div className="border bg-white px-4 py-2 rounded-full flex items-center gap-3">
-                    <span className="size-2 bg-gray-400 rounded-full block"></span>
-                    <span className="text-gray-500 font-bold text-xs">LAST CONFIRMED NEVER</span>
-                </div>
-                <h1 className="font-bold text-5xl ">This page is <span className="text-red-500"> out of stock.</span></h1>
+  return (
+    <div className="relative flex min-h-[80vh] flex-col items-center justify-center overflow-hidden bg-[radial-gradient(120%_80%_at_50%_-10%,#FFF1EB_0%,rgba(255,241,235,0)_55%)] px-6 py-20">
+      {/* Background 404 watermark */}
+      <div
+        aria-hidden
+        className="font-tn-amh pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[260px] leading-none font-bold text-tn-red/[0.05] select-none sm:text-[420px] lg:text-[520px]"
+      >
+        404
+      </div>
 
-                <p className="w-[420px] flex items-center text-center text-gray-600">
-                    The listing you are looking for may have sold, moved, or never existed.
-                    Let&apos;s get you back to something that&apos;s confirmed in stock.
-                </p>
-
-                <div className="border-tn-hair flex h-11 items-center gap-2.5 rounded-2xl border-[1.5px] bg-white pl-1 w-[401px] overflow-hidden ">
-                    <Icon name="search" className="ml-3"/>
-                    <input type="text" name="" id="" placeholder="Search verified shops & products" className="text-tn-ink placeholder:text-tn-mute min-w-0 flex-1 bg-transparent text-[14.5px] font-medium outline-none"/>
-                    <button className="bg-red-500 text-white p-2 h-11 ">Search</button>
-                </div>
-                <div className="md:flex grid gap-3 text-center flex-wrap max-w-[80%]">
-                    {
-                        LINKS.map((l)=>(
-                            <LinkComponent key={l.href} link={l}/>
-                        ))
-                    }
-                </div>    
-            </div>
-            
-            <h1 className="absolute md:text-[400px] text-[260px] text-red-100 font-bold z-0">404</h1>
+      <div className="relative z-10 mx-auto max-w-[760px] text-center">
+        {/* Status Pill */}
+        <div className="font-tn-mono text-tn-ink2 inline-flex items-center gap-2 rounded-full border border-tn-hair bg-white px-3.5 py-1.5 text-[12.5px] font-bold shadow-[0_2px_10px_rgba(11,11,11,0.04)]">
+          <span className="size-2 rounded-full bg-tn-stale" />
+          LAST CONFIRMED · NEVER
         </div>
-    )
+
+        <h1 className="text-tn-ink mt-6 text-[44px] leading-none font-extrabold tracking-[-0.04em] sm:text-[60px] lg:text-[64px]">
+          This page is <span className="text-tn-red">out of stock.</span>
+        </h1>
+
+        <p className="text-tn-mute mx-auto mt-5 max-w-[520px] text-base leading-relaxed font-medium sm:text-[18px]">
+          The listing you&apos;re looking for may have sold, moved, or never existed. Let&apos;s get
+          you back to something that&apos;s confirmed in stock.
+        </p>
+
+        {/* Search bar */}
+        <form
+          onSubmit={onSearch}
+          className="border-tn-hair mx-auto mt-8 flex h-14 max-w-[520px] items-center overflow-hidden rounded-2xl border bg-white shadow-[0_10px_30px_rgba(11,11,11,0.06)]"
+        >
+          <span className="pl-4.5">
+            <Icon name="search" size={20} className="text-tn-mute" />
+          </span>
+          <input
+            type="text"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search verified shops & products"
+            aria-label="Search listings"
+            className="text-tn-ink placeholder:text-tn-mute h-full flex-1 bg-transparent px-3 text-[15.5px] font-medium outline-none"
+          />
+          <button
+            type="submit"
+            className="bg-tn-red hover:bg-tn-red-dark h-full px-6 text-[14.5px] font-bold text-white transition-colors cursor-pointer"
+          >
+            Search
+          </button>
+        </form>
+
+        {/* Quick Links */}
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          {QUICK_LINKS.map((item) => (
+            <QuickLink key={item.href} item={item} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }

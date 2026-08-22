@@ -32,7 +32,10 @@ export type IconName =
   | "bolt"
   | "plus"
   | "minus"
-  | "sliders";
+  | "sliders"
+  | "car"
+  | "msg"
+  | "back";
 
 type IconProps = {
   name: IconName;
@@ -263,6 +266,26 @@ export function Icon({ name, size = 18, className, strokeWidth = 1.6 }: IconProp
       return (
         <svg {...stroke}>
           <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" />
+        </svg>
+      );
+    case "car":
+      return (
+        <svg {...stroke}>
+          <path d="M5 11l1.6-4.3A2 2 0 018.5 5.4h7a2 2 0 011.9 1.3L19 11M4 11h16a1 1 0 011 1v4h-2M5 16H3v-4a1 1 0 011-1M5 16v1.5M19 16v1.5M5 16h14" />
+          <circle cx="7.5" cy="16.5" r="1.6" />
+          <circle cx="16.5" cy="16.5" r="1.6" />
+        </svg>
+      );
+    case "back":
+      return (
+        <svg {...stroke}>
+          <path d="M15 5l-7 7 7 7" />
+        </svg>
+      );
+    case "msg":
+      return (
+        <svg {...stroke}>
+          <path d="M21 12c0 4.4-4 8-9 8-1.2 0-2.4-.2-3.4-.6L4 20l1-3.2C3.8 15.4 3 13.8 3 12c0-4.4 4-8 9-8s9 3.6 9 8z" />
         </svg>
       );
   }
