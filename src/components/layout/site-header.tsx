@@ -215,11 +215,14 @@ export function SiteHeader() {
         <SearchField className="hidden max-w-[560px] lg:block" inputRef={searchRef} />
 
         <div className="ml-auto flex shrink-0 items-center gap-2.5">
-          <button type="button" className="text-tn-ink2 hover:text-tn-ink px-1.5 py-2.5 text-[14.5px] font-bold transition-colors">
-            Sign in
-          </button>
           <Link
-            href="/products"
+            href="/signin"
+            className="text-tn-ink2 hover:text-tn-ink px-1.5 py-2.5 text-[14.5px] font-bold transition-colors"
+          >
+            Sign in
+          </Link>
+          <Link
+            href="/signup"
             className="bg-tn-ink text-white inline-flex h-10 items-center gap-2 rounded-full px-[18px] text-[13.5px] font-bold whitespace-nowrap shadow-[0_8px_22px_rgba(11,11,11,0.18)] transition-all duration-150 hover:-translate-y-px"
           >
             <Icon name="tg" size={15.5} />
@@ -288,18 +291,21 @@ export function SiteHeader() {
               <p className="text-tn-mute mt-6 mb-2 text-[10.5px] font-extrabold tracking-[0.09em] uppercase">
                 More
               </p>
-              {(["How it works", "Verified shops", "Map view", "For shop owners"] as const).map(
-                (label) => (
-                  <Link
-                    key={label}
-                    href={label === "How it works" ? "/how-it-works" : "/products"}
-                    onClick={() => setDrawerOpen(false)}
-                    className="border-tn-hair2 text-tn-ink2 block border-b py-3 text-[15px] font-semibold"
-                  >
-                    {label}
-                  </Link>
-                ),
-              )}
+              {[
+                { label: "How it works", href: "/how-it-works" },
+                { label: "Verified shops", href: "/products?verified_only=1" },
+                { label: "Browse listings", href: "/products" },
+                { label: "For shop owners", href: "/signup" },
+              ].map(({ label, href }) => (
+                <Link
+                  key={label}
+                  href={href}
+                  onClick={() => setDrawerOpen(false)}
+                  className="border-tn-hair2 text-tn-ink2 block border-b py-3 text-[15px] font-semibold"
+                >
+                  {label}
+                </Link>
+              ))}
             </div>
 
             <div className="border-tn-hair flex flex-col gap-2.5 border-t px-5 py-4">
@@ -312,18 +318,20 @@ export function SiteHeader() {
                 <Icon name="arrow" size={16} />
               </Link>
               <div className="flex gap-2.5">
-                <button
-                  type="button"
-                  className="border-tn-hair text-tn-ink h-[46px] flex-1 rounded-full border-[1.5px] bg-white text-[14.5px] font-bold"
+                <Link
+                  href="/signin"
+                  onClick={() => setDrawerOpen(false)}
+                  className="border-tn-hair text-tn-ink inline-flex h-[46px] flex-1 items-center justify-center rounded-full border-[1.5px] bg-white text-[14.5px] font-bold"
                 >
                   Sign in
-                </button>
-                <button
-                  type="button"
-                  className="bg-tn-ink text-white h-[46px] flex-1 rounded-full text-[14.5px] font-bold"
+                </Link>
+                <Link
+                  href="/signup"
+                  onClick={() => setDrawerOpen(false)}
+                  className="bg-tn-ink text-white inline-flex h-[46px] flex-1 items-center justify-center rounded-full text-[14.5px] font-bold"
                 >
                   List your shop
-                </button>
+                </Link>
               </div>
             </div>
           </div>

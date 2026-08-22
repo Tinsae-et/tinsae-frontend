@@ -27,7 +27,7 @@ export function FinalCTA() {
             <Pill
               kind="ghost"
               size="lg"
-              href="#"
+              href="/signup"
               className="border-white/60 text-white hover:bg-white/10"
             >
               List your shop
