@@ -12,6 +12,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ detail: "Authentication required." }, { status: 401 });
   }
 
+  // The page in front of this checks the same two things, but the endpoint is
+  // reachable on its own, so it has to check them itself: a buyer must not be
+  // able to create a shop, and an owner must not be able to create a second.
+  let user;
+  try {
+    user = await authDriver.me(access);
+  } catch (error) {
+    return errorResponse(error);
+  }
+  if (user.role !== "owner") {
+    return NextResponse.json({ detail: "Only shop owners can register a shop." }, { status: 403 });
+  }
+  if (user.shops?.length) {
+    return NextResponse.json({ detail: "This account already has a shop." }, { status: 409 });
+  }
+
   const input = (await request.json()) as {
     name: string;
     city: string;

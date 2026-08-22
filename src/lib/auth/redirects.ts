@@ -1,3 +1,5 @@
+import type { AuthUser } from "./types";
+
 /**
  * Where to send someone after they sign in.
  *
@@ -19,15 +21,13 @@ export function safeNext(next: string | undefined): string | null {
  * Fork on state, not just role: owners without a registered shop land in the
  * onboarding funnel (/shop/onboarding); owners with a shop land on the
  * dashboard (/dashboard); buyers land on the home page (/).
+ *
+ * This deliberately takes the whole user rather than a role string. An earlier
+ * version accepted either, and every call site passed `user.role` — which
+ * silently took the role-only branch and sent owners who already had a shop
+ * back into the funnel. Requiring the object makes that a type error.
  */
-export function homeFor(
-  userOrRole: { role: "buyer" | "owner"; shops?: unknown[] } | "buyer" | "owner",
-): string {
-  if (typeof userOrRole === "string") {
-    return userOrRole === "owner" ? "/shop/onboarding" : "/";
-  }
-  if (userOrRole.role === "owner") {
-    return userOrRole.shops && userOrRole.shops.length > 0 ? "/dashboard" : "/shop/onboarding";
-  }
-  return "/";
+export function homeFor(user: Pick<AuthUser, "role" | "shops">): string {
+  if (user.role !== "owner") return "/";
+  return user.shops?.length ? "/dashboard" : "/shop/onboarding";
 }

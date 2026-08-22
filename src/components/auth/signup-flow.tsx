@@ -56,7 +56,7 @@ export function SignUpFlow({ next }: { next: string | null }) {
   }, [resendAt]);
 
   function land(user: AuthUser) {
-    router.replace(next ?? homeFor(user.role));
+    router.replace(next ?? homeFor(user));
     router.refresh();
   }
 
