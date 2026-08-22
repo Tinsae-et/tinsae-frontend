@@ -36,8 +36,13 @@ export type Product = {
   category: Category | null;
   /** Ordered product images (primary first); empty when unset. */
   images: ProductImage[];
-  /** Backend confirmation status: "fresh" | "stale" | null (never confirmed). */
-  confirmation_status?: "fresh" | "stale" | string | null;
+  /**
+   * Backend confirmation status; null when never confirmed. Graded on the
+   * backend's 30-day window, so it is coarser than the tone we render — see
+   * `resolveTone` in lib/format. Kept a closed union deliberately: the previous
+   * `| string` member collapsed it and silently disabled every check.
+   */
+  confirmation_status?: "fresh" | "stale" | null;
   /** Nullable — a product may never have been confirmed in stock. */
   last_confirmed_at: string | null;
   slug: string;

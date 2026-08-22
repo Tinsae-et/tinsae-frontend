@@ -2,7 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProduct, getProducts } from "@/lib/api";
-import { formatETB, freshness } from "@/lib/format";
+import {
+  formatETB,
+  freshness,
+  resolveFreshness,
+  AGING_HOURS,
+  type FreshnessTone,
+} from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { Product } from "@/lib/types";
 import { kindForSlug } from "@/components/tinsae/prod-placeholder";
 import { ProductGallery } from "@/components/products/product-gallery";
@@ -115,17 +122,36 @@ function shopColor(name: string): string {
   return palette[Math.abs(h) % palette.length];
 }
 
-function FreshnessBar({ hours, responded }: { hours: number | null; responded: boolean }) {
-  // One dot per shop, placed at (hours/24)*100% along the 24h track.
-  const pct = hours === null ? null : Math.min(100, (hours / 24) * 100);
-  const dotColor = hours === null ? "#9A9A95" : hours <= 6 ? "#1F8A5B" : hours <= 12 ? "#B8741F" : "#9A9A95";
+// Track colours mirror the tn-green / tn-warn / tn-stale tokens.
+const TONE_HEX: Record<FreshnessTone, string> = {
+  fresh: "#1F8A5B",
+  aging: "#B8741F",
+  stale: "#9A9A95",
+  unknown: "#9A9A95",
+};
+
+function FreshnessBar({
+  hours,
+  responded,
+  tone,
+}: {
+  hours: number | null;
+  responded: boolean;
+  tone: FreshnessTone;
+}) {
+  // One dot per shop, on a track spanning the full confirmation window, so the
+  // point where the dot runs out is the same point the badge turns "Stale".
+  const pct = hours === null ? null : Math.min(100, (hours / AGING_HOURS) * 100);
+  // Coloured by the resolved tone, not by the raw clock: a listing the shop has
+  // reported sold out must not sit green on the track just because it is recent.
+  const dotColor = TONE_HEX[tone];
 
   return (
     <div className="rounded-[18px] border border-tn-hair bg-white px-[22px] py-[18px]">
       <div className="mb-3.5 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Icon name="clock" size={16} className="text-tn-ink2" />
-          <span className="text-[13.5px] font-extrabold text-tn-ink">Stock freshness · last 24h</span>
+          <span className="text-[13.5px] font-extrabold text-tn-ink">Stock freshness · last 30 days</span>
         </div>
         <span className="text-tn-mute text-xs">
           {responded ? "1 of 1 responded" : "no response yet"}
@@ -143,23 +169,31 @@ function FreshnessBar({ hours, responded }: { hours: number | null; responded: b
 
       <div className="font-tn-mono text-tn-mute mt-2.5 flex justify-between text-[10.5px]">
         <span>now</span>
-        <span>6h</span>
-        <span>12h</span>
-        <span>18h</span>
-        <span>24h</span>
+        <span>7d</span>
+        <span>14d</span>
+        <span>21d</span>
+        <span>30d</span>
       </div>
     </div>
   );
 }
 
+// The hero pill states. Stale and never-confirmed stay neutral — the ticket
+// asks for stale to be flagged honestly, not alarmingly, so no red anywhere.
+const HERO_BADGE: Record<FreshnessTone, string> = {
+  fresh: "bg-tn-green-soft text-[#157049]",
+  aging: "bg-[#FBF0E2] text-[#8a5512]",
+  stale: "bg-tn-paper text-tn-ink2",
+  unknown: "bg-tn-paper text-tn-mute",
+};
+
 function ShopComparison({ product, now }: { product: Product; now: number }) {
-  const f = freshness(product.last_confirmed_at, now);
+  const f = resolveFreshness(freshness(product.last_confirmed_at, now), product.confirmation_status);
   const hours = product.last_confirmed_at
     ? Math.max(0, (now - new Date(product.last_confirmed_at).getTime()) / 36e5)
     : null;
   const responded = product.last_confirmed_at !== null;
-  const confirmedToday = responded && hours !== null && hours <= 24;
-  const inStock = product.confirmation_status === "fresh";
+  const tone = f.tone;
 
   const specs = orderSpecs(
     Object.entries(product.specs).filter(([, v]) => v !== null && v !== ""),
@@ -169,13 +203,18 @@ function ShopComparison({ product, now }: { product: Product; now: number }) {
     <div>
       {/* ── two-column hero ─────────────────────────────── */}
       <div className="grid items-start gap-[44px] lg:grid-cols-[1fr_1.12fr]">
-        <ProductGallery images={product.images.map((i) => i.url)} kind={kindForSlug(product.category?.slug)} inStock={inStock} />
+        <ProductGallery images={product.images.map((i) => i.url)} kind={kindForSlug(product.category?.slug)} tone={tone} label={f.badge} />
 
         <div className="min-w-0">
           <div className="mb-3.5 flex flex-wrap gap-2">
-            <span className="bg-tn-green-soft text-[#157049] inline-flex h-[30px] items-center gap-1.5 rounded-full px-3 text-[12.5px] font-semibold">
-              <Icon name="check" size={13} />
-              {confirmedToday ? "Confirmed in stock today" : "No confirmation today"}
+            <span
+              className={cn(
+                "inline-flex h-[30px] items-center gap-1.5 rounded-full px-3 text-[12.5px] font-semibold",
+                HERO_BADGE[tone],
+              )}
+            >
+              {tone === "fresh" && <Icon name="check" size={13} />}
+              {f.confirmed}
             </span>
             {product.shop_verified && (
               <span className="bg-tn-paper text-tn-ink2 inline-flex h-[30px] items-center gap-1.5 rounded-full px-3 text-[12.5px] font-semibold">
@@ -228,7 +267,7 @@ function ShopComparison({ product, now }: { product: Product; now: number }) {
 
           {/* freshness */}
           <div className="mt-[18px]">
-            <FreshnessBar hours={hours} responded={responded} />
+            <FreshnessBar hours={hours} responded={responded} tone={tone} />
           </div>
 
           {/* key specifications */}
@@ -301,7 +340,7 @@ function ShopComparison({ product, now }: { product: Product; now: number }) {
             <span className="text-tn-ink2 text-[13px] font-semibold">New</span>
             <span className="text-tn-ink2 flex items-center gap-1.5 text-[13px] font-semibold">
               <Icon name="shield" size={13} className="text-tn-mute" />
-              {responded ? f.age : "Unconfirmed"}
+              {f.age}
             </span>
 
             <div className="flex items-center justify-between gap-3">
@@ -318,9 +357,9 @@ function ShopComparison({ product, now }: { product: Product; now: number }) {
         <div className="text-tn-ink2 mt-4 flex items-start gap-2.5 rounded-2xl bg-tn-paper px-[18px] py-4 text-[13.5px] leading-[1.55]">
           <Icon name="shield" size={16} className="mt-0.5 shrink-0 text-tn-green" />
           <p>
-            All shops are <b className="text-tn-ink">verified by Tinsae</b>. Stock is reconfirmed daily
-            via Telegram. Tinsae does not handle payment — visit the shop to inspect and complete your
-            purchase.
+            All shops are <b className="text-tn-ink">verified by Tinsae</b>. Stock is reconfirmed by
+            the shop via Telegram — check the confirmation date above. Tinsae does not handle payment;
+            visit the shop to inspect and complete your purchase.
           </p>
         </div>
       </section>

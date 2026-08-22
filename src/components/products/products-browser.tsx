@@ -8,6 +8,7 @@ import { Pill } from "@/components/tinsae/pill";
 import { ProductGrid } from "./product-grid";
 import { FilterRail } from "./filter-rail";
 import { FilterSheet } from "./filter-sheet";
+import { SortSelect } from "./sort-select";
 import { useProducts, type InitialProducts } from "@/hooks/use-products";
 import {
   activeFilterCount,
@@ -17,7 +18,6 @@ import {
   filtersToSearchParams,
   FRESHNESS_OPTIONS,
   type SearchFilters,
-  type SortKey,
 } from "@/lib/filters";
 
 export function ProductsBrowser({
@@ -131,20 +131,7 @@ export function ProductsBrowser({
 
             <div className="flex items-center gap-2.5">
               {/* Sort */}
-              <label className="flex h-11 items-center gap-2 rounded-full border border-tn-hair bg-white px-3.5">
-                <Icon name="sort" size={15} className="text-tn-mute" />
-                <span className="sr-only">Sort results</span>
-                <select
-                  value={filters.sort}
-                  onChange={(e) => applyPatch({ sort: e.target.value as SortKey })}
-                  className="cursor-pointer border-none bg-transparent text-[13.5px] font-bold text-tn-ink outline-none"
-                >
-                  <option value="fresh">Freshest first</option>
-                  <option value="price-asc">Price: low → high</option>
-                  <option value="price-desc">Price: high → low</option>
-                  <option value="response">Response rate</option>
-                </select>
-              </label>
+              <SortSelect value={filters.sort} onChange={(sort) => applyPatch({ sort })} />
 
               {/* Grid / list toggle */}
               <div className="flex rounded-full border border-tn-hair bg-white p-1">
@@ -230,7 +217,7 @@ export function ProductsBrowser({
           onReset={clearAll}
         />
 
-        <main className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1">
           {error && !loading ? (
             <ErrorState onRetry={retry} />
           ) : !loading && products.length === 0 ? (
@@ -247,7 +234,7 @@ export function ProductsBrowser({
               onRetry={retry}
             />
           )}
-        </main>
+        </div>
       </div>
 
       <FilterSheet
