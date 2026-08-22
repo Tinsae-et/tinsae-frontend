@@ -31,6 +31,8 @@ export function Pill({
   iconAfter,
   href,
   onClick,
+  type = "button",
+  disabled = false,
   children,
   className,
 }: {
@@ -40,6 +42,8 @@ export function Pill({
   iconAfter?: IconName;
   href?: string;
   onClick?: () => void;
+  type?: "button" | "submit";
+  disabled?: boolean;
   children: React.ReactNode;
   className?: string;
 }) {
@@ -47,12 +51,22 @@ export function Pill({
     "inline-flex items-center justify-center gap-2 rounded-full font-bold tracking-[-0.01em] whitespace-nowrap transition-[transform,box-shadow,background] duration-150 hover:-translate-y-px",
     kinds[kind],
     sizes[size],
+    // A Pill that can't be pressed must say so, not just look faded: the
+    // onboarding funnel relied on opacity alone and stayed clickable, which is
+    // how a double-tap on "Create my shop" got two shops created.
+    disabled && "pointer-events-none cursor-not-allowed opacity-50 shadow-none hover:translate-y-0",
     className,
   );
 
-  if (onClick) {
+  if (onClick || type === "submit") {
     return (
-      <button type="button" onClick={onClick} className={classes}>
+      <button
+        type={type}
+        onClick={onClick}
+        disabled={disabled}
+        aria-disabled={disabled || undefined}
+        className={classes}
+      >
         {icon && <Icon name={icon} size={size === "lg" ? 18 : 17} />}
         {children}
         {iconAfter && <Icon name={iconAfter} size={size === "lg" ? 16 : 15} />}

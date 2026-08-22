@@ -323,7 +323,7 @@ export const mockDriver: AuthDriver = {
       phone: input.phone || user.phone,
       is_verified: false,
     };
-    user.shops = [shop];
+    user.shops = [...user.shops, shop];
     return shop;
   },
 };
