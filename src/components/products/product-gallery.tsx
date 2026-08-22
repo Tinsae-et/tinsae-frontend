@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Icon } from "@/components/tinsae/icon";
 import { ProdPlaceholder, type ProductKind } from "@/components/tinsae/prod-placeholder";
 import { cn } from "@/lib/utils";
+import type { FreshnessTone } from "@/lib/format";
 
 // Listing gallery — ported from design_handoff_listing.
 // Sticky on desktop, main frame + thumbnail rail with click-to-swap.
@@ -13,14 +14,25 @@ import { cn } from "@/lib/utils";
 
 const TONES = ["#1a1a1a", "#2a2520", "#0f1418", "#1a1a1a"];
 
+// Same restraint as the card badge: only "fresh" gets green and a check.
+const TONE_BADGE: Record<FreshnessTone, string> = {
+  fresh: "text-[#157049]",
+  aging: "text-[#8a5512]",
+  stale: "text-tn-ink2",
+  unknown: "text-tn-mute",
+};
+
 export function ProductGallery({
   images,
   kind,
-  inStock,
+  tone,
+  label,
 }: {
   images: string[];
   kind: ProductKind;
-  inStock: boolean;
+  tone: FreshnessTone;
+  /** Pre-resolved badge text, so it can never disagree with `tone`. */
+  label: string;
 }) {
   const total = Math.max(1, images.length || TONES.length);
   const [idx, setIdx] = useState(0);
@@ -47,12 +59,12 @@ export function ProductGallery({
 
         <span
           className={cn(
-            "absolute top-4 left-4 inline-flex h-[30px] items-center gap-1.5 rounded-full px-3 text-[12.5px] font-semibold",
-            inStock ? "bg-white/95 text-[#157049]" : "bg-white/95 text-[#8a5512]",
+            "absolute top-4 left-4 inline-flex h-[30px] items-center gap-1.5 rounded-full bg-white/95 px-3 text-[12.5px] font-semibold",
+            TONE_BADGE[tone],
           )}
         >
-          <Icon name="check" size={13} />
-          {inStock ? "Confirmed in stock today" : "Aging"}
+          {tone === "fresh" && <Icon name="check" size={13} />}
+          {label}
         </span>
 
         <span className="font-tn-mono absolute right-4 bottom-4 rounded-full bg-black/50 px-3 py-1.5 text-[12px] text-white">

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Icon } from "@/components/tinsae/icon";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
-import { formatETB, freshness, type FreshnessTone } from "@/lib/format";
+import { formatETB, freshness, resolveFreshness, type FreshnessTone } from "@/lib/format";
 import type { Product } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +23,15 @@ const TONE_DOT: Record<FreshnessTone, string> = {
   unknown: "bg-tn-stale",
 };
 
+// Stale/unconfirmed read as quiet and factual rather than alarming — no red,
+// no warning icon. Only "fresh" earns the green + check.
+const TONE_BADGE: Record<FreshnessTone, string> = {
+  fresh: "text-[#157049]",
+  aging: "text-[#8a5512]",
+  stale: "text-tn-ink2",
+  unknown: "text-tn-mute",
+};
+
 function ProductCardInner({
   product,
   saved,
@@ -32,10 +41,9 @@ function ProductCardInner({
   saved: boolean;
   onSave: () => void;
 }) {
-  const fresh = freshness(product.last_confirmed_at);
-  const statusTone = product.confirmation_status ? (product.confirmation_status as FreshnessTone) : fresh.tone;
+  const fresh = resolveFreshness(freshness(product.last_confirmed_at), product.confirmation_status);
+  const tone = fresh.tone;
   const image = product.images?.[0]?.url || null;
-  const inStock = statusTone === "fresh";
 
   const detailHref = `/products/${product.slug}`;
 
@@ -64,11 +72,11 @@ function ProductCardInner({
         <span
           className={cn(
             "absolute top-3 left-3 inline-flex h-[26px] items-center gap-1 rounded-full bg-white/95 px-2.5 text-[11.5px] font-semibold",
-            inStock ? "text-[#157049]" : "text-[#8a5512]",
+            TONE_BADGE[tone],
           )}
         >
-          {inStock && <Icon name="check" size={12} />}
-          {inStock ? "In stock" : "Aging"}
+          {tone === "fresh" && <Icon name="check" size={12} />}
+          {fresh.badge}
         </span>
 
         <button
@@ -103,14 +111,16 @@ function ProductCardInner({
           </span>
         </p>
 
-        <div className="border-tn-hair2 text-tn-ink2 mt-3 flex items-center justify-between gap-2 border-t pt-3 text-[11.5px]">
+        {/* Stacked rather than side-by-side: "Confirmed 20d ago" is long enough
+            that a single row truncated the shop name down to "B…". */}
+        <div className="border-tn-hair2 text-tn-ink2 mt-3 flex flex-col gap-1.5 border-t pt-3 text-[11.5px]">
           <span className="flex min-w-0 items-center gap-1.5">
             {product.shop_verified && <VerifiedBadge size={11} />}
             <span className="truncate">{product.shop_name}</span>
           </span>
-          <span className="font-tn-mono text-tn-mute flex shrink-0 items-center gap-1.5 text-xs">
-            <span className={cn("size-1.5 rounded-full", TONE_DOT[statusTone])} />
-            {fresh.age}
+          <span className="font-tn-mono text-tn-mute flex min-w-0 items-center gap-1.5 text-[10.5px] sm:text-xs">
+            <span className={cn("size-1.5 shrink-0 rounded-full", TONE_DOT[tone])} />
+            <span className="truncate">{fresh.confirmed}</span>
           </span>
         </div>
       </div>
@@ -126,8 +136,8 @@ export function ProductCard({ product }: { product: Product }) {
 // ── list view row ──────────────────────────────────────────
 export function ProductRow({ product }: { product: Product }) {
   const [saved, setSaved] = useState(false);
-  const fresh = freshness(product.last_confirmed_at);
-  const statusTone = product.confirmation_status ? (product.confirmation_status as FreshnessTone) : fresh.tone;
+  const fresh = resolveFreshness(freshness(product.last_confirmed_at), product.confirmation_status);
+  const tone = fresh.tone;
   const image = product.images?.[0]?.url || null;
 
   return (
@@ -178,8 +188,8 @@ export function ProductRow({ product }: { product: Product }) {
           {formatETB(product.price)}
         </p>
         <p className="font-tn-mono text-tn-mute mt-1 flex items-center justify-end gap-1.5 text-[11.5px]">
-          <span className={cn("size-1.5 rounded-full", TONE_DOT[statusTone])} />
-          {fresh.age}
+          <span className={cn("size-1.5 rounded-full", TONE_DOT[tone])} />
+          {fresh.confirmed}
         </p>
       </div>
     </div>
