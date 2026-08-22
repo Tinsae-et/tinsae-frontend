@@ -29,7 +29,7 @@ export function TrustHero() {
           <Pill kind="solid" size="lg" iconAfter="arrow" href="/products">
             Browse verified shops
           </Pill>
-          <Pill kind="outline" size="lg" icon="tg" href="#faq">
+          <Pill kind="outline" size="lg" icon="tg" href="/how-it-works">
             How this works
           </Pill>
         </div>
