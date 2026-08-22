@@ -1,6 +1,12 @@
 import { Icon } from "@/components/tinsae/icon";
 
-const faqItems = [
+type FAQItem = {
+  question: string;
+  answer: string;
+  open?: boolean;
+};
+
+const faqItems: FAQItem[] = [
   {
     question: "Does “verified” mean the product is guaranteed?",
     answer:
