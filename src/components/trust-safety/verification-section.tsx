@@ -1,53 +1,54 @@
-import { Icon } from "@/components/tinsae/icon";
+import { Icon, type IconName } from "@/components/tinsae/icon";
+import { SectionHead } from "./section-head";
 
-const verificationSteps = [
+// These map to the owner Verification screen's steps — keep the two in sync.
+const verificationSteps: { icon: IconName; title: string; description: string }[] = [
   {
+    icon: "phone",
     title: "Phone & identity",
     description:
-      "We confirm the shop owner matches the business, phone number, and registered details before the listing goes live.",
-    icon: "phone",
-    accent: "bg-green-100 text-green-700",
+      "We confirm a working Ethiopian number and match it to the owner — the same person who answers when you call.",
   },
   {
+    icon: "spec",
     title: "Business documents",
     description:
-      "We check trade docs, registration details, and a real storefront address before a shop can carry the verified badge.",
-    icon: "building",
-    accent: "bg-green-100 text-green-700",
+      "Trade licence and registration are checked against the shop’s name and address before anything goes live.",
   },
   {
+    icon: "building",
     title: "In-person store visit",
     description:
-      "A team member visits the shop, confirms the space is real, and checks that the business is operating as advertised.",
-    icon: "pin",
-    accent: "bg-green-100 text-green-700",
+      "Someone from Tinsae walks into the actual shop in Bole. No real storefront, no badge — it’s that simple.",
   },
-] as const;
+];
 
 export function VerificationSection() {
   return (
-    <section className="pt-8">
-      <div className="mx-auto max-w-3xl pb-6 text-center">
-        <p className="text-sm font-black uppercase tracking-[0.2em] text-tn-red">The verification process</p>
-        <h2 className="mt-3 text-3xl font-black tracking-[-0.05em] text-tn-ink md:text-5xl">
-          Every shop passes three checks.
-        </h2>
-        <p className="mx-auto mt-4 max-w-[600px] text-base leading-7 text-zinc-600">
-          A badge on Tinsae is earned the slow way: by being a real business at a real address that we&apos;ve confirmed ourselves.
-        </p>
-      </div>
+    <section className="mx-auto mt-20 max-w-[1240px] px-6 lg:mt-24 lg:px-7">
+      <SectionHead
+        center
+        eyebrow="The verification process"
+        title="Every shop passes three checks."
+        intro="A badge on Tinsae is earned the slow way — by being a real business at a real address that we’ve confirmed ourselves."
+      />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="mt-11 grid gap-[18px] md:grid-cols-3">
         {verificationSteps.map((step, index) => (
-          <article key={step.title} className="rounded-[26px] border border-tn-hair bg-white p-5 shadow-sm">
-            <div className="mb-5 flex items-center justify-between">
-              <span className={`inline-flex size-12 items-center justify-center rounded-2xl ${step.accent}`}>
-                <Icon name={step.icon} size={22} />
-              </span>
-              <span className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-400">Step {index + 1}</span>
+          <article
+            key={step.title}
+            className="border-tn-hair relative rounded-[18px] border bg-white px-7 py-[30px] transition-shadow hover:shadow-[0_18px_40px_rgba(11,11,11,0.06)]"
+          >
+            <span className="font-tn-mono text-tn-mute absolute top-6 right-[26px] text-[11.5px] font-semibold tracking-[0.04em]">
+              Step {index + 1}
+            </span>
+            <div className="bg-tn-green-soft mb-5 flex size-[54px] items-center justify-center rounded-[15px]">
+              <Icon name={step.icon} size={25} className="text-tn-green" />
             </div>
-            <h3 className="mb-2 text-xl font-bold text-tn-ink">{step.title}</h3>
-            <p className="text-sm leading-6 text-zinc-600">{step.description}</p>
+            <h3 className="text-tn-ink mb-2.5 text-xl font-extrabold tracking-[-0.02em]">
+              {step.title}
+            </h3>
+            <p className="text-tn-mute text-[14.5px] leading-[1.6]">{step.description}</p>
           </article>
         ))}
       </div>
