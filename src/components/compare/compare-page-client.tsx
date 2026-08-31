@@ -135,9 +135,12 @@ export function ComparePageClient({
     }
   }, [items, showToast]);
 
-  // Category name for subtitle
-  const firstCategory = items.find((i) => i.isAvailable && i.product.category?.name)?.product
-    .category?.name;
+  // Category name & slug from first available product
+  const firstAvailable = items.find(
+    (i): i is Extract<CompareItem, { isAvailable: true }> => i.isAvailable,
+  );
+  const firstCategory = firstAvailable?.product.category?.name;
+  const firstCategorySlug = firstAvailable?.product.category?.slug ?? "phones";
   const categoryLabel = firstCategory ? firstCategory.toLowerCase() : "products";
 
   return (
@@ -158,7 +161,7 @@ export function ComparePageClient({
           <>
             <Icon name="chevron" size={11} className="text-[#B7B5AD]" />
             <Link
-              href={`/products?category=${items.find((i) => i.isAvailable)?.product.category?.slug ?? ""}`}
+              href={`/products?category=${firstCategorySlug}`}
               className="text-tn-mute hover:text-tn-ink"
             >
               {firstCategory}
@@ -230,7 +233,7 @@ export function ComparePageClient({
       <CompareAddModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        currentCategory={items.find((i) => i.isAvailable)?.product.category?.slug ?? "phones"}
+        currentCategory={firstCategorySlug}
       />
     </div>
   );
