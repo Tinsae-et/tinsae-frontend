@@ -52,31 +52,6 @@ export function ComparePageClient({
     }
   }, [initialSlugs, storedSlugs, setCompareSlugs, router]);
 
-  // When storedSlugs change after mount (e.g. adding from modal, removing), refresh items & URL
-  const fetchFreshItems = useCallback(async (slugList: string[]) => {
-    if (slugList.length === 0) {
-      setItems([]);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const fetched = await Promise.all(
-        slugList.map(async (slug): Promise<CompareItem> => {
-          try {
-            const product = await getProduct(slug);
-            return { isAvailable: true, product };
-          } catch {
-            return { isAvailable: false, slug };
-          }
-        }),
-      );
-      setItems(fetched);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   // Sync items whenever context slugs change
   useEffect(() => {
     if (!hasInitialized.current) return;
@@ -85,18 +60,47 @@ export function ComparePageClient({
       currentSlugs.length === storedSlugs.length &&
       currentSlugs.every((s, idx) => s === storedSlugs[idx]);
 
-    if (!isSame) {
-      fetchFreshItems(storedSlugs);
-      // Keep URL query in sync
-      if (storedSlugs.length > 0) {
-        const search = new URLSearchParams(window.location.search);
-        search.set("items", storedSlugs.join(","));
-        window.history.replaceState(null, "", `/compare?${search.toString()}`);
-      } else {
-        window.history.replaceState(null, "", "/compare");
-      }
+    if (isSame) return;
+
+    // Keep URL query in sync
+    if (storedSlugs.length > 0) {
+      const search = new URLSearchParams(window.location.search);
+      search.set("items", storedSlugs.join(","));
+      window.history.replaceState(null, "", `/compare?${search.toString()}`);
+    } else {
+      window.history.replaceState(null, "", "/compare");
     }
-  }, [storedSlugs, items, fetchFreshItems]);
+
+    let isCancelled = false;
+    Promise.resolve().then(() => {
+      if (!isCancelled) setLoading(true);
+    });
+
+    Promise.all(
+      storedSlugs.map(async (slug): Promise<CompareItem> => {
+        try {
+          const product = await getProduct(slug);
+          return { isAvailable: true, product };
+        } catch {
+          return { isAvailable: false, slug };
+        }
+      }),
+    )
+      .then((fetched) => {
+        if (!isCancelled) {
+          setItems(fetched);
+        }
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [storedSlugs, items]);
 
   // Handle single item remove
   const handleRemove = useCallback(

@@ -4,8 +4,9 @@ import React, {
   createContext,
   useCallback,
   useContext,
-  useEffect,
+  useMemo,
   useState,
+  useSyncExternalStore,
 } from "react";
 
 export const MAX_COMPARE_ITEMS = 4;
@@ -36,38 +37,59 @@ type CompareContextValue = {
   hideToast: () => void;
 };
 
+function getCompareSnapshot(): string {
+  if (typeof window === "undefined") return "[]";
+  try {
+    return localStorage.getItem(STORAGE_KEY) ?? "[]";
+  } catch {
+    return "[]";
+  }
+}
+
+function getServerSnapshot(): string {
+  return "[]";
+}
+
+function subscribeToCompare(callback: () => void) {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("storage", callback);
+  window.addEventListener("tinsae-compare-change", callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener("tinsae-compare-change", callback);
+  };
+}
+
+function saveSlugsToStorage(newSlugs: string[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newSlugs));
+  } catch {
+    // Ignore storage errors
+  }
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("tinsae-compare-change"));
+  }
+}
+
 const CompareContext = createContext<CompareContextValue | null>(null);
 
 export function CompareProvider({ children }: { children: React.ReactNode }) {
-  const [slugs, setSlugs] = useState<string[]>([]);
+  const rawSlugs = useSyncExternalStore(
+    subscribeToCompare,
+    getCompareSnapshot,
+    getServerSnapshot,
+  );
+
+  const slugs = useMemo(() => {
+    try {
+      const parsed = JSON.parse(rawSlugs);
+      return Array.isArray(parsed) ? parsed.slice(0, MAX_COMPARE_ITEMS) : [];
+    } catch {
+      return [];
+    }
+  }, [rawSlugs]);
+
   const [toast, setToast] = useState<CompareToastData>(null);
-  const [mounted, setMounted] = useState(false);
-
-  // Initialize from localStorage on client mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          setSlugs(parsed.slice(0, MAX_COMPARE_ITEMS));
-        }
-      }
-    } catch {
-      // Ignore storage errors
-    }
-    setMounted(true);
-  }, []);
-
-  // Sync to localStorage whenever slugs change (after mount)
-  useEffect(() => {
-    if (!mounted) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(slugs));
-    } catch {
-      // Ignore storage errors
-    }
-  }, [slugs, mounted]);
 
   const showToast = useCallback((message: string, type: ToastType = "info") => {
     const id = Math.random().toString(36).substring(2, 9);
@@ -100,7 +122,7 @@ export function CompareProvider({ children }: { children: React.ReactNode }) {
       }
 
       const next = [...slugs, cleanSlug];
-      setSlugs(next);
+      saveSlugsToStorage(next);
       showToast(
         title
           ? `Added "${title}" to compare (${next.length}/${MAX_COMPARE_ITEMS})`
@@ -114,9 +136,10 @@ export function CompareProvider({ children }: { children: React.ReactNode }) {
 
   const removeFromCompare = useCallback(
     (slug: string) => {
-      setSlugs((prev) => prev.filter((s) => s !== slug));
+      const next = slugs.filter((s) => s !== slug);
+      saveSlugsToStorage(next);
     },
-    [],
+    [slugs],
   );
 
   const toggleCompare = useCallback(
@@ -136,11 +159,11 @@ export function CompareProvider({ children }: { children: React.ReactNode }) {
 
   const setCompareSlugs = useCallback((newSlugs: string[]) => {
     const unique = Array.from(new Set(newSlugs)).slice(0, MAX_COMPARE_ITEMS);
-    setSlugs(unique);
+    saveSlugsToStorage(unique);
   }, []);
 
   const clearCompare = useCallback(() => {
-    setSlugs([]);
+    saveSlugsToStorage([]);
     showToast("Cleared all products from comparison", "info");
   }, [showToast]);
 
@@ -179,3 +202,4 @@ export function useCompare(): CompareContextValue {
   }
   return context;
 }
+

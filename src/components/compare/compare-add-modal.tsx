@@ -31,7 +31,11 @@ export function CompareAddModal({
     if (!isOpen) return;
 
     let isCancelled = false;
-    setLoading(true);
+    Promise.resolve().then(() => {
+      if (!isCancelled) {
+        setLoading(true);
+      }
+    });
 
     getProducts({
       q: debouncedSearch.trim() || undefined,
