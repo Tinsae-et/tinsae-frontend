@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { Icon, type IconName } from "@/components/tinsae/icon";
 import { NAV_CATEGORIES } from "@/lib/nav-categories";
+import { useCompare } from "@/hooks/use-compare";
 import { cn } from "@/lib/utils";
 
 function Logo() {
@@ -169,6 +170,7 @@ function BrowseMenu() {
 }
 
 export function SiteHeader() {
+  const { count } = useCompare();
   const [scrolled, setScrolled] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -228,6 +230,20 @@ export function SiteHeader() {
         />
 
         <div className="ml-auto flex shrink-0 items-center gap-2.5">
+          <Link
+            href="/compare"
+            aria-label="Compare products"
+            className="text-tn-ink2 hover:text-tn-ink relative inline-flex items-center gap-1.5 px-2 py-2 text-[14.5px] font-bold transition-colors"
+          >
+            <Icon name="sliders" size={17} />
+            <span>Compare</span>
+            {count > 0 && (
+              <span className="bg-tn-red text-white flex size-5 items-center justify-center rounded-full text-[10.5px] font-extrabold">
+                {count}
+              </span>
+            )}
+          </Link>
+
           <Link
             href="/signin"
             className="text-tn-ink2 hover:text-tn-ink px-1.5 py-2.5 text-[14.5px] font-bold transition-colors"
@@ -323,6 +339,7 @@ export function SiteHeader() {
                   More
                 </p>
                 {[
+                  { label: "Compare products", href: "/compare" },
                   { label: "How it works", href: "/how-it-works" },
                   {
                     label: "Verified shops",
