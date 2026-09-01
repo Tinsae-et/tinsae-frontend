@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Icon } from "@/components/tinsae/icon";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
-import { formatETB, freshness, resolveFreshness, type FreshnessTone } from "@/lib/format";
+import { formatETB, freshness, type FreshnessTone } from "@/lib/format";
 import type { Product } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useCompare } from "@/hooks/use-compare";
@@ -19,18 +19,16 @@ import { useCompare } from "@/hooks/use-compare";
 
 const TONE_DOT: Record<FreshnessTone, string> = {
   fresh: "bg-tn-green",
-  aging: "bg-tn-warn",
   stale: "bg-tn-stale",
-  unknown: "bg-tn-stale",
+  unconfirmed: "bg-tn-stale",
 };
 
 // Stale/unconfirmed read as quiet and factual rather than alarming — no red,
 // no warning icon. Only "fresh" earns the green + check.
 const TONE_BADGE: Record<FreshnessTone, string> = {
   fresh: "text-[#157049]",
-  aging: "text-[#8a5512]",
   stale: "text-tn-ink2",
-  unknown: "text-tn-mute",
+  unconfirmed: "text-tn-mute",
 };
 
 function ProductCardInner({
@@ -45,7 +43,7 @@ function ProductCardInner({
   const { isInCompare, toggleCompare } = useCompare();
   const inCompare = isInCompare(product.slug);
 
-  const fresh = resolveFreshness(freshness(product.last_confirmed_at), product.confirmation_status);
+  const fresh = freshness(product.last_confirmed_at, product.confirmation_status);
   const tone = fresh.tone;
   const image = product.images?.[0]?.url || null;
 
@@ -168,7 +166,7 @@ export function ProductRow({ product }: { product: Product }) {
   const inCompare = isInCompare(product.slug);
 
   const [saved, setSaved] = useState(false);
-  const fresh = resolveFreshness(freshness(product.last_confirmed_at), product.confirmation_status);
+  const fresh = freshness(product.last_confirmed_at, product.confirmation_status);
   const tone = fresh.tone;
   const image = product.images?.[0]?.url || null;
 
