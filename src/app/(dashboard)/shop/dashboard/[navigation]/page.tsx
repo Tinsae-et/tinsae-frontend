@@ -31,7 +31,7 @@ const Listings = async ({ params }: props) => {
   }
   else if (navigation === "shop-profile") {
     return (
-      <section className="p-5">
+      <section>
         <ShopProfile />
       </section>
     )

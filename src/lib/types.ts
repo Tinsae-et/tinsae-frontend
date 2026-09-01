@@ -76,10 +76,11 @@ export type ShopProduct = {
   currency: string;
   shop: number;
   category: string;
+  condition: string;
   is_available: boolean;
   confirmation_status?: "fresh" | "stale" | null;
   last_confirmed_at: string | null;
   freshness: string;
   slug: string;
   specs: Record<string, unknown>;
-}
+};

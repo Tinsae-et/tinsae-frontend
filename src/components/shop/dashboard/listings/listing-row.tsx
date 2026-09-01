@@ -1,101 +1,144 @@
+"use client";
+
 import { Icon } from "@/components/tinsae/icon";
-import { formatETB, freshness, FreshnessTone, resolveFreshness } from "@/lib/format";
+import { formatETB, freshness } from "@/lib/format";
 import { ShopProduct } from "@/lib/types";
+import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
+import { Pill } from "@/components/tinsae/pill";
 import { cn } from "@/lib/utils";
 import { Pencil } from "lucide-react";
+import Link from "next/link";
 
+export function ListingRow({
+  product,
+  selected,
+  toggleOne,
+}: {
+  product: ShopProduct;
+  selected: number[];
+  toggleOne: (id: number) => void;
+}) {
+  const isSelected = selected.includes(product.id);
+  const fresh = freshness(product.last_confirmed_at, product.confirmation_status);
 
-const TONE_DOT: Record<FreshnessTone, string> = {
-    fresh: "bg-tn-green",
-    aging: "bg-tn-warn",
-    stale: "bg-tn-stale",
-    unknown: "bg-tn-stale",
-};
+  const dotColor =
+    fresh.tone === "fresh"
+      ? "bg-tn-green shadow-[0_0_0_3px_#1F8A5B22]"
+      : fresh.tone === "stale"
+      ? "bg-tn-mute"
+      : "bg-tn-warn";
 
-function StatusBadge({ status }: { status: boolean }) {
-    return (
-        <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
-            {
-                status ? "Live" : "Not Live"
-            }
-        </span>
-    );
-}
-
-
-
-export function ListingRow({ product, selected, toggleOne }: { product: ShopProduct, selected: number[], toggleOne: (id: number) => void }) {
-    const fresh = resolveFreshness(freshness(product.last_confirmed_at), product.confirmation_status);
-    const tone = fresh.tone
-    return (
-        <tr
-            key={product.id}
-            className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50/60"
+  return (
+    <tr
+      className={cn(
+        "border-b border-tn-hair2 last:border-b-0 transition-colors",
+        isSelected ? "bg-tn-red-soft" : "hover:bg-tn-paper/50"
+      )}
+    >
+      {/* Checkbox */}
+      <td className="py-[13px] pl-5 pr-2 w-12">
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={isSelected}
+          aria-label={`Select ${product.name}`}
+          onClick={() => toggleOne(product.id)}
+          className={cn(
+            "flex h-4 w-4 items-center justify-center rounded-[4px] border transition-colors cursor-pointer",
+            isSelected ? "border-tn-red bg-tn-red text-white" : "border-tn-hair bg-white"
+          )}
         >
-            <td className="py-4 pl-5 pr-2">
-                <input
-                    type="checkbox"
-                    checked={selected.includes(product.id)}
-                    onChange={() => { toggleOne(product.id) }}
-                    className="h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-0"
-                />
-            </td>
+          {isSelected && <Icon name="check" size={12} strokeWidth={3} />}
+        </button>
+      </td>
 
-            <td className="px-2 py-4">
-                <div className="flex products-center gap-3">
-                    <div className="h-10 w-10 shrink-0 rounded-lg bg-neutral-900" />
-                    <div>
-                        <div className="font-semibold text-neutral-900">
-                            {product.name}
-                        </div>
-                        <div className="text-xs text-neutral-400">{product.description}</div>
-                    </div>
-                </div>
-            </td>
+      {/* Product */}
+      <td className="px-3 py-[13px]">
+        <div className="flex items-center gap-3">
+          <div className="size-[42px] rounded-[10px] bg-tn-paper flex items-center justify-center shrink-0 overflow-hidden">
+            <ProdPlaceholder kind={kindForSlug(product.category)} />
+          </div>
+          <div className="min-w-0">
+            <div className="text-[13.5px] font-bold text-tn-ink truncate">
+              {product.name}
+            </div>
+            <div className="text-[11.5px] text-tn-mute truncate">
+              {product.description ? `${product.description} · ` : ""}
+              {product.condition || "New"}
+            </div>
+          </div>
+        </div>
+      </td>
 
-            <td className="px-2 py-4 text-right font-semibold text-neutral-900">
-                {formatETB(product.price)}
-            </td>
+      {/* Price */}
+      <td className="whitespace-nowrap px-3 py-[13px] text-right font-tn-mono text-sm font-semibold text-tn-ink">
+        {formatETB(product.price)}
+      </td>
 
-            <td className="px-2 py-4">
-                <div className="flex products-center gap-3">
-                    <span className="text-neutral-700">{4}</span>
-                    <StatusBadge status={product.is_available} />
-                </div>
-            </td>
+      {/* Stock · status */}
+      <td className="whitespace-nowrap px-3 py-[13px]">
+        <div className="flex items-center gap-2">
+          <span className="font-tn-mono text-[13px] font-semibold text-tn-mute">—</span>
+          {product.is_available ? (
+            <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-tn-green-soft text-tn-green">
+              Live
+            </span>
+          ) : (
+            <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-tn-paper text-tn-mute">
+              Sold
+            </span>
+          )}
+        </div>
+      </td>
 
-            <td className="px-2 py-4">
-                <p className="font-tn-mono text-tn-mute mt-1 flex items-center justify-end gap-1.5 text-[11.5px]">
-                    <span className={cn("size-1.5 rounded-full", TONE_DOT[tone])} />
-                    {fresh.confirmed.slice(10)}
-                </p>
-            </td>
+      {/* Confirmed */}
+      <td className="whitespace-nowrap px-3 py-[13px]">
+        {product.is_available ? (
+          <div className="flex items-center gap-2">
+            <span className={cn("size-2 rounded-full", dotColor)} />
+            <span className="font-tn-mono text-xs text-tn-mute">{fresh.age}</span>
+          </div>
+        ) : (
+          <span className="font-tn-mono text-xs text-tn-mute">—</span>
+        )}
+      </td>
 
-            <td className="px-2 py-4 text-right text-neutral-700">
-                {3}
-            </td>
+      {/* Views */}
+      <td className="whitespace-nowrap px-3 py-[13px] text-right font-tn-mono text-[12.5px] text-tn-mute">
+        —
+      </td>
 
-            <td className="px-2 py-4 text-right font-medium text-orange-600">
-                {product.id ?? <span className="text-neutral-300">—</span>}
-            </td>
+      {/* Inq */}
+      <td className="whitespace-nowrap px-3 py-[13px] text-right font-tn-mono text-[12.5px] text-tn-mute">
+        —
+      </td>
 
-            <td className="py-4 pl-2 pr-5">
-                <div className="flex products-center justify-end gap-2">
-                    {product.confirmation_status === "stale" ? (
-                        <button className="flex items-center gap-1.5 rounded-full bg-orange-600 px-4 py-2 text-xs font-medium text-white hover:bg-orange-700">
-                            <Icon name="check" className="h-3.5 w-3.5" />
-                            Confirm
-                        </button>
-                    ) : (
-                        <button className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 text-emerald-600 hover:bg-neutral-50">
-                            <Icon name="check" className="h-4 w-4" />
-                        </button>
-                    )}
-                    <button className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 text-neutral-500 hover:bg-neutral-50">
-                        <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                </div>
-            </td>
-        </tr>
-    )
+      {/* Actions */}
+      <td className="py-[13px] pl-2 pr-5 text-right">
+        <div className="flex items-center justify-end gap-2">
+          {product.is_available && fresh.tone !== "fresh" ? (
+            <Pill kind="solid" size="sm" icon="check">
+              Confirm
+            </Pill>
+          ) : (
+            <button
+              type="button"
+              aria-label="Listing confirmed"
+              className="size-8 rounded-full border border-tn-hair flex items-center justify-center text-tn-green bg-white cursor-pointer hover:border-tn-green"
+            >
+              <Icon name="check" size={15} />
+            </button>
+          )}
+
+          <Link
+            href={`/shop/dashboard/listings/edit?id=${product.id}`}
+            aria-label={`Edit ${product.name}`}
+            className="size-8 rounded-full border border-tn-hair flex items-center justify-center text-tn-mute hover:text-tn-ink hover:border-tn-ink transition-colors bg-white cursor-pointer"
+          >
+            <Pencil className="size-3.5" />
+          </Link>
+        </div>
+      </td>
+    </tr>
+  );
 }

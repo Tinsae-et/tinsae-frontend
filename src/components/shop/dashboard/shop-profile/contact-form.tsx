@@ -1,48 +1,70 @@
-import React from "react"
-import { Icon } from "@/components/tinsae/icon"
+"use client";
 
+import React, { useState } from "react";
+import { Pill } from "@/components/tinsae/pill";
 
 export default function ContactForm() {
-    return (
-        <form className="border border-gray-200 rounded-2xl bg-white overflow-hidden">
-            <div className="p-4 border-b border-gray-300">
-                <h2 className="font-bold">Contact</h2>
-                <p className="text-gray-500 text-sm">Buyers reach you through these --keep them current.</p>
-            </div>
-            <div className="p-4 border border-gray-100">
-                <div>
-                    <div className="mt-5 grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="mb-2 block text-sm font-bold text-gray-700">
-                                Phone
-                            </label>
-                            <input
-                                type="text"
-                                placeholder="+251 12 345 6789"
-                                className="w-full rounded-xl border border-neutral-200 px-3.5 py-2.5 text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-300"
-                            />
-                        </div>
-                        <div>
-                            <label className="mb-2 block text-sm font-bold text-neutral-700">
-                                Email
-                            </label>
-                            <input
-                                type="email"
-                                placeholder="e.g. youremail@gmail.com"
-                                className="w-full rounded-xl border border-neutral-200 px-3.5 py-2.5 text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-300"
-                            />
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end">
-                <div className="">
-                    <button className="flex items-center bg-red-600 px-3 py-1 rounded-full shadow-red-200 shadow-lg text-white font-bold">
-                        <Icon name="check" />
-                        Save Changes
-                    </button>
-                </div>
-            </div>
-        </form>
-    )
+  const [phone, setPhone] = useState<string>("+251 91 142 5006");
+  const [email, setEmail] = useState<string>("sales@almeda.et");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // TODO: Save contact mutation
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="border border-tn-hair rounded-[18px] bg-white overflow-hidden"
+    >
+      {/* Header */}
+      <div className="px-[22px] pt-[18px] pb-3.5 border-b border-tn-hair">
+        <h2 className="text-[15.5px] font-extrabold text-tn-ink">Contact</h2>
+        <p className="text-[12.5px] leading-[1.45] text-tn-mute mt-0.5">
+          Buyers reach you through these — keep them current.
+        </p>
+      </div>
+
+      {/* Body */}
+      <div className="px-[22px] py-5">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className="text-[12.5px] font-bold text-tn-ink2 block mb-1.5">
+              Phone
+            </label>
+            <input
+              type="text"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="e.g. +251 91 142 5006"
+              className="font-tn-mono h-12 w-full rounded-xl border-[1.5px] border-tn-hair bg-white px-3.5 text-[14.5px] text-tn-ink placeholder:text-tn-mute focus:outline-none focus:border-tn-ink"
+            />
+            <p className="text-[11.5px] text-tn-mute mt-1.5">
+              Shown only after a buyer taps &ldquo;reveal&rdquo;.
+            </p>
+          </div>
+
+          <div>
+            <label className="text-[12.5px] font-bold text-tn-ink2 block mb-1.5">
+              Public email (optional)
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="e.g. sales@almeda.et"
+              className="h-12 w-full rounded-xl border-[1.5px] border-tn-hair bg-white px-3.5 text-[14.5px] text-tn-ink placeholder:text-tn-mute focus:outline-none focus:border-tn-ink"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="px-[22px] py-3.5 border-t border-tn-hair bg-tn-paper flex justify-end items-center gap-3">
+        <Pill kind="solid" size="md" icon="check" type="submit">
+          Save changes
+        </Pill>
+      </div>
+    </form>
+  );
 }
