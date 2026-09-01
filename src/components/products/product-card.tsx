@@ -9,6 +9,7 @@ import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placehold
 import { formatETB, freshness, type FreshnessTone } from "@/lib/format";
 import type { Product } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useCompare } from "@/hooks/use-compare";
 
 // Matches the design's search-result card (design_handoff_search): radius 18,
 // "In stock" (check) / "Aging" status tag, heart save button, "From ETB" price,
@@ -39,6 +40,9 @@ function ProductCardInner({
   saved: boolean;
   onSave: () => void;
 }) {
+  const { isInCompare, toggleCompare } = useCompare();
+  const inCompare = isInCompare(product.slug);
+
   const fresh = freshness(product.last_confirmed_at, product.confirmation_status);
   const tone = fresh.tone;
   const image = product.images?.[0]?.url || null;
@@ -77,19 +81,44 @@ function ProductCardInner({
           {fresh.badge}
         </span>
 
-        <button
-          type="button"
-          aria-pressed={saved}
-          aria-label={saved ? "Unsave" : "Save"}
-          onClick={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            onSave();
-          }}
-          className="bg-white/95 text-tn-ink2 absolute top-3 right-3 z-10 inline-flex size-8 items-center justify-center rounded-[10px] shadow-[0_2px_8px_rgba(11,11,11,0.06)] transition-colors"
-        >
-          <Icon name="heart" size={15} className={saved ? "text-tn-red" : ""} />
-        </button>
+        {/* Top-right action buttons */}
+        <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
+          {/* Add to compare toggle */}
+          <button
+            type="button"
+            aria-pressed={inCompare}
+            aria-label={inCompare ? "Remove from compare" : "Add to compare"}
+            title={inCompare ? "In compare (click to remove)" : "Add to compare"}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              toggleCompare(product.slug, product.title);
+            }}
+            className={cn(
+              "inline-flex size-8 items-center justify-center rounded-[10px] shadow-[0_2px_8px_rgba(11,11,11,0.06)] transition-all",
+              inCompare
+                ? "bg-tn-ink text-white"
+                : "bg-white/95 text-tn-ink2 hover:bg-white hover:text-tn-ink",
+            )}
+          >
+            <Icon name="sliders" size={14} />
+          </button>
+
+          {/* Wishlist toggle */}
+          <button
+            type="button"
+            aria-pressed={saved}
+            aria-label={saved ? "Unsave" : "Save"}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              onSave();
+            }}
+            className="bg-white/95 text-tn-ink2 hover:bg-white hover:text-tn-ink inline-flex size-8 items-center justify-center rounded-[10px] shadow-[0_2px_8px_rgba(11,11,11,0.06)] transition-colors"
+          >
+            <Icon name="heart" size={15} className={saved ? "text-tn-red" : ""} />
+          </button>
+        </div>
       </div>
 
       <div className="px-[18px] pt-4 pb-[18px]">
@@ -133,6 +162,9 @@ export function ProductCard({ product }: { product: Product }) {
 
 // ── list view row ──────────────────────────────────────────
 export function ProductRow({ product }: { product: Product }) {
+  const { isInCompare, toggleCompare } = useCompare();
+  const inCompare = isInCompare(product.slug);
+
   const [saved, setSaved] = useState(false);
   const fresh = freshness(product.last_confirmed_at, product.confirmation_status);
   const tone = fresh.tone;
@@ -153,19 +185,41 @@ export function ProductRow({ product }: { product: Product }) {
         ) : (
           <ProdPlaceholder kind={kindForSlug(product.category?.slug)} />
         )}
-        <button
-          type="button"
-          aria-pressed={saved}
-          aria-label={saved ? "Unsave" : "Save"}
-          onClick={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            setSaved((s) => !s);
-          }}
-          className="bg-white/95 text-tn-ink2 absolute top-1.5 right-1.5 z-10 inline-flex size-7 items-center justify-center rounded-lg shadow-[0_2px_8px_rgba(11,11,11,0.06)]"
-        >
-          <Icon name="heart" size={14} className={saved ? "text-tn-red" : ""} />
-        </button>
+        <div className="absolute top-1.5 right-1.5 z-10 flex items-center gap-1">
+          <button
+            type="button"
+            aria-pressed={inCompare}
+            aria-label={inCompare ? "Remove from compare" : "Add to compare"}
+            title={inCompare ? "In compare" : "Add to compare"}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              toggleCompare(product.slug, product.title);
+            }}
+            className={cn(
+              "inline-flex size-7 items-center justify-center rounded-lg shadow-[0_2px_8px_rgba(11,11,11,0.06)] transition-all",
+              inCompare
+                ? "bg-tn-ink text-white"
+                : "bg-white/95 text-tn-ink2 hover:bg-white",
+            )}
+          >
+            <Icon name="sliders" size={13} />
+          </button>
+
+          <button
+            type="button"
+            aria-pressed={saved}
+            aria-label={saved ? "Unsave" : "Save"}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              setSaved((s) => !s);
+            }}
+            className="bg-white/95 text-tn-ink2 hover:bg-white absolute top-1.5 right-1.5 z-10 inline-flex size-7 items-center justify-center rounded-lg shadow-[0_2px_8px_rgba(11,11,11,0.06)]"
+          >
+            <Icon name="heart" size={14} className={saved ? "text-tn-red" : ""} />
+          </button>
+        </div>
       </div>
 
       <div className="min-w-0 flex-1">

@@ -8,6 +8,7 @@ import type { Product } from "@/lib/types";
 import { kindForSlug } from "@/components/tinsae/prod-placeholder";
 import { ProductGallery } from "@/components/products/product-gallery";
 import { ProductCard } from "@/components/products/product-card";
+import { ProductDetailActions } from "@/components/products/product-detail-actions";
 import { Pill } from "@/components/tinsae/pill";
 import { Icon } from "@/components/tinsae/icon";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
@@ -263,14 +264,7 @@ function ShopComparison({ product, now }: { product: Product; now: number }) {
                 across <b>{product.shop_verified ? "1 verified shop" : "1 shop"}</b>
               </p>
             </div>
-            <div className="flex flex-col gap-2.5">
-              <Pill kind="solid" size="lg" icon="tg">
-                Contact best shop
-              </Pill>
-              <Pill kind="outline" size="md" icon="heart">
-                Save to wishlist
-              </Pill>
-            </div>
+            <ProductDetailActions slug={product.slug} title={product.title} />
           </div>
 
           {/* freshness */}
