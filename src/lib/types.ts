@@ -66,3 +66,21 @@ export type Shop = {
   city: string;
   is_verified: boolean;
 };
+
+export type ShopProduct = {
+  id: number;
+  name: string;
+  brand: string;
+  description: string;
+  price: string;
+  currency: string;
+  shop: number;
+  category: string;
+  condition: string;
+  is_available: boolean;
+  confirmation_status?: "fresh" | "stale" | null;
+  last_confirmed_at: string | null;
+  freshness: string;
+  slug: string;
+  specs: Record<string, unknown>;
+};
