@@ -1,13 +1,26 @@
-// Fake-but-shaped JWTs for the mock driver.
+// Token lifetimes, and fake-but-shaped JWTs for the mock driver.
 //
-// Real header.payload.signature strings with a real `exp`, so everything
-// downstream (cookie max-age, the middleware refresh, the 401 retry) exercises
-// the same code paths it will against simplejwt. The signature is decorative —
-// nothing verifies it, and nothing should: this module never runs in http mode.
+// Two audiences, which is worth knowing before editing either half. The
+// *signing* half is mock-only: real header.payload.signature strings with a
+// real `exp`, so everything downstream exercises the same code paths it will
+// against simplejwt. Its signature is decorative — nothing verifies it, and
+// nothing should.
+//
+// The *constants* below are not mock-only. session.ts reads them for every
+// cookie it writes, in http mode as much as mock, so they are the browser's
+// copy of the backend's token lifetimes and have to track them.
 
-/** simplejwt defaults, because config/settings/base.py sets no SIMPLE_JWT block. */
-export const ACCESS_TTL_SECONDS = 5 * 60;
-export const REFRESH_TTL_SECONDS = 24 * 60 * 60;
+/**
+ * Mirrors the backend's SIMPLE_JWT block (config/settings/base.py).
+ *
+ * These are cookie max-ages as well as mock-token lifetimes, so they have to
+ * track the real settings: a cookie that expires early logs a merchant out
+ * while their token is still perfectly valid. They were 5 minutes and 24 hours
+ * — simplejwt's library defaults, from back when the backend set no SIMPLE_JWT
+ * block — which signed merchants out once a day against a 14-day token.
+ */
+export const ACCESS_TTL_SECONDS = 15 * 60;
+export const REFRESH_TTL_SECONDS = 14 * 24 * 60 * 60;
 
 type Payload = {
   token_type: "access" | "refresh";

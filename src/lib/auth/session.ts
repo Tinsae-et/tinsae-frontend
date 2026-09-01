@@ -58,10 +58,24 @@ export function setAccessCookie(res: NextResponse, access: string): void {
   res.cookies.set(ACCESS_COOKIE, access, options(ACCESS_TTL_SECONDS));
 }
 
+/**
+ * Stores a rotated refresh token.
+ *
+ * Separate from `setSessionCookies` because a refresh returns a new refresh
+ * token but no new *session* — the user is the same and there is nothing else
+ * to write. Skipping this is what silently ends a session: the backend has
+ * already blacklisted the token still sitting in the browser.
+ */
+export function setRefreshCookie(res: NextResponse, refresh: string): void {
+  res.cookies.set(REFRESH_COOKIE, refresh, options(REFRESH_TTL_SECONDS));
+}
+
 export function clearSessionCookies(res: NextResponse): void {
-  // Note: simplejwt's token_blacklist app is not installed on the backend, so
-  // this ends the *client's* session only. The refresh token stays valid for
-  // its remaining lifetime — worth a backend ticket before launch.
+  // Dropping the cookies is only half of a logout: the refresh token stays
+  // usable until it is blacklisted server-side. `/api/auth/logout` calls the
+  // backend's POST /auth/logout/ to do that. This function is also used on
+  // paths where there is nobody left to ask (an expired or rejected refresh),
+  // which is why it stays a pure cookie operation.
   res.cookies.set(ACCESS_COOKIE, "", options(0));
   res.cookies.set(REFRESH_COOKIE, "", options(0));
 }

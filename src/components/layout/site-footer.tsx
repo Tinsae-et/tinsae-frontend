@@ -26,8 +26,8 @@ export function SiteFooter() {
             </Link>
           </div>
           <p className="text-tn-mute max-w-xs text-sm leading-relaxed">
-            The verified electronics marketplace for Addis Ababa. Compare, confirm, and buy in
-            person.
+            The verified electronics marketplace for Addis Ababa. Compare,
+            confirm, and buy in person.
           </p>
         </div>
 
@@ -40,7 +40,39 @@ export function SiteFooter() {
               {items.map((item) => (
                 <li key={item}>
                   <Link
-                    href={item === "Browse all" ? "/products" : item === "How it works" ? "/how-it-works" : "#"}
+                    href={
+                      item === "Browse all"
+                        ? "/products"
+                        : item === "How it works"
+                          ? "/how-it-works"
+                          : item === "List your shop"
+                            ? "/list-your-shop"
+                            : item === "Pricing"
+                              ? "/pricing"
+                              : item === "Dashboard"
+                                ? "/dashboard"
+                                : item === "Telegram bot"
+                                  ? "/telegram-bot"
+                                  : item === "About"
+                                    ? "/about"
+                                    : item === "Press"
+                                      ? "/press"
+                                      : item === "Careers"
+                                        ? "/careers"
+                                        : item === "Contact"
+                                          ? "/contact"
+                                          : item === "Terms"
+                                            ? "/terms"
+                                            : item === "Privacy"
+                                              ? "/privacy"
+                                              : item === "Returns"
+                                                ? "/returns"
+                                                : item === "Verified shops"
+                                                  ? "/verified-shops"
+                                                  : item === "Trust & safety"
+                                                    ? "/trust-and-safety"
+                                                    : "#"
+                    }
                     className="text-tn-ink2 hover:text-tn-red text-sm transition-colors"
                   >
                     {item}

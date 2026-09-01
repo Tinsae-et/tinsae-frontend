@@ -15,6 +15,7 @@ import {
   type OtpRequest,
   type OtpRequestResult,
   type OtpVerify,
+  type RefreshResult,
   type Role,
   type Session,
 } from "./types";
@@ -29,12 +30,24 @@ const API_URL =
 
 const AUTH = `${API_URL}/api/v1/auth`;
 
+/**
+ * Ceiling on a single call to Django.
+ *
+ * Node's fetch does eventually give up on its own, but on undici's defaults —
+ * minutes, and not ours to rely on. `refresh` in particular is held under a
+ * per-token lock, so a request that hangs holds every other caller for that
+ * token behind it (see ./refresh-lock). Failing at ten seconds turns a stalled
+ * session into one retryable error.
+ */
+const REQUEST_TIMEOUT_MS = 10_000;
+
 async function post<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${AUTH}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
     cache: "no-store",
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
   return unwrap<T>(res);
 }
@@ -45,6 +58,28 @@ async function unwrap<T>(res: Response): Promise<T> {
   // DRF answers with JSON for every error it raises itself; a proxy or a 500
   // page may not, so fall back to a synthetic detail rather than throwing a
   // parse error over the top of the real status.
+  let body: Record<string, unknown>;
+  try {
+    body = (await res.json()) as Record<string, unknown>;
+  } catch {
+    body = { detail: `Request failed with ${res.status}` };
+  }
+  throw new AuthApiError(res.status, body);
+}
+
+/**
+ * For endpoints that answer without a body.
+ *
+ * `res.json()` on an empty response throws a parse error over the top of a
+ * perfectly successful call. Logout answers 205 RESET_CONTENT (users/views.py),
+ * which is the only bodiless response this driver makes today.
+ *
+ * Branching on `res.ok` rather than on 205 is what keeps that true as more
+ * arrive: DRF's other bodiless answer is 204 on DELETE, and a guard written
+ * against one of the two numbers throws on the other.
+ */
+async function unwrapEmpty(res: Response): Promise<void> {
+  if (res.ok) return;
   let body: Record<string, unknown>;
   try {
     body = (await res.json()) as Record<string, unknown>;
@@ -78,14 +113,34 @@ export const httpDriver: AuthDriver = {
     return post<Session>("/telegram/", { ...payload, mode, role });
   },
 
-  refresh(refreshToken: string): Promise<{ access: string }> {
-    return post<{ access: string }>("/token/refresh/", { refresh: refreshToken });
+  refresh(refreshToken: string): Promise<RefreshResult> {
+    // The response carries a *new* refresh token as well as the access token:
+    // ROTATE_REFRESH_TOKENS is on, and BLACKLIST_AFTER_ROTATION blacklists the
+    // one we just spent. Whoever calls this has to store both.
+    return post<RefreshResult>("/token/refresh/", { refresh: refreshToken });
+  },
+
+  async logout(accessToken: string, refreshToken: string): Promise<void> {
+    // Authenticated *and* carrying the token to revoke: the view checks that
+    // the refresh token belongs to the caller before blacklisting it.
+    const res = await fetch(`${AUTH}/logout/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ refresh: refreshToken }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
+    return unwrapEmpty(res);
   },
 
   async me(accessToken: string): Promise<AuthUser> {
     const res = await fetch(`${AUTH}/me/`, {
       headers: { Authorization: `Bearer ${accessToken}` },
       cache: "no-store",
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
     return unwrap<AuthUser>(res);
   },
@@ -99,6 +154,7 @@ export const httpDriver: AuthDriver = {
       },
       body: JSON.stringify(input),
       cache: "no-store",
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
     return unwrap(res);
   },
