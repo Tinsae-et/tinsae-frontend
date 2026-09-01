@@ -4,7 +4,7 @@ import Link from "next/link";
 const COLUMNS: [string, string[]][] = [
   ["Buy", ["How it works", "Verified shops", "Trust & safety", "Browse all"]],
   ["Sell", ["List your shop", "Pricing", "Dashboard", "Telegram bot"]],
-  ["Company", ["About", "Press", "Careers", "Contact"]],
+  ["Company", ["About", "Press", "Careers", "Contact", "Help"]],
   ["Legal", ["Terms", "Privacy", "Returns"]],
 ];
 
@@ -40,7 +40,7 @@ export function SiteFooter() {
               {items.map((item) => (
                 <li key={item}>
                   <Link
-                    href={item === "Browse all" ? "/products" : item === "How it works" ? "/how-it-works" : "#"}
+                    href={item === "Browse all" ? "/products" : item === "How it works" ? "/how-it-works" : item === "Help" ? "/help" :"#"}
                     className="text-tn-ink2 hover:text-tn-red text-sm transition-colors"
                   >
                     {item}
