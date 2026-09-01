@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getProducts, type ProductQuery } from "@/lib/api";
-import type { Product } from "@/lib/types";
+import { getProducts, getShopProducts, ShopProductQuery, type ProductQuery } from "@/lib/api";
+import type { Product, ShopProduct } from "@/lib/types";
 import { PRODUCTS_PAGE_SIZE } from "@/components/products/product-grid";
 
 export type InitialProducts = { products: Product[]; total: number } | null;
@@ -54,4 +54,39 @@ export function useProducts(query: ProductQuery, initial: InitialProducts) {
   const retry = useCallback(() => fetchPage(), [fetchPage]);
 
   return { products, total, loading, error, page, retry };
+}
+
+
+export function useShopProducts(query: ShopProductQuery, slug: string, access: string | undefined){
+  const [products, setProducts] = useState<ShopProduct[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const queryKey = JSON.stringify(query);
+  const loadedKey = useRef(queryKey);
+
+  const fetchPage = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getShopProducts(slug, query, access);
+      setTotal(data.count);
+      setProducts(data.results);
+    } catch {
+      setError("Couldn't load listings. Check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, [query, slug, access]);
+
+  // Refetch whenever the query changes.
+  useEffect(() => {
+    if (loadedKey.current === queryKey) return;
+    loadedKey.current = queryKey;
+    fetchPage();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryKey]);
+
+  return { products, total, loading, error };  
 }

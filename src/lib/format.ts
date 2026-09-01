@@ -10,7 +10,19 @@ export function formatETB(price: string | number): string {
   return `ETB ${Math.round(n).toLocaleString("en-US")}`;
 }
 
-export type FreshnessTone = "fresh" | "aging" | "stale" | "unknown";
+/**
+ * The three states the backend actually publishes —
+ * `catalog.models.ConfirmationStatus`, one for one.
+ *
+ * There used to be a fourth, "aging", produced by bucketing the age of
+ * `last_confirmed_at` against thresholds declared here. That re-implemented
+ * catalog/freshness.py in TypeScript against a different clock, which is the
+ * duplication the backend removed `freshness` from the buyer payload to end:
+ * one payload could call the same product fresh here and expired there.
+ *
+ * Formatting an age is still ours. Deciding what an age *means* is not.
+ */
+export type FreshnessTone = "fresh" | "stale" | "unconfirmed";
 
 export type Freshness = {
   tone: FreshnessTone;
@@ -26,80 +38,68 @@ export type Freshness = {
 const UNCONFIRMED = "Not yet confirmed";
 
 /**
- * The design only draws two states (In stock / Aging). "Stale" and the
- * never-confirmed case are ours: the ticket asks for stale to be flagged
- * honestly rather than folded into "Aging".
+ * Stale and unconfirmed read as quiet and factual rather than alarming — the
+ * ticket asks for stale to be flagged honestly, not dressed up as a warning.
+ * Only "fresh" earns the green and the check.
  */
 const BADGE: Record<FreshnessTone, string> = {
   fresh: "In stock",
-  aging: "Aging",
   stale: "Stale",
-  // Deliberately shorter than the `confirmed` line: this one sits in the
-  // corner chip on the card image, which collides with the save button at
-  // two-column mobile widths. The full wording still shows in the footer.
-  unknown: "Unconfirmed",
+  // Deliberately short: this sits in the corner chip on the card image, which
+  // collides with the save button at two-column mobile widths. The full wording
+  // still shows in the footer.
+  unconfirmed: "Unconfirmed",
 };
 
 /**
- * Freshness thresholds, in hours.
+ * What to render for one listing's confirmation state.
  *
- * Deliberately pinned to the backend so "stale" means one thing system-wide:
- * AGING_HOURS matches settings.PRODUCT_STALENESS_DAYS (default 30), which is
- * the line `sweep_freshness` uses to flip confirmation_status to "stale" and
- * the line ?freshness=1 filters on. Cross the same line here and the badge, the
- * filter and the Telegram prompts finally agree.
+ * Takes both fields because neither answers alone. `confirmation_status`
+ * defaults to "fresh" on a brand-new row, so a listing nobody has ever
+ * confirmed arrives labelled fresh with a null timestamp; the timestamp is what
+ * distinguishes "confirmed, and recently" from "never asked".
  *
- * The design originally used 6h/12h, but that graded a normal once-a-day
- * reconfirmation cycle as stale — every listing in dev sat at ~20h and rendered
- * "Stale" across the board.
- *
- * FRESH_HOURS carves the last week before that cutoff into an "Aging" warning
- * band; it has no backend counterpart (the backend is binary) and is display
- * nuance only. Both are expected to tighten as the confirmation cadence
- * improves — keep them in step with PRODUCT_STALENESS_DAYS when they do.
+ * An absent or unrecognised status falls to `unconfirmed` rather than `fresh`.
+ * The serializer always sends the field, so this is a defensive branch — but on
+ * a product whose whole promise is that the green badge means something,
+ * guessing green is the one wrong answer that costs a buyer's trust.
  */
-export const FRESH_HOURS = 24 * 23;
-export const AGING_HOURS = 24 * 30;
-
-/**
- * Grades a confirmation timestamp. Adds the "unknown" case the design has no
- * state for — `last_confirmed_at` is nullable.
- */
-export function freshness(lastConfirmedAt: string | null, now = Date.now()): Freshness {
+export function freshness(
+  lastConfirmedAt: string | null,
+  confirmationStatus?: "fresh" | "stale" | "unconfirmed" | null,
+  now = Date.now(),
+): Freshness {
   const then = lastConfirmedAt ? new Date(lastConfirmedAt).getTime() : Number.NaN;
+
   if (!Number.isFinite(then)) {
-    return { tone: "unknown", badge: BADGE.unknown, age: UNCONFIRMED, confirmed: UNCONFIRMED };
+    return {
+      tone: "unconfirmed",
+      badge: BADGE.unconfirmed,
+      age: UNCONFIRMED,
+      confirmed: UNCONFIRMED,
+    };
   }
+
+  const tone: FreshnessTone =
+    confirmationStatus === "fresh"
+      ? "fresh"
+      : confirmationStatus === "stale"
+        ? "stale"
+        : "unconfirmed";
 
   const hours = Math.max(0, (now - then) / 36e5);
-  const tone: FreshnessTone =
-    hours <= FRESH_HOURS ? "fresh" : hours <= AGING_HOURS ? "aging" : "stale";
-  const age = relativeAge(hours);
-
-  return { tone, badge: BADGE[tone], age, confirmed: `Confirmed ${age.toLowerCase()}` };
+  return {
+    tone,
+    badge: BADGE[tone],
+    age: relativeAge(hours),
+    confirmed: `Confirmed ${spelledAge(hours)}`,
+  };
 }
 
 /**
- * The freshness to actually render. `last_confirmed_at` is the source of truth,
- * because the backend's `confirmation_status` uses that 30-day window — trusting
- * it would paint a week-old listing green right next to a footer reading
- * "7d ago". We only let the backend make things *worse*: an explicit "stale"
- * downgrades a listing the clock still considers fresh (the shop may have
- * reported it sold out since). Unrecognised values are ignored.
- *
- * Returns the whole object rather than a bare tone so the badge and the dot
- * can never be read from different sources and disagree.
+ * Compact age for the card's corner chip, which is about eight characters wide
+ * before it collides with the save button.
  */
-export function resolveFreshness(
-  f: Freshness,
-  confirmationStatus?: "fresh" | "stale" | null,
-): Freshness {
-  if (confirmationStatus === "stale" && (f.tone === "fresh" || f.tone === "aging")) {
-    return { ...f, tone: "stale", badge: BADGE.stale };
-  }
-  return f;
-}
-
 function relativeAge(hours: number): string {
   if (hours < 1) return "Just now";
   if (hours < 24) return `${Math.floor(hours)}h ago`;
@@ -107,4 +107,24 @@ function relativeAge(hours: number): string {
   if (days < 30) return `${days}d ago`;
   const months = Math.floor(days / 30);
   return months < 12 ? `${months}mo ago` : `${Math.floor(months / 12)}y ago`;
+}
+
+/**
+ * The same age spelled out, for the confirmation line, which has a row to
+ * itself — "Confirmed 2 days ago" per the handoff, not "Confirmed 2d ago".
+ * Abbreviations are fine on a chip and read as clutter in a sentence.
+ */
+function spelledAge(hours: number): string {
+  if (hours < 1) return "moments ago";
+  if (hours < 24) return "today";
+
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "yesterday";
+  if (days < 30) return `${days} days ago`;
+
+  const months = Math.floor(days / 30);
+  if (months < 12) return months === 1 ? "last month" : `${months} months ago`;
+
+  const years = Math.floor(months / 12);
+  return years === 1 ? "last year" : `${years} years ago`;
 }

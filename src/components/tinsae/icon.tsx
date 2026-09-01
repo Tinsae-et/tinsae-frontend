@@ -35,6 +35,9 @@ export type IconName =
   | "sliders"
   | "car"
   | "msg"
+  | "tag"
+  | "home"
+  | "user"
   | "back";
 
 type IconProps = {
@@ -276,6 +279,13 @@ export function Icon({ name, size = 18, className, strokeWidth = 1.6 }: IconProp
           <circle cx="16.5" cy="16.5" r="1.6" />
         </svg>
       );
+    case "tag":
+      return (
+        <svg {...stroke}>
+          <path d="M3 12.5V4a1 1 0 011-1h8.5L21 11.5 12.5 20z" />
+          <circle cx="7.5" cy="7.5" r="1.4" />
+        </svg>
+      );
     case "back":
       return (
         <svg {...stroke}>
@@ -286,6 +296,19 @@ export function Icon({ name, size = 18, className, strokeWidth = 1.6 }: IconProp
       return (
         <svg {...stroke}>
           <path d="M21 12c0 4.4-4 8-9 8-1.2 0-2.4-.2-3.4-.6L4 20l1-3.2C3.8 15.4 3 13.8 3 12c0-4.4 4-8 9-8s9 3.6 9 8z" />
+        </svg>
+      );
+    case "home":
+      return (
+        <svg {...stroke}>
+          <path d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-6h-6v6H4a1 1 0 01-1-1v-9.5z" />
+        </svg>
+      );
+    case "user":
+      return (
+        <svg {...stroke}>
+          <circle cx="12" cy="7" r="4" />
+          <path d="M5.5 21a6.5 6.5 0 0113 0" />
         </svg>
       );
   }

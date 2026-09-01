@@ -17,9 +17,8 @@ const TONES = ["#1a1a1a", "#2a2520", "#0f1418", "#1a1a1a"];
 // Same restraint as the card badge: only "fresh" gets green and a check.
 const TONE_BADGE: Record<FreshnessTone, string> = {
   fresh: "text-[#157049]",
-  aging: "text-[#8a5512]",
   stale: "text-tn-ink2",
-  unknown: "text-tn-mute",
+  unconfirmed: "text-tn-mute",
 };
 
 export function ProductGallery({

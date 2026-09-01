@@ -1,7 +1,5 @@
 import "@/app/globals.css";
 
-import { fontVariables } from "@/lib/fonts";
-
 /**
  * Root layout for the authenticated shop dashboard.
  *
@@ -10,9 +8,5 @@ import { fontVariables } from "@/lib/fonts";
  * "My Products", the confirm flow — belongs to the dashboard ticket.
  */
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en" className={`${fontVariables} h-full antialiased`}>
-      <body className="font-tn-sans text-tn-ink min-h-full bg-tn-paper">{children}</body>
-    </html>
-  );
+  return <div className="min-h-full bg-tn-paper">{children}</div>;
 }

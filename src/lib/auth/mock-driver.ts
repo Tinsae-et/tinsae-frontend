@@ -292,9 +292,19 @@ export const mockDriver: AuthDriver = {
         code: "token_not_valid",
       });
     }
-    // No rotation: simplejwt's ROTATE_REFRESH_TOKENS defaults to False, so the
-    // refresh token the client holds stays valid for its full lifetime.
+    // No rotation here, deliberately, even though the real backend does rotate
+    // (ROTATE_REFRESH_TOKENS + BLACKLIST_AFTER_ROTATION). Rotating would mean
+    // keeping a blacklist in the mock's globalThis store to be faithful, and
+    // the callers already handle an absent `refresh` by keeping the cookie they
+    // have. Omitting the field is the honest signal for "nothing to replace".
     return { access: signMockToken(payload.user_id, "access", ACCESS_TTL_SECONDS) };
+  },
+
+  async logout(): Promise<void> {
+    // Nothing to blacklist: the mock has no token store, and `readMockToken`
+    // trusts any well-formed unexpired token. The route handler drops the
+    // cookies either way, which is the part a developer is exercising here.
+    await latency();
   },
 
   async me(accessToken: string): Promise<AuthUser> {
@@ -323,7 +333,7 @@ export const mockDriver: AuthDriver = {
       phone: input.phone || user.phone,
       is_verified: false,
     };
-    user.shops = [shop];
+    user.shops = [...user.shops, shop];
     return shop;
   },
 };

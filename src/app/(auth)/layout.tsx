@@ -1,7 +1,5 @@
 import "@/app/globals.css";
 
-import { fontVariables } from "@/lib/fonts";
-
 /**
  * Root layout for the auth gateway.
  *
@@ -11,9 +9,5 @@ import { fontVariables } from "@/lib/fonts";
  * dead end apart from "Back to browsing".
  */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en" className={`${fontVariables} h-full antialiased`}>
-      <body className="font-tn-sans text-tn-ink min-h-full bg-white">{children}</body>
-    </html>
-  );
+  return <div className="min-h-full bg-white">{children}</div>;
 }

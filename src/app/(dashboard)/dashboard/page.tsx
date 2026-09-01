@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { authDriver, usingMockAuth } from "@/lib/auth/driver";
+import { hasShop } from "@/lib/auth/roles";
 import { readSession } from "@/lib/auth/session";
 import type { AuthUser } from "@/lib/auth/types";
 
@@ -26,9 +27,10 @@ export default async function DashboardPage() {
     redirect("/signin?next=/dashboard");
   }
 
-  if (user.role === "owner" && (!user.shops || user.shops.length === 0)) {
-    redirect("/shop/onboarding");
-  }
+  // No shop means there is nothing on this page to show, so send them to the
+  // funnel that makes one. `user.role` is not consulted here — the backend does
+  // not send it, so asking would only ever route them nowhere (lib/auth/roles).
+  if (!hasShop(user)) redirect("/shop/onboarding");
 
   const shop = user.shops[0];
 

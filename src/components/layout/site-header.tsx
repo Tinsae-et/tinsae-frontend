@@ -4,8 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 import { Icon, type IconName } from "@/components/tinsae/icon";
 import { NAV_CATEGORIES } from "@/lib/nav-categories";
+import { useCompare } from "@/hooks/use-compare";
 import { cn } from "@/lib/utils";
 
 function Logo() {
@@ -48,7 +50,11 @@ function SearchField({
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        router.push(q.trim() ? `/products?q=${encodeURIComponent(q.trim())}` : "/products");
+        router.push(
+          q.trim()
+            ? `/products?q=${encodeURIComponent(q.trim())}`
+            : "/products",
+        );
         onSubmitted?.();
       }}
       role="search"
@@ -87,7 +93,10 @@ function SearchField({
 function BrowseMenu() {
   const [open, setOpen] = useState(false);
   return (
-    <div className="relative hidden lg:block" onMouseLeave={() => setOpen(false)}>
+    <div
+      className="relative hidden lg:block"
+      onMouseLeave={() => setOpen(false)}
+    >
       <button
         type="button"
         onMouseEnter={() => setOpen(true)}
@@ -109,50 +118,50 @@ function BrowseMenu() {
             role="menu"
             className="w-[520px] rounded-[18px] border border-tn-hair bg-white p-4 shadow-[0_26px_64px_rgba(11,11,11,0.18)]"
           >
-          <p className="text-tn-mute mb-3 ml-1.5 text-[10.5px] font-extrabold tracking-[0.09em] uppercase">
-            Shop by category
-          </p>
-          <div className="grid grid-cols-2 gap-1.5">
-            {NAV_CATEGORIES.map((c) => (
-              <Link
-                key={c.slug}
-                href={`/products?category=${c.slug}`}
-                onClick={() => setOpen(false)}
-                className="hover:bg-tn-paper flex items-center gap-3 rounded-xl px-3 py-2.5"
-              >
-                <span className="bg-tn-paper inline-flex size-10 shrink-0 items-center justify-center rounded-[11px]">
-                  <Icon name={c.icon} size={20} className="text-tn-ink" />
-                </span>
-                <span>
-                  <span className="text-tn-ink block text-sm font-extrabold tracking-tight">
-                    {c.label}
+            <p className="text-tn-mute mb-3 ml-1.5 text-[10.5px] font-extrabold tracking-[0.09em] uppercase">
+              Shop by category
+            </p>
+            <div className="grid grid-cols-2 gap-1.5">
+              {NAV_CATEGORIES.map((c) => (
+                <Link
+                  key={c.slug}
+                  href={`/products?category=${c.slug}`}
+                  onClick={() => setOpen(false)}
+                  className="hover:bg-tn-paper flex items-center gap-3 rounded-xl px-3 py-2.5"
+                >
+                  <span className="bg-tn-paper inline-flex size-10 shrink-0 items-center justify-center rounded-[11px]">
+                    <Icon name={c.icon} size={20} className="text-tn-ink" />
                   </span>
-                  <span className="font-tn-mono text-tn-mute mt-0.5 block text-[11.5px]">
-                    {c.count} listings
+                  <span>
+                    <span className="text-tn-ink block text-sm font-extrabold tracking-tight">
+                      {c.label}
+                    </span>
+                    <span className="font-tn-mono text-tn-mute mt-0.5 block text-[11.5px]">
+                      {c.count} listings
+                    </span>
                   </span>
-                </span>
-              </Link>
-            ))}
-          </div>
-          <div className="border-tn-hair2 mt-3 flex gap-2 border-t pt-3.5">
-            {(
-              [
-                ["building", "Shops"],
-                ["pin", "Map view"],
-                ["spec", "All categories"],
-              ] as [IconName, string][]
-            ).map(([icon, label]) => (
-              <Link
-                key={label}
-                href="/products"
-                onClick={() => setOpen(false)}
-                className="border-tn-hair text-tn-ink2 inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[10px] border text-[13px] font-bold"
-              >
-                <Icon name={icon} size={15} className="text-tn-red" />
-                {label}
-              </Link>
-            ))}
-          </div>
+                </Link>
+              ))}
+            </div>
+            <div className="border-tn-hair2 mt-3 flex gap-2 border-t pt-3.5">
+              {(
+                [
+                  ["building", "Shops"],
+                  ["pin", "Map view"],
+                  ["spec", "All categories"],
+                ] as [IconName, string][]
+              ).map(([icon, label]) => (
+                <Link
+                  key={label}
+                  href="/products"
+                  onClick={() => setOpen(false)}
+                  className="border-tn-hair text-tn-ink2 inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[10px] border text-[13px] font-bold"
+                >
+                  <Icon name={icon} size={15} className="text-tn-red" />
+                  {label}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -161,6 +170,7 @@ function BrowseMenu() {
 }
 
 export function SiteHeader() {
+  const { count } = useCompare();
   const [scrolled, setScrolled] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -202,19 +212,38 @@ export function SiteHeader() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-30 backdrop-blur-md transition-[background,border-color,box-shadow] duration-200",
+        "sticky top-0 transition-[background,border-color,box-shadow] duration-200",
+        drawerOpen ? "z-[10000]" : "z-30",
+        "lg:backdrop-blur-md",
         scrolled
           ? "border-tn-hair border-b bg-white/95 shadow-[0_6px_24px_rgba(11,11,11,0.05)]"
           : "border-b border-transparent bg-white/80",
       )}
     >
       {/* Desktop bar */}
-      <div className="mx-auto flex h-[72px] max-w-[1280px] items-center gap-[18px] px-7">
+      <div className="mx-auto hidden h-[72px] max-w-[1280px] items-center gap-[18px] px-7 lg:flex">
         <Logo />
         <BrowseMenu />
-        <SearchField className="hidden max-w-[560px] lg:block" inputRef={searchRef} />
+        <SearchField
+          className="hidden max-w-[560px] lg:block"
+          inputRef={searchRef}
+        />
 
         <div className="ml-auto flex shrink-0 items-center gap-2.5">
+          <Link
+            href="/compare"
+            aria-label="Compare products"
+            className="text-tn-ink2 hover:text-tn-ink relative inline-flex items-center gap-1.5 px-2 py-2 text-[14.5px] font-bold transition-colors"
+          >
+            <Icon name="sliders" size={17} />
+            <span>Compare</span>
+            {count > 0 && (
+              <span className="bg-tn-red text-white flex size-5 items-center justify-center rounded-full text-[10.5px] font-extrabold">
+                {count}
+              </span>
+            )}
+          </Link>
+
           <Link
             href="/signin"
             className="text-tn-ink2 hover:text-tn-ink px-1.5 py-2.5 text-[14.5px] font-bold transition-colors"
@@ -247,96 +276,119 @@ export function SiteHeader() {
       </div>
 
       {/* Mobile drawer */}
-      {drawerOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
-            onClick={() => setDrawerOpen(false)}
-            aria-hidden
-          />
-          <div className="animate-[tnRise_0.5s_ease_both] absolute inset-y-0 right-0 flex w-[min(360px,86vw)] flex-col bg-white shadow-[-20px_0_60px_rgba(11,11,11,0.2)]">
-            <div className="border-tn-hair flex h-16 items-center justify-between border-b px-5">
-              <Logo />
-              <button
-                type="button"
-                onClick={() => setDrawerOpen(false)}
-                aria-label="Close menu"
-                className="border-tn-hair text-tn-ink inline-flex size-[38px] items-center justify-center rounded-[10px] border bg-white"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
-                  <path d="M6 6l12 12M18 6L6 18" />
-                </svg>
-              </button>
-            </div>
+      {drawerOpen &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div className="fixed inset-0 isolate z-[10001] lg:hidden">
+            <div
+              className="absolute inset-0 z-[1] bg-black/40 backdrop-blur-[2px]"
+              onClick={() => setDrawerOpen(false)}
+              aria-hidden
+            />
+            <div className="animate-[tnRise_0.5s_ease_both] absolute inset-y-0 right-0 z-[2] flex w-[min(360px,86vw)] flex-col bg-white shadow-[-20px_0_60px_rgba(11,11,11,0.2)]">
+              <div className="border-tn-hair flex h-16 items-center justify-between border-b px-5">
+                {/* <Logo /> */}
+                <button
+                  type="button"
+                  onClick={() => setDrawerOpen(false)}
+                  aria-label="Close menu"
+                  className="border-tn-hair text-tn-ink inline-flex size-[38px] items-center justify-center rounded-[10px] border bg-white"
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    aria-hidden
+                  >
+                    <path d="M6 6l12 12M18 6L6 18" />
+                  </svg>
+                </button>
+              </div>
 
-            <div className="flex-1 overflow-y-auto p-5">
-              <SearchField autoFocus onSubmitted={() => setDrawerOpen(false)} />
-              <p className="text-tn-mute mt-6 mb-2 text-[10.5px] font-extrabold tracking-[0.09em] uppercase">
-                Categories
-              </p>
-              {NAV_CATEGORIES.map((c) => (
-                <Link
-                  key={c.slug}
-                  href={`/products?category=${c.slug}`}
-                  onClick={() => setDrawerOpen(false)}
-                  className="border-tn-hair2 text-tn-ink flex items-center gap-3 border-b py-3"
-                >
-                  <span className="bg-tn-paper inline-flex size-9 shrink-0 items-center justify-center rounded-[10px]">
-                    <Icon name={c.icon} size={18} className="text-tn-ink" />
-                  </span>
-                  <span className="flex-1 text-[15px] font-bold">{c.label}</span>
-                  <span className="font-tn-mono text-tn-mute text-xs">{c.count}</span>
-                </Link>
-              ))}
-              <p className="text-tn-mute mt-6 mb-2 text-[10.5px] font-extrabold tracking-[0.09em] uppercase">
-                More
-              </p>
-              {[
-                { label: "How it works", href: "/how-it-works" },
-                { label: "Verified shops", href: "/products?verified_only=1" },
-                { label: "Browse listings", href: "/products" },
-                { label: "For shop owners", href: "/signup" },
-              ].map(({ label, href }) => (
-                <Link
-                  key={label}
-                  href={href}
-                  onClick={() => setDrawerOpen(false)}
-                  className="border-tn-hair2 text-tn-ink2 block border-b py-3 text-[15px] font-semibold"
-                >
-                  {label}
-                </Link>
-              ))}
-            </div>
+              <div className="flex-1 overflow-y-auto p-5">
+                <SearchField
+                  autoFocus
+                  onSubmitted={() => setDrawerOpen(false)}
+                />
+                <p className="text-tn-mute mt-6 mb-2 text-[10.5px] font-extrabold tracking-[0.09em] uppercase">
+                  Categories
+                </p>
+                {NAV_CATEGORIES.map((c) => (
+                  <Link
+                    key={c.slug}
+                    href={`/products?category=${c.slug}`}
+                    onClick={() => setDrawerOpen(false)}
+                    className="border-tn-hair2 text-tn-ink flex items-center gap-3 border-b py-3"
+                  >
+                    <span className="bg-tn-paper inline-flex size-9 shrink-0 items-center justify-center rounded-[10px]">
+                      <Icon name={c.icon} size={18} className="text-tn-ink" />
+                    </span>
+                    <span className="flex-1 text-[15px] font-bold">
+                      {c.label}
+                    </span>
+                    <span className="font-tn-mono text-tn-mute text-xs">
+                      {c.count}
+                    </span>
+                  </Link>
+                ))}
+                <p className="text-tn-mute mt-6 mb-2 text-[10.5px] font-extrabold tracking-[0.09em] uppercase">
+                  More
+                </p>
+                {[
+                  { label: "Compare products", href: "/compare" },
+                  { label: "How it works", href: "/how-it-works" },
+                  {
+                    label: "Verified shops",
+                    href: "/products?verified_only=1",
+                  },
+                  { label: "Browse listings", href: "/products" },
+                  { label: "For shop owners", href: "/signup" },
+                ].map(({ label, href }) => (
+                  <Link
+                    key={label}
+                    href={href}
+                    onClick={() => setDrawerOpen(false)}
+                    className="border-tn-hair2 text-tn-ink2 block border-b py-3 text-[15px] font-semibold"
+                  >
+                    {label}
+                  </Link>
+                ))}
+              </div>
 
-            <div className="border-tn-hair flex flex-col gap-2.5 border-t px-5 py-4">
-              <Link
-                href="/products"
-                onClick={() => setDrawerOpen(false)}
-                className="bg-tn-red text-white inline-flex h-12 items-center justify-center gap-2 rounded-full text-[14.5px] font-bold shadow-[0_8px_22px_rgba(204,48,0,0.26)]"
-              >
-                Browse listings
-                <Icon name="arrow" size={16} />
-              </Link>
-              <div className="flex gap-2.5">
+              <div className="border-tn-hair flex flex-col gap-2.5 border-t px-5 py-4">
                 <Link
-                  href="/signin"
+                  href="/products"
                   onClick={() => setDrawerOpen(false)}
-                  className="border-tn-hair text-tn-ink inline-flex h-[46px] flex-1 items-center justify-center rounded-full border-[1.5px] bg-white text-[14.5px] font-bold"
+                  className="bg-tn-red text-white inline-flex h-12 items-center justify-center gap-2 rounded-full text-[14.5px] font-bold shadow-[0_8px_22px_rgba(204,48,0,0.26)]"
                 >
-                  Sign in
+                  Browse listings
+                  <Icon name="arrow" size={16} />
                 </Link>
-                <Link
-                  href="/signup"
-                  onClick={() => setDrawerOpen(false)}
-                  className="bg-tn-ink text-white inline-flex h-[46px] flex-1 items-center justify-center rounded-full text-[14.5px] font-bold"
-                >
-                  List your shop
-                </Link>
+                <div className="flex gap-2.5">
+                  <Link
+                    href="/signin"
+                    onClick={() => setDrawerOpen(false)}
+                    className="border-tn-hair text-tn-ink inline-flex h-[46px] flex-1 items-center justify-center rounded-full border-[1.5px] bg-white text-[14.5px] font-bold"
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/signup"
+                    onClick={() => setDrawerOpen(false)}
+                    className="bg-tn-ink text-white inline-flex h-[46px] flex-1 items-center justify-center rounded-full text-[14.5px] font-bold"
+                  >
+                    List your shop
+                  </Link>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </header>
   );
 }
