@@ -1,3 +1,4 @@
+import { hasShop } from "./roles";
 import type { AuthUser } from "./types";
 
 /**
@@ -18,16 +19,16 @@ export function safeNext(next: string | undefined): string | null {
 /**
  * Where a session lands when no `next` was carried in.
  *
- * Fork on state, not just role: owners without a registered shop land in the
- * onboarding funnel (/shop/onboarding); owners with a shop land on the
- * dashboard (/dashboard); buyers land on the home page (/).
+ * Fork on state, not on a role the backend does not send: a shop of their own
+ * means the dashboard, and no shop yet means the onboarding funnel. See ./roles
+ * for why there is no third branch — nothing distinguishes a merchant without a
+ * shop from any other account, and today every account is a merchant.
  *
  * This deliberately takes the whole user rather than a role string. An earlier
  * version accepted either, and every call site passed `user.role` — which
  * silently took the role-only branch and sent owners who already had a shop
  * back into the funnel. Requiring the object makes that a type error.
  */
-export function homeFor(user: Pick<AuthUser, "role" | "shops">): string {
-  if (user.role !== "owner") return "/";
-  return user.shops?.length ? "/dashboard" : "/shop/onboarding";
+export function homeFor(user: Pick<AuthUser, "shops">): string {
+  return hasShop(user) ? "/dashboard" : "/shop/onboarding";
 }

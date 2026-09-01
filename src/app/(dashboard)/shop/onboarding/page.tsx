@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { ShopOnboarding } from "@/components/shop/shop-onboarding";
 import { authDriver } from "@/lib/auth/driver";
+import { hasShop } from "@/lib/auth/roles";
 import { readSession } from "@/lib/auth/session";
 import type { AuthUser } from "@/lib/auth/types";
 
@@ -11,12 +12,15 @@ export const metadata: Metadata = { title: "List your shop — Tinsae" };
 /**
  * Server guard in front of the funnel.
  *
- * The proxy only proves *a* session exists on /shop/:path*. It can't tell a
- * buyer from an owner, and it can't tell an owner who still needs a shop from
- * one who already has one — both of those need the /me/ payload. Without this
- * a signed-in buyer could walk the funnel and POST a shop (the backend would
- * accept it: perform_create sets owner=request.user), and an owner could run it
- * a second time.
+ * The proxy only proves *a* session exists on /shop/:path*. It cannot tell an
+ * owner who still needs a shop from one who already has one — that needs the
+ * /me/ payload — so without this an owner could run the funnel a second time.
+ *
+ * There is no check for "is this account allowed a shop at all". The only field
+ * that could answer it was `user.role`, which the backend does not send, so the
+ * check rejected exactly the shopless accounts the funnel exists to serve. See
+ * lib/auth/roles. Being signed in is the permission, which matches the backend:
+ * perform_create sets owner=request.user.
  */
 export default async function ShopOnboardingPage() {
   const { access } = await readSession();
@@ -31,8 +35,7 @@ export default async function ShopOnboardingPage() {
     redirect("/signin?next=/shop/onboarding");
   }
 
-  if (user.role !== "owner") redirect("/");
-  if (user.shops?.length) redirect("/dashboard");
+  if (hasShop(user)) redirect("/dashboard");
 
   return <ShopOnboarding userId={user.id} />;
 }

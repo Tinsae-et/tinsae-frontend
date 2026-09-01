@@ -33,7 +33,17 @@ export type AuthUser = {
   username: string;
   email: string;
   phone: string;
-  role: Role;
+  /**
+   * Optional, because the backend does not send it: `users.UserSerializer`
+   * returns id/username/email/phone/shops and `User` has no role column.
+   *
+   * Use the helpers in ./roles rather than reading this directly — owning a
+   * shop is the merchant test that works against the real API today. This
+   * field is still meaningful under the mock driver, whose OTP/Telegram
+   * sign-up can create an owner before they have a shop; a real role column
+   * only becomes necessary if buyer accounts become a real product.
+   */
+  role?: Role;
   shops: AuthShop[];
 };
 
@@ -76,6 +86,20 @@ export type OtpVerify = {
 };
 
 export type Session = AuthTokens & { user: AuthUser };
+
+/**
+ * What a refresh hands back.
+ *
+ * `refresh` is present whenever the backend rotates — SIMPLE_JWT sets
+ * ROTATE_REFRESH_TOKENS and BLACKLIST_AFTER_ROTATION, so the token we sent is
+ * blacklisted the moment it is spent and this replacement is the only way to
+ * refresh again. Dropping it silently ends the session at the next refresh.
+ * Optional because the mock driver does not rotate.
+ */
+export type RefreshResult = {
+  access: string;
+  refresh?: string;
+};
 
 /** DRF's validation-error shape: { field: ["message", ...] }. */
 export type FieldErrors = Record<string, string[]>;
@@ -144,7 +168,14 @@ export type AuthDriver = {
    * object the backend must verify against the bot token.
    */
   telegram(payload: Record<string, string>, mode: AuthMode, role?: Role): Promise<Session>;
-  refresh(refreshToken: string): Promise<{ access: string }>;
+  refresh(refreshToken: string): Promise<RefreshResult>;
+  /**
+   * Blacklists one refresh token — the session this client is holding.
+   *
+   * The access token is unaffected and stays valid until it expires; that is
+   * inherent to stateless JWTs, not an oversight on either side.
+   */
+  logout(accessToken: string, refreshToken: string): Promise<void>;
   me(accessToken: string): Promise<AuthUser>;
   createShop(
     accessToken: string,

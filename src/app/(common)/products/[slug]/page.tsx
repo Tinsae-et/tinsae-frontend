@@ -2,13 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProduct, getProducts } from "@/lib/api";
-import {
-  formatETB,
-  freshness,
-  resolveFreshness,
-  AGING_HOURS,
-  type FreshnessTone,
-} from "@/lib/format";
+import { formatETB, freshness, type FreshnessTone } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/lib/types";
 import { kindForSlug } from "@/components/tinsae/prod-placeholder";
@@ -122,13 +116,28 @@ function shopColor(name: string): string {
   return palette[Math.abs(h) % palette.length];
 }
 
-// Track colours mirror the tn-green / tn-warn / tn-stale tokens.
+// Track colours mirror the tn-green / tn-stale tokens.
 const TONE_HEX: Record<FreshnessTone, string> = {
   fresh: "#1F8A5B",
-  aging: "#B8741F",
   stale: "#9A9A95",
-  unknown: "#9A9A95",
+  unconfirmed: "#9A9A95",
 };
+
+/**
+ * The width of the chart below, in days, matching its own tick labels.
+ *
+ * This is an axis, not a threshold: it decides where the dot sits, never what
+ * the listing is called. The label comes from `confirmation_status` via
+ * `freshness()`, and nothing here can promote or demote it.
+ *
+ * Chosen to sit near PRODUCT_STALENESS_DAYS so the dot runs out at roughly the
+ * point the backend stops calling a listing fresh — "roughly" because that
+ * setting is `env.int("PRODUCT_STALENESS_DAYS", 30)`, so a deployment can move
+ * it and this will not follow. The cost of drifting is a dot in a slightly
+ * wrong position, which is why this is a local constant instead of a value
+ * worth plumbing through the API.
+ */
+const AXIS_DAYS = 30;
 
 function FreshnessBar({
   hours,
@@ -140,8 +149,8 @@ function FreshnessBar({
   tone: FreshnessTone;
 }) {
   // One dot per shop, on a track spanning the full confirmation window, so the
-  // point where the dot runs out is the same point the badge turns "Stale".
-  const pct = hours === null ? null : Math.min(100, (hours / AGING_HOURS) * 100);
+  // point where the dot runs out is roughly the point the badge turns "Stale".
+  const pct = hours === null ? null : Math.min(100, (hours / (AXIS_DAYS * 24)) * 100);
   // Coloured by the resolved tone, not by the raw clock: a listing the shop has
   // reported sold out must not sit green on the track just because it is recent.
   const dotColor = TONE_HEX[tone];
@@ -182,13 +191,12 @@ function FreshnessBar({
 // asks for stale to be flagged honestly, not alarmingly, so no red anywhere.
 const HERO_BADGE: Record<FreshnessTone, string> = {
   fresh: "bg-tn-green-soft text-[#157049]",
-  aging: "bg-[#FBF0E2] text-[#8a5512]",
   stale: "bg-tn-paper text-tn-ink2",
-  unknown: "bg-tn-paper text-tn-mute",
+  unconfirmed: "bg-tn-paper text-tn-mute",
 };
 
 function ShopComparison({ product, now }: { product: Product; now: number }) {
-  const f = resolveFreshness(freshness(product.last_confirmed_at, now), product.confirmation_status);
+  const f = freshness(product.last_confirmed_at, product.confirmation_status, now);
   const hours = product.last_confirmed_at
     ? Math.max(0, (now - new Date(product.last_confirmed_at).getTime()) / 36e5)
     : null;
