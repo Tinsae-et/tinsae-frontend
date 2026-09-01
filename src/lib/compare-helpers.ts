@@ -1,4 +1,4 @@
-import { formatETB, freshness, resolveFreshness } from "@/lib/format";
+import { formatETB, freshness } from "@/lib/format";
 import type { Product } from "@/lib/types";
 
 export type CompareItem =
@@ -284,9 +284,14 @@ export function buildCompareSections(items: CompareItem[], now = Date.now()): Co
       label: "Stock confirmed",
       cells: items.map((item) => {
         if (!item.isAvailable) return null;
-        const f = resolveFreshness(
-          freshness(item.product.last_confirmed_at, now),
+        // `freshness` now takes the status as its second argument and `now` as
+        // its third; the old two-argument form passed `now` where the status is
+        // read, and grading the age locally is what the backend asked us to
+        // stop doing. See lib/format.
+        const f = freshness(
+          item.product.last_confirmed_at,
           item.product.confirmation_status,
+          now,
         );
         const hours = item.product.last_confirmed_at
           ? Math.max(0, (now - new Date(item.product.last_confirmed_at).getTime()) / 36e5)
