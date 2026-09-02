@@ -6,7 +6,7 @@ import { safeNext } from "@/lib/auth/redirects";
 
 export const metadata: Metadata = {
   title: "Sign in — Tinsae",
-  description: "Sign in to Tinsae with Telegram or your phone number.",
+  description: "Sign in to manage your shop's listings, prices and confirmations.",
 };
 
 export default async function SignInPage({
@@ -18,7 +18,7 @@ export default async function SignInPage({
 
   return (
     <AuthShell>
-      <SignInForm next={safeNext(next)} />
+      <SignInForm next={safeNext(next)} telegram={false} />
     </AuthShell>
   );
 }

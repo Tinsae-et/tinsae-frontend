@@ -31,8 +31,15 @@ export type AuthShop = {
 export type AuthUser = {
   id: string;
   username: string;
+  full_name?: string;
   email: string;
   phone: string;
+  phone_verified?: boolean;
+  preferred_area?: string;
+  telegram_username?: string;
+  telegram_chat_id?: string;
+  avatar?: string | null;
+  date_joined?: string;
   /**
    * Optional, because the backend does not send it: `users.UserSerializer`
    * returns id/username/email/phone/shops and `User` has no role column.
@@ -55,8 +62,38 @@ export type AuthUser = {
  * owner whose Telegram is unavailable still has a way in that costs no SMS.
  */
 export type LoginInput = {
-  username: string;
+  /**
+   * Username, email or phone — the backend decides which by shape.
+   *
+   * Named `identifier` because that is the field simplejwt's serializer is
+   * configured to read (`username_field = "identifier"`). It accepts a
+   * `username` alias too, but only as a migration aid for this client, and its
+   * own comment says the alias goes once the form posts the real name.
+   */
+  identifier: string;
   password: string;
+};
+
+/**
+ * What `/auth/register/` accepts (users.ShopOwnerRegistrationSerializer).
+ *
+ * Registration creates the merchant *and* their first shop in one transaction,
+ * which is why the shop fields live here rather than behind a second step: the
+ * backend has no notion of an owner without a shop, and splitting it would mean
+ * a half-made account if the second call failed.
+ *
+ * `email` is optional on purpose — a large share of merchants have none they
+ * read, and requiring it yields `a@a.com` typed twice.
+ */
+export type RegisterInput = {
+  username?: string;
+  full_name?: string;
+  password: string;
+  phone: string;
+  role?: Role;
+  shop_name?: string;
+  city?: string;
+  email?: string;
 };
 
 export type OtpRequest = {
@@ -83,6 +120,9 @@ export type OtpVerify = {
   mode: AuthMode;
   /** Sent on sign-up only. The server ignores it otherwise. */
   role?: Role;
+  full_name?: string;
+  shop_name?: string;
+  city?: string;
 };
 
 export type Session = AuthTokens & { user: AuthUser };
@@ -159,6 +199,14 @@ export const AuthErrorCode = {
 /** What both drivers implement. */
 export type AuthDriver = {
   login(input: LoginInput): Promise<Session>;
+  /**
+   * Creates a merchant account and its first shop, and signs them in.
+   *
+   * Answers with tokens as well as the user: the backend puts them in the 201
+   * precisely so the client does not have to replay the credentials it just
+   * sent against /auth/token/.
+   */
+  register(input: RegisterInput): Promise<Session>;
   requestOtp(input: OtpRequest): Promise<OtpRequestResult>;
   verifyOtp(input: OtpVerify): Promise<Session>;
   /**
@@ -177,6 +225,7 @@ export type AuthDriver = {
    */
   logout(accessToken: string, refreshToken: string): Promise<void>;
   me(accessToken: string): Promise<AuthUser>;
+  updateProfile(accessToken: string, data: FormData | Partial<AuthUser>): Promise<AuthUser>;
   createShop(
     accessToken: string,
     shop: { name: string; city: string; phone: string; description?: string; telegram_chat_id?: string },

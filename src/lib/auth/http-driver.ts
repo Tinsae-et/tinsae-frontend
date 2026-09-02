@@ -1,10 +1,18 @@
-// The real endpoints, per the handoff's Data section:
-//   POST /auth/otp/request   POST /auth/otp/verify   POST /auth/telegram
+// The Django auth surface, split into what exists and what does not.
 //
-// None of these exist on tinsae-backend yet — it ships username/password
-// registration plus simplejwt's /auth/token/ pair. This file is written to the
-// contract the design specifies so that integration is a flag flip; if the
-// backend lands a different shape, this is the only file that changes.
+// Live today (users/urls.py):
+//   POST /auth/register/   POST /auth/token/   POST /auth/token/refresh/
+//   POST /auth/logout/     GET  /auth/me/
+//
+// Written to the handoff's contract but NOT yet routed on the backend:
+//   POST /auth/otp/request   POST /auth/otp/verify   POST /auth/telegram
+// These return 404 against a real server. `register` is the path that works,
+// and it is what /signup uses whenever AUTH_DRIVER=http; the OTP and Telegram
+// flows stay reachable under the mock driver so the designed UX keeps running
+// until the backend lands them. If the backend ships a different shape, this
+// is the only file that changes.
+import { headers } from "next/headers";
+
 import {
   AuthApiError,
   type AuthDriver,
@@ -12,6 +20,7 @@ import {
   type AuthTokens,
   type AuthUser,
   type LoginInput,
+  type RegisterInput,
   type OtpRequest,
   type OtpRequestResult,
   type OtpVerify,
@@ -41,10 +50,24 @@ const AUTH = `${API_URL}/api/v1/auth`;
  */
 const REQUEST_TIMEOUT_MS = 10_000;
 
+async function getForwardedHeaders(): Promise<Record<string, string>> {
+  try {
+    const h = await headers();
+    const forwardedFor = h.get("x-forwarded-for") ?? h.get("x-real-ip");
+    if (forwardedFor) {
+      return { "X-Forwarded-For": forwardedFor };
+    }
+  } catch {
+    // Outside a Next.js server request context
+  }
+  return {};
+}
+
 async function post<T>(path: string, body: unknown): Promise<T> {
+  const forwarded = await getForwardedHeaders();
   const res = await fetch(`${AUTH}${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...forwarded },
     body: JSON.stringify(body),
     cache: "no-store",
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
@@ -94,9 +117,17 @@ export const httpDriver: AuthDriver = {
     // simplejwt's TokenObtainPairView returns tokens only, so the user comes
     // from a second call. Two round trips, but the alternative is inventing a
     // response shape the backend doesn't send.
+    // Posts `identifier`, not `username`: MultiIdentifierTokenObtainPairSerializer
+    // routes the value to the email, phone or username column by its shape.
     const tokens = await post<AuthTokens>("/token/", input);
     const user = await httpDriver.me(tokens.access);
     return { ...tokens, user };
+  },
+
+  register(input: RegisterInput): Promise<Session> {
+    // Unlike `login`, this needs no follow-up /me/ call: the registration view
+    // returns the token pair and the serialized user together.
+    return post<Session>("/register/", input);
   },
 
   requestOtp(input: OtpRequest): Promise<OtpRequestResult> {
@@ -123,11 +154,13 @@ export const httpDriver: AuthDriver = {
   async logout(accessToken: string, refreshToken: string): Promise<void> {
     // Authenticated *and* carrying the token to revoke: the view checks that
     // the refresh token belongs to the caller before blacklisting it.
+    const forwarded = await getForwardedHeaders();
     const res = await fetch(`${AUTH}/logout/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
+        ...forwarded,
       },
       body: JSON.stringify({ refresh: refreshToken }),
       cache: "no-store",
@@ -137,8 +170,33 @@ export const httpDriver: AuthDriver = {
   },
 
   async me(accessToken: string): Promise<AuthUser> {
+    const forwarded = await getForwardedHeaders();
     const res = await fetch(`${AUTH}/me/`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        ...forwarded,
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
+    return unwrap<AuthUser>(res);
+  },
+
+  async updateProfile(accessToken: string, data: FormData | Partial<AuthUser>): Promise<AuthUser> {
+    const forwarded = await getForwardedHeaders();
+    const isFormData = data instanceof FormData;
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${accessToken}`,
+      ...forwarded,
+    };
+    if (!isFormData) {
+      headers["Content-Type"] = "application/json";
+    }
+
+    const res = await fetch(`${AUTH}/me/`, {
+      method: "PATCH",
+      headers,
+      body: isFormData ? data : JSON.stringify(data),
       cache: "no-store",
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
@@ -146,11 +204,13 @@ export const httpDriver: AuthDriver = {
   },
 
   async createShop(accessToken: string, input: { name: string; city: string; phone: string; description?: string; telegram_chat_id?: string }) {
+    const forwarded = await getForwardedHeaders();
     const res = await fetch(`${API_URL}/api/v1/shops/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
+        ...forwarded,
       },
       body: JSON.stringify(input),
       cache: "no-store",

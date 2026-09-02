@@ -16,7 +16,6 @@ const API_URL =
 
 /** Catalog routes live under /api/v1/catalog/ (config/urls.py). */
 const CATALOG = `${API_URL}/api/v1/catalog`;
-const SHOPS = `${API_URL}/api/v1/shops`
 
 export async function getHealth(): Promise<{ status: string; database: string }> {
   const res = await fetch(`${API_URL}/api/health/`, { cache: "no-store" });
@@ -136,19 +135,23 @@ function ShopProductSearchParams(query: ShopProductQuery): URLSearchParams{
   return params;
 }
 
+/**
+ * The signed-in shop's own catalogue.
+ *
+ * Browser-only, and deliberately takes no token: it calls the same-origin route
+ * handler at /api/shop/<slug>/products, which reads the httpOnly session cookie
+ * and attaches the Authorization header server-side. The JWT never enters the
+ * client bundle, a component prop, or the RSC payload.
+ */
 export async function getShopProducts(
   slug: string,
   query: ShopProductQuery,
-  accessToken?: string,
 ): Promise<Paginated<ShopProduct>> {
-
-  const params = ShopProductSearchParams(query).toString()
-  const res = await fetch(`${SHOPS}/${slug}/products/${params ? `?${params}` : ""}`, {
-  method: 'GET',
-  headers: accessToken ? {
-      Authorization: `Bearer ${accessToken}`
-    } : undefined
-  });
+  const params = ShopProductSearchParams(query).toString();
+  const res = await fetch(
+    `/api/shop/${encodeURIComponent(slug)}/products${params ? `?${params}` : ""}`,
+    { method: "GET", cache: "no-store" },
+  );
   if (!res.ok) {
     throw new Error(`Couldn't load products (${res.status})`);
   }

@@ -1,11 +1,14 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { Icon, IconName } from "@/components/tinsae/icon";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { cn } from "@/lib/utils";
+
+import { LogoutButton } from "@/components/auth/logout-button";
 
 type NavLinkItem = {
   to: string;
@@ -86,10 +89,21 @@ function SideBar({ showSidebar }: { showSidebar: boolean }) {
         {/* Header */}
         <div className="px-[18px] pt-5 pb-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <span className="text-tn-red font-bold text-[19px] leading-none">ትንሳኤ</span>
-              <span className="text-tn-ink font-extrabold text-[17px] leading-none">Tinsae</span>
-            </div>
+            <Link
+              href="/"
+              className="flex shrink-0 items-center hover:opacity-80 transition-opacity"
+              aria-label="Tinsae Home"
+            >
+              <Image
+                src="/tinsae-logo.svg"
+                alt="Tinsae"
+                width={184}
+                height={53}
+                unoptimized
+                className="h-[27px] w-auto"
+                priority
+              />
+            </Link>
             <span className="text-[9.5px] font-bold tracking-[0.04em] bg-tn-paper text-tn-ink2 px-[7px] py-[3px] rounded-full">
               SHOPS
             </span>
@@ -117,6 +131,11 @@ function SideBar({ showSidebar }: { showSidebar: boolean }) {
 
         {/* Navigation */}
         <Links links={NAVLINKS} />
+
+        {/* Sign out */}
+        <div className="px-3 mt-1 pt-1 border-t border-tn-hair2">
+          <LogoutButton variant="nav" />
+        </div>
       </div>
 
       {/* Bot status card */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DailyStockCheckIn, RecentActivities } from "./activities";
 import { MoreHorizontal, Pencil, Trash } from "lucide-react";
 import { ShopProduct } from "@/lib/types";
@@ -10,51 +10,50 @@ import { Pill } from "@/components/tinsae/pill";
 import { Icon } from "@/components/tinsae/icon";
 import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
 import { cn } from "@/lib/utils";
-import { MOCK_SHOP_PRODUCTS } from "@/lib/mock-data";
 
 type KpiItem = {
   label: string;
-  value: string;
+  /** `null` when the backend cannot answer this yet — rendered as an em dash. */
+  value: string | null;
   sub: string;
-  delta: string;
-  up: boolean;
-  spark: number[];
+  delta?: string;
+  up?: boolean;
+  spark?: number[];
 };
 
-const NUMBERS: KpiItem[] = [
-  {
-    label: "Active listings",
-    value: "142",
-    sub: "138 confirmed today",
-    delta: "+4",
-    up: true,
-    spark: [28, 30, 29, 31, 30, 32, 33, 34, 35, 36],
-  },
-  {
-    label: "Views today",
-    value: "1,284",
-    sub: "vs 1,088 yesterday",
-    delta: "+18%",
-    up: true,
-    spark: [15, 22, 18, 24, 20, 28, 25, 32, 30, 35],
-  },
-  {
-    label: "Inquiries today",
-    value: "34",
-    sub: "7 awaiting reply",
-    delta: "+9",
-    up: true,
-    spark: [10, 12, 11, 14, 13, 16, 18, 17, 20, 22],
-  },
-  {
-    label: "Response rate",
-    value: "98%",
-    sub: "last 30 days · top 5%",
-    delta: "+2%",
-    up: true,
-    spark: [30, 32, 31, 33, 32, 34, 33, 35, 34, 35],
-  },
-];
+/**
+ * The four tiles, built from what the API actually returns.
+ *
+ * Three of them cannot be answered at all today: `ShopProductSerializer` has no
+ * views, no inquiries and no reply timestamps (docs/backend-requirements.md §1).
+ * They used to render 1,284 views and a 98% response rate on every shop in the
+ * system, complete with a rising sparkline — numbers a merchant could have made
+ * a pricing decision on. A dash is worth more than a plausible number: it is
+ * the difference between "we do not track this yet" and a lie.
+ *
+ * No delta chip and no sparkline without a value, for the same reason — a trend
+ * line over data we do not have is the most confident-looking part of the lie.
+ */
+function buildKpis(products: ShopProduct[]): KpiItem[] {
+  const active = products.filter((p) => p.is_available);
+  const confirmed = active.filter(
+    (p) => freshness(p.last_confirmed_at, p.confirmation_status).tone === "fresh",
+  ).length;
+
+  return [
+    {
+      label: "Active listings",
+      value: String(active.length),
+      sub:
+        active.length > 0
+          ? `${confirmed} confirmed recently`
+          : "Add your first listing to get started",
+    },
+    { label: "Views today", value: null, sub: "Not tracked yet" },
+    { label: "Inquiries today", value: null, sub: "Not tracked yet" },
+    { label: "Response rate", value: null, sub: "Not tracked yet" },
+  ];
+}
 
 function Sparkline({ data }: { data: number[] }) {
   if (!data || data.length < 2) return null;
@@ -118,31 +117,47 @@ function StatusPill({ tone }: { tone: "fresh" | "stale" | "unconfirmed" }) {
 }
 
 function NumberCard({ numb }: { numb: KpiItem }) {
+  const tracked = numb.value !== null;
+
   return (
     <div className="rounded-[18px] border border-tn-hair px-[22px] py-5 bg-white flex flex-col justify-between transition-shadow hover:shadow-[0_18px_44px_rgba(11,11,11,0.09)]">
       <div className="flex items-center justify-between">
         <span className="text-[11.5px] font-bold uppercase tracking-[0.05em] text-tn-mute">
           {numb.label}
         </span>
-        <span
-          className={`font-tn-mono text-[11.5px] font-extrabold px-2 py-0.5 rounded-full ${
-            numb.up ? "bg-tn-green-soft text-tn-green" : "bg-tn-red-soft text-tn-red"
-          }`}
-        >
-          {numb.delta}
-        </span>
+        {numb.delta ? (
+          <span
+            className={cn(
+              "font-tn-mono text-[11.5px] font-extrabold px-2 py-0.5 rounded-full",
+              numb.up ? "bg-tn-green-soft text-tn-green" : "bg-tn-red-soft text-tn-red",
+            )}
+          >
+            {numb.delta}
+          </span>
+        ) : null}
       </div>
 
       <div className="mt-3">
-        <div className="font-tn-mono text-[34px] font-semibold tracking-[-0.03em] text-tn-ink leading-none">
-          {numb.value}
+        <div
+          className={cn(
+            "font-tn-mono text-[34px] font-semibold tracking-[-0.03em] leading-none",
+            tracked ? "text-tn-ink" : "text-tn-hair",
+          )}
+        >
+          {tracked ? numb.value : "—"}
         </div>
         <div className="text-xs text-tn-mute mt-1.5">{numb.sub}</div>
       </div>
 
-      <div className="mt-4 -mx-1">
-        <Sparkline data={numb.spark} />
-      </div>
+      {numb.spark ? (
+        <div className="mt-4 -mx-1">
+          <Sparkline data={numb.spark} />
+        </div>
+      ) : (
+        // Holds the tiles to a common height so the row does not go ragged
+        // where a sparkline is absent.
+        <div className="mt-4 h-10" />
+      )}
     </div>
   );
 }
@@ -154,7 +169,7 @@ function getGreeting(): string {
   return "Good evening";
 }
 
-function Greeting({ shopName = "Almeda" }: { shopName?: string }) {
+function Greeting({ shopName }: { shopName: string }) {
   const greeting = getGreeting();
   return (
     <h1 className="text-[30px] font-extrabold tracking-[-0.03em] text-tn-ink">
@@ -356,12 +371,9 @@ function TableRow({
   );
 }
 
-function ListingsTable() {
+function ListingsTable({ products }: { products: ShopProduct[] }) {
   const [selected, setSelected] = useState<number[]>([]);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
-
-  const { products: apiProducts } = useShopProducts({}, "shewa-electronics", "sdasd");
-  const products = apiProducts.length > 0 ? apiProducts : MOCK_SHOP_PRODUCTS.slice(0, 7);
 
   const toggleOne = (id: number) => {
     if (selected.includes(id)) {
@@ -431,16 +443,46 @@ function ListingsTable() {
   );
 }
 
-function Numbers() {
+function Numbers({
+  shopName,
+  products,
+}: {
+  shopName: string;
+  products: ShopProduct[];
+}) {
+  const kpis = useMemo(() => buildKpis(products), [products]);
+
+  const needsReconfirming = products.filter(
+    (p) =>
+      p.is_available &&
+      freshness(p.last_confirmed_at, p.confirmation_status).tone !== "fresh",
+  ).length;
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <Greeting shopName="Almeda" />
+          <Greeting shopName={shopName} />
+          {/*
+            The design's line is "You have {n} unanswered inquiries and {n}
+            listings need re-confirmation today." We can count the second half
+            and not the first — there is no inquiries endpoint — so the sentence
+            says only the half we can stand behind. Restoring the full wording is
+            a one-line change once inquiries exist.
+          */}
           <p className="text-sm text-tn-ink2 mt-1">
-            You have{" "}
-            <span className="text-tn-red font-bold">7 unanswered inquiries</span> and{" "}
-            <span className="text-tn-ink font-bold">4 listings</span> need re-confirmation today.
+            {needsReconfirming > 0 ? (
+              <>
+                <span className="text-tn-ink font-bold">
+                  {needsReconfirming} {needsReconfirming === 1 ? "listing" : "listings"}
+                </span>{" "}
+                need re-confirmation today.
+              </>
+            ) : products.length > 0 ? (
+              "Every listing is confirmed. Nothing needs your attention today."
+            ) : (
+              "Add your first listing to start showing up in buyer searches."
+            )}
           </p>
         </div>
 
@@ -455,7 +497,7 @@ function Numbers() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {NUMBERS.map((n) => (
+        {kpis.map((n) => (
           <NumberCard key={n.label} numb={n} />
         ))}
       </div>
@@ -463,15 +505,30 @@ function Numbers() {
   );
 }
 
-export default function Overview() {
+/**
+ * One fetch, shared by every panel on the screen.
+ *
+ * The KPI tiles, the greeting's re-confirmation count, the check-in card and
+ * the table are all views of the same list, so lifting the request here keeps
+ * them consistent with each other and costs one round trip instead of two.
+ */
+export default function Overview({
+  slug,
+  shopName,
+}: {
+  slug: string;
+  shopName: string;
+}) {
+  const { products } = useShopProducts({}, slug);
+
   return (
     <div className="flex flex-col gap-6">
-      <Numbers />
+      <Numbers shopName={shopName} products={products} />
       <div className="grid md:grid-cols-2 gap-4">
-        <DailyStockCheckIn />
+        <DailyStockCheckIn products={products} />
         <RecentActivities />
       </div>
-      <ListingsTable />
+      <ListingsTable products={products} />
     </div>
   );
 }

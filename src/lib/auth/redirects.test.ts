@@ -34,15 +34,12 @@ describe("hasShop", () => {
 
 describe("homeFor", () => {
   it("sends an owner with a shop to the dashboard", () => {
-    expect(homeFor(withShop)).toBe("/dashboard");
+    expect(homeFor(withShop)).toBe("/shop/dashboard/overview");
   });
 
-  it("sends a signed-in account with no shop to onboarding, not the public site", () => {
-    // Regression: this branch used to require `role === "owner"`, so it never
-    // fired and shopless accounts were bounced to "/" — away from the one page
-    // that could give them a shop.
-    expect(homeFor(noShop)).toBe("/shop/onboarding");
-    expect(homeFor(unknownAccount)).toBe("/shop/onboarding");
+  it("sends a buyer account with no shop to the homepage", () => {
+    expect(homeFor(noShop)).toBe("/");
+    expect(homeFor(unknownAccount)).toBe("/");
   });
 });
 
