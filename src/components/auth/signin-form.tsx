@@ -29,7 +29,7 @@ export function SignInForm({ next }: { next: string | null }) {
   const [pending, setPending] = useState<"none" | "password" | "telegram">("none");
 
   function land(user: AuthUser) {
-    router.replace(next ?? homeFor(user.role));
+    router.replace(next ?? homeFor(user));
     router.refresh();
   }
 

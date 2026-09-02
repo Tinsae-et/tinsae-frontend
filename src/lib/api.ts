@@ -1,6 +1,6 @@
 // Central place for talking to the backend API.
 // The base URL comes from the environment so it can change per environment.
-import type { Category, Paginated, Product, Shop } from "./types";
+import type { Category, Paginated, Product, Shop, ShopProduct } from "./types";
 
 // Dual-context base URL:
 //  - Server components (SSR, inside the dev container) reach the host backend
@@ -16,6 +16,7 @@ const API_URL =
 
 /** Catalog routes live under /api/v1/catalog/ (config/urls.py). */
 const CATALOG = `${API_URL}/api/v1/catalog`;
+const SHOPS = `${API_URL}/api/v1/shops`
 
 export async function getHealth(): Promise<{ status: string; database: string }> {
   const res = await fetch(`${API_URL}/api/health/`, { cache: "no-store" });
@@ -115,6 +116,41 @@ export async function getProduct(slug: string, init?: RequestInit): Promise<Prod
   });
   if (!res.ok) {
     throw new Error(`Could not load product (${res.status})`);
+  }
+  return res.json();
+}
+
+export type ShopProductQuery = {
+  q?: string;
+  category?: string;
+  ordering?: string;
+  status?: string;
+}
+
+function ShopProductSearchParams(query: ShopProductQuery): URLSearchParams{
+  const params = new URLSearchParams()
+  if (query.q) params.set("q", query.q);
+  if (query.category) params.set("category", query.category);
+  if (query.ordering) params.set("ordering", query.ordering);
+  if (query.status) params.set("status", query.status);
+  return params;
+}
+
+export async function getShopProducts(
+  slug: string,
+  query: ShopProductQuery,
+  accessToken?: string,
+): Promise<Paginated<ShopProduct>> {
+
+  const params = ShopProductSearchParams(query).toString()
+  const res = await fetch(`${SHOPS}/${slug}/products/${params ? `?${params}` : ""}`, {
+  method: 'GET',
+  headers: accessToken ? {
+      Authorization: `Bearer ${accessToken}`
+    } : undefined
+  });
+  if (!res.ok) {
+    throw new Error(`Couldn't load products (${res.status})`);
   }
   return res.json();
 }
