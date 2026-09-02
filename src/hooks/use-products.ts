@@ -57,20 +57,32 @@ export function useProducts(query: ProductQuery, initial: InitialProducts) {
 }
 
 
-export function useShopProducts(query: ShopProductQuery, slug: string, access: string | undefined){
+/**
+ * Owns the merchant's own catalogue for the dashboard.
+ *
+ * Takes no access token: `getShopProducts` calls a same-origin route handler
+ * that attaches the Authorization header server-side (see lib/auth/authed-fetch).
+ *
+ * Unlike `useProducts` there is no server-rendered `initial` list to fall back
+ * on, so this must fetch on mount as well as on every query change — seeding
+ * `loadedKey` with the first query key, as the sibling hook does, meant the
+ * mount effect returned early and the table stayed empty until the user touched
+ * a filter.
+ */
+export function useShopProducts(query: ShopProductQuery, slug: string) {
   const [products, setProducts] = useState<ShopProduct[]>([]);
   const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const queryKey = JSON.stringify(query);
-  const loadedKey = useRef(queryKey);
+  const loadedKey = useRef<string | null>(null);
 
   const fetchPage = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getShopProducts(slug, query, access);
+      const data = await getShopProducts(slug, query);
       setTotal(data.count);
       setProducts(data.results);
     } catch {
@@ -78,9 +90,10 @@ export function useShopProducts(query: ShopProductQuery, slug: string, access: s
     } finally {
       setLoading(false);
     }
-  }, [query, slug, access]);
+  }, [query, slug]);
 
-  // Refetch whenever the query changes.
+  // Fetches on mount, then whenever the query changes. The ref survives
+  // StrictMode's simulated remount, so this is one request either way.
   useEffect(() => {
     if (loadedKey.current === queryKey) return;
     loadedKey.current = queryKey;
@@ -88,5 +101,5 @@ export function useShopProducts(query: ShopProductQuery, slug: string, access: s
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryKey]);
 
-  return { products, total, loading, error };  
+  return { products, total, loading, error };
 }

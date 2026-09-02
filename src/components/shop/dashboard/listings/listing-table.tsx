@@ -11,7 +11,6 @@ import { formatETB, freshness } from "@/lib/format";
 import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
 import { Pill } from "@/components/tinsae/pill";
 import { cn } from "@/lib/utils";
-import { MOCK_SHOP_PRODUCTS } from "@/lib/mock-data";
 import Link from "next/link";
 
 type TabKey = "all" | "live" | "needs-attention" | "drafts" | "sold";
@@ -335,58 +334,18 @@ function ListingGridCard({
   );
 }
 
-export default function ListingsTable({
-  access,
-  slug,
-}: {
-  access: string | undefined;
-  slug: string;
-}) {
+export default function ListingsTable({ slug }: { slug: string }) {
   const [selected, setSelected] = useState<number[]>([]);
   const [query, setQuery] = useState<ShopProductQuery>({});
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [view, setView] = useState<"rows" | "grid">("rows");
 
-  const { products: apiProducts } = useShopProducts(query, slug, access);
+  const { products: apiProducts } = useShopProducts(query, slug);
 
-  const baseProducts = useMemo(() => {
-    if (apiProducts.length > 0) return apiProducts;
-    let list = [...MOCK_SHOP_PRODUCTS];
-    if (query.q) {
-      const qLower = query.q.toLowerCase();
-      list = list.filter(
-        (p) =>
-          p.name.toLowerCase().includes(qLower) ||
-          (p.description && p.description.toLowerCase().includes(qLower)) ||
-          (p.brand && p.brand.toLowerCase().includes(qLower))
-      );
-    }
-    if (query.category) {
-      list = list.filter(
-        (p) => p.category.toLowerCase() === query.category?.toLowerCase()
-      );
-    }
-    if (query.ordering) {
-      if (query.ordering === "-created_at") {
-        list.sort((a, b) => b.id - a.id);
-      } else if (query.ordering === "last_confirmed_at") {
-        list.sort((a, b) => {
-          const timeA = a.last_confirmed_at
-            ? new Date(a.last_confirmed_at).getTime()
-            : 0;
-          const timeB = b.last_confirmed_at
-            ? new Date(b.last_confirmed_at).getTime()
-            : 0;
-          return timeA - timeB;
-        });
-      } else if (query.ordering === "-price") {
-        list.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
-      } else if (query.ordering === "price") {
-        list.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
-      }
-    }
-    return list;
-  }, [apiProducts, query]);
+  // The API already applies q / category / ordering — see the proxy route's
+  // allowlist and shops/views.py. Re-filtering here would only ever disagree
+  // with it, so the fetched list is the list.
+  const baseProducts = apiProducts;
 
   const displayedProducts = useMemo(() => {
     return baseProducts.filter((p) => {

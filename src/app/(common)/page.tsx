@@ -9,8 +9,21 @@ import { HowItWorks } from "@/components/home/how-it-works";
 import { StatBand } from "@/components/home/stat-band";
 import { ShopBand } from "@/components/home/shop-band";
 import { FinalCTA } from "@/components/home/final-cta";
+import { readSession } from "@/lib/auth/session";
+import { authDriver } from "@/lib/auth/driver";
+import type { AuthUser } from "@/lib/auth/types";
 
 export default async function Home() {
+  const { access } = await readSession();
+  let user: AuthUser | null = null;
+  if (access) {
+    try {
+      user = await authDriver.me(access);
+    } catch {
+      user = null;
+    }
+  }
+
   // The landing page must render even with the backend down, so the fetch
   // degrades to empty rather than throwing the whole route.
   const products = await getProducts({
@@ -26,7 +39,7 @@ export default async function Home() {
 
   return (
     <main>
-      <Hero />
+      <Hero user={user} />
       <BrowseCategories />
       <TopShops />
       <FreshListings products={freshest} />
@@ -34,7 +47,7 @@ export default async function Home() {
       <HowItWorks />
       <StatBand />
       <ShopBand />
-      <FinalCTA />
+      <FinalCTA user={user} />
     </main>
   );
 }

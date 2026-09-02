@@ -12,17 +12,30 @@ import { postAuth } from "@/lib/auth/submit";
 import { AuthErrorCode, type AuthUser, type FieldErrors } from "@/lib/auth/types";
 
 /**
- * Sign-in: Telegram first, password second.
+ * Sign-in: Telegram first, password second — where Telegram exists.
  *
  * No OTP here deliberately. A code proves you hold the SIM, which sign-in
  * doesn't need to re-establish — sign-up already verified the number, and the
  * session lasts. Sending an SMS on every sign-in would cost money and depend on
  * delivery for something the account itself can answer.
+ *
+ * `telegram` is off against the real backend because /auth/telegram/ is not
+ * routed there yet (see docs/backend-requirements.md). A button that answers
+ * 404 is worse than no button: it is the most prominent control on the page,
+ * and a merchant who tries it concludes the product is broken rather than that
+ * one path is unfinished. The whole flow stays intact behind the mock driver,
+ * so nothing is deleted and turning it back on is one prop.
  */
-export function SignInForm({ next }: { next: string | null }) {
+export function SignInForm({
+  next,
+  telegram: telegramEnabled = false,
+}: {
+  next: string | null;
+  telegram?: boolean;
+}) {
   const router = useRouter();
 
-  const [username, setUsername] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
   const [notice, setNotice] = useState<React.ReactNode>();
@@ -46,7 +59,8 @@ export function SignInForm({ next }: { next: string | null }) {
     event.preventDefault();
 
     const found: FieldErrors = {};
-    if (!username.trim()) found.username = ["Enter your username."];
+    if (!identifier.trim())
+      found.identifier = ["Enter your username, email or phone."];
     if (!password) found.password = ["Enter your password."];
     if (Object.keys(found).length > 0) {
       setErrors(found);
@@ -56,7 +70,7 @@ export function SignInForm({ next }: { next: string | null }) {
     setNotice(undefined);
     setPending("password");
     const result = await postAuth<{ user: AuthUser }>("/api/auth/login", {
-      username,
+      identifier,
       password,
     });
     setPending("none");
@@ -71,8 +85,12 @@ export function SignInForm({ next }: { next: string | null }) {
       result.code === AuthErrorCode.NoPassword
         ? result.detail
         : result.status === 401
-          ? "That username and password don't match an account."
-          : result.detail,
+          ? "Those details don't match an account."
+          : // Login is throttled per account as well as per IP (5/min), so a
+            // 429 here usually means this one account, not the whole service.
+            result.status === 429
+            ? "Too many sign-in attempts for that account. Wait a minute and try again."
+            : result.detail,
     );
   }
 
@@ -101,29 +119,35 @@ export function SignInForm({ next }: { next: string | null }) {
 
       {notice ? <FormNotice>{notice}</FormNotice> : null}
 
-      <TelegramButton
-        onClick={telegram}
-        pending={pending === "telegram"}
-        disabled={pending !== "none"}
-      />
-
-      <OrDivider />
+      {telegramEnabled ? (
+        <>
+          <TelegramButton
+            onClick={telegram}
+            pending={pending === "telegram"}
+            disabled={pending !== "none"}
+          />
+          <OrDivider />
+        </>
+      ) : null}
 
       <form onSubmit={signIn} noValidate className="space-y-4">
         <Field
-          id="username"
-          name="username"
-          label="Username"
+          id="identifier"
+          name="identifier"
+          label="Username, email or phone"
+          // Correct for all three shapes: the spec defines "username" as the
+          // account identifier, whatever form it takes, and password managers
+          // pair it with current-password below.
           autoComplete="username"
           autoCapitalize="none"
           spellCheck={false}
           placeholder="bolephones"
-          value={username}
-          errors={errors.username}
+          value={identifier}
+          errors={errors.identifier}
           disabled={pending !== "none"}
           onChange={(event) => {
-            setUsername(event.target.value);
-            clearField("username");
+            setIdentifier(event.target.value);
+            clearField("identifier");
           }}
         />
 

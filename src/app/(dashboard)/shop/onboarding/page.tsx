@@ -35,7 +35,7 @@ export default async function ShopOnboardingPage() {
     redirect("/signin?next=/shop/onboarding");
   }
 
-  if (hasShop(user)) redirect("/dashboard");
+  if (hasShop(user)) redirect("/shop/dashboard/overview");
 
   return <ShopOnboarding userId={user.id} />;
 }
