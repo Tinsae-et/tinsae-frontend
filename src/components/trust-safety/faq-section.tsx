@@ -64,11 +64,13 @@ export function FAQSection() {
                   {question}
                 </span>
                 <span
-                  className={`inline-flex size-[30px] shrink-0 items-center justify-center rounded-full transition-transform duration-200 ${
-                    isOpen ? "bg-tn-red rotate-45 text-white" : "bg-tn-paper text-tn-ink2"
+                  className={`inline-flex size-7 shrink-0 items-center justify-center transition-all duration-150 ${
+                    isOpen
+                      ? "rounded-[8px] bg-tn-red text-white"
+                      : "rounded-full bg-transparent text-tn-mute hover:text-tn-ink"
                   }`}
                 >
-                  <Icon name="plus" size={16} />
+                  <Icon name={isOpen ? "close" : "plus"} size={15} strokeWidth={2.4} />
                 </span>
               </button>
 

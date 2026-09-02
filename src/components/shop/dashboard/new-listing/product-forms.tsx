@@ -97,6 +97,7 @@ export function ProductForm(){
                     </label>
                     <div className="relative">
                         <select
+                        value={brand}
                         onChange={(event)=>setBrand(event.target.value)}
                         className="w-full appearance-none rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-300"
                         >

@@ -4,19 +4,19 @@ import { Eyebrow } from "./section-head";
 // dim on black, so the design shifts them lighter here.
 const freshnessStates = [
   {
-    color: "#1F8A5B",
+    color: "#22c55e",
     label: "In stock",
     when: "Confirmed within 6 hours",
     note: "Buy with confidence",
   },
   {
-    color: "#D89A3C",
+    color: "#f59e0b",
     label: "Aging",
     when: "6 to 24 hours ago",
     note: "Worth a quick message first",
   },
   {
-    color: "#8C8C86",
+    color: "#737373",
     label: "Hidden",
     when: "Over a day with no reply",
     note: "Tinsae stops showing it",
@@ -26,7 +26,7 @@ const freshnessStates = [
 export function FreshnessBanner() {
   return (
     <section className="mx-auto mt-20 max-w-[1240px] px-6 lg:mt-24 lg:px-7">
-      <div className="bg-tn-ink relative overflow-hidden rounded-[24px] px-7 py-10 sm:px-10 lg:px-12 lg:py-[52px]">
+      <div className="bg-[#111111] relative overflow-hidden rounded-[24px] px-7 py-10 sm:px-10 lg:px-12 lg:py-[52px]">
         <span
           aria-hidden
           className="font-tn-amh pointer-events-none absolute -right-[30px] -bottom-[70px] text-[240px] leading-none font-bold text-white/[0.045]"
@@ -36,9 +36,11 @@ export function FreshnessBanner() {
 
         <div className="relative grid items-center gap-10 lg:grid-cols-[0.92fr_1.08fr] lg:gap-12">
           <div>
-            <Eyebrow color="text-[#7FD3AC]">Beyond the badge</Eyebrow>
+            <div className="mb-3 text-[11.5px] font-bold tracking-[0.12em] text-white/60 uppercase">
+              Beyond the badge
+            </div>
             <h2 className="text-[30px] leading-[1.07] font-extrabold tracking-[-0.03em] text-white sm:text-[38px]">
-              Verified is who. Fresh is <span className="text-[#7FD3AC]">when.</span>
+              Verified is who. Fresh is <span className="text-[#34d399]">when.</span>
             </h2>
             <p className="mt-[18px] max-w-[440px] text-base leading-[1.6] text-white/[0.66]">
               A verified shop can still sell out. That&rsquo;s why every listing carries a freshness
@@ -51,7 +53,7 @@ export function FreshnessBanner() {
             {freshnessStates.map((state) => (
               <div
                 key={state.label}
-                className="flex items-center gap-4 rounded-[14px] border border-white/[0.09] bg-white/[0.06] px-[18px] py-4"
+                className="flex items-center gap-4 rounded-[14px] border border-[#262626] bg-[#181818] px-[18px] py-4"
               >
                 <span
                   className="size-3.5 shrink-0 rounded-full"

@@ -4,8 +4,8 @@ import Link from "next/link";
 const COLUMNS: [string, string[]][] = [
   ["Buy", ["How it works", "Verified shops", "Trust & safety", "Browse all"]],
   ["Sell", ["List your shop", "Pricing", "Dashboard", "Telegram bot"]],
-  ["Company", ["About", "Press", "Careers", "Contact"]],
-  ["Legal", ["Terms", "Privacy", "Returns"]],
+  ["Company", ["About", "Press", "Careers", "Contact", "Help"]],
+  ["Legal", ["Terms & Privacy", "Returns"]],
 ];
 
 export function SiteFooter() {
@@ -61,10 +61,8 @@ export function SiteFooter() {
                                         ? "/careers"
                                         : item === "Contact"
                                           ? "/contact"
-                                          : item === "Terms"
-                                            ? "/terms"
-                                            : item === "Privacy"
-                                              ? "/privacy"
+                                          : item === "Terms & Privacy"
+                                            ? "/terms-and-privacy"
                                               : item === "Returns"
                                                 ? "/returns"
                                                 : item === "Verified shops"
