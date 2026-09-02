@@ -16,11 +16,14 @@ export async function POST(request: Request) {
   const blocked = rejectCrossOrigin(request);
   if (blocked) return blocked;
 
-  const { phone, code, mode, role } = (await request.json()) as {
+  const { phone, code, mode, role, full_name, shop_name, city } = (await request.json()) as {
     phone: string;
     code: string;
     mode: AuthMode;
     role?: Role;
+    full_name?: string;
+    shop_name?: string;
+    city?: string;
   };
 
   if (!/^\d{6}$/.test(code ?? "")) {
@@ -33,6 +36,9 @@ export async function POST(request: Request) {
       code,
       mode: mode === "signup" ? "signup" : "signin",
       role,
+      full_name,
+      shop_name,
+      city,
     });
     const res = NextResponse.json({ user });
     setSessionCookies(res, { access, refresh });

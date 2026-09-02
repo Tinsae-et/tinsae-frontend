@@ -41,7 +41,7 @@ export function ReportingSection() {
               key={title}
               className="border-tn-hair flex items-start gap-4 rounded-[16px] border bg-white px-[22px] py-5"
             >
-              <span className="bg-tn-ink font-tn-mono inline-flex size-[34px] shrink-0 items-center justify-center rounded-[10px] text-sm font-semibold text-white">
+              <span className="bg-tn-ink font-tn-mono inline-flex size-[34px] shrink-0 items-center justify-center rounded-full text-sm font-bold text-white">
                 {index + 1}
               </span>
               <div>

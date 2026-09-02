@@ -55,12 +55,7 @@ export function TrustHero() {
 function BadgeCard() {
   return (
     <div className="border-tn-hair mx-auto w-full max-w-[420px] overflow-hidden rounded-[22px] border bg-white shadow-[0_30px_70px_rgba(11,11,11,0.13)] lg:mr-0">
-      <div className="relative h-[70px] bg-[linear-gradient(120deg,#0F2A4D_0%,#1d4068_100%)]">
-        <div
-          aria-hidden
-          className="absolute inset-0 opacity-[0.16] [background:repeating-linear-gradient(45deg,transparent,transparent_9px,rgba(255,255,255,0.4)_9px,rgba(255,255,255,0.4)_10px)]"
-        />
-      </div>
+      <div className="relative h-[70px] bg-[#0c2340]" />
 
       <div className="relative -mt-[26px] px-6 pb-6">
         <div className="flex size-14 items-center justify-center rounded-[15px] border-[3px] border-white bg-[#0F2A4D] text-[19px] font-extrabold text-white shadow-[0_6px_16px_rgba(11,11,11,0.14)]">
