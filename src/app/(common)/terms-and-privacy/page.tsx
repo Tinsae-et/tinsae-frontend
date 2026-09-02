@@ -12,7 +12,7 @@ interface Section {
   paragraphs: string[];
 }
 
-const TOC: Section[] = [
+const SECTIONS: Section[] = [
   {
     id: "acceptance",
     number: 1,
@@ -168,7 +168,7 @@ export default function LegalPage() {
               On this page
             </p>
             <ul className="mt-4 space-y-4">
-              {TOC.map((s) => (
+              {SECTIONS.map((s) => (
                 <li key={s.id}>
                   <Link
                     href={`#${s.id}`}
@@ -195,8 +195,8 @@ export default function LegalPage() {
             </div>
 
             {/* Sections */}
-            <div className="mt-8 space-y-8">
-              {TOC.map((s) => (
+            <div className="mt-8 px-5 space-y-8">
+              {SECTIONS.map((s) => (
                 <section key={s.id} id={s.id}>
                   <h2 className="text-xl font-bold text-neutral-900">
                     {s.number} · {s.title}
