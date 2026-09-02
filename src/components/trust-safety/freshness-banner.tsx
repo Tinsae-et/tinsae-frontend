@@ -1,4 +1,3 @@
-import { Eyebrow } from "./section-head";
 
 // Dark-ground variants of the freshness tokens: #B8741F and #9A9A95 are too
 // dim on black, so the design shifts them lighter here.
