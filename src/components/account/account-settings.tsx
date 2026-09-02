@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   User as UserIcon,
@@ -16,8 +17,6 @@ import {
   Loader2,
   AlertCircle,
   ChevronRight,
-  Radio,
-  Tv,
 } from "lucide-react";
 import type { AuthUser } from "@/lib/auth/types";
 
@@ -144,6 +143,7 @@ export function AccountSettings({ initialUser }: AccountSettingsProps) {
         message: "Profile changes saved successfully.",
       });
       router.refresh();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setFeedback({
         type: "error",
@@ -200,7 +200,7 @@ export function AccountSettings({ initialUser }: AccountSettingsProps) {
         <div className="mb-8 flex items-center gap-5">
           <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#1e40af] text-2xl font-bold text-white shadow-sm ring-4 ring-white">
             {avatarPreview ? (
-              <img
+              <Image
                 src={avatarPreview}
                 alt={displayName}
                 className="h-full w-full object-cover"
@@ -350,7 +350,7 @@ export function AccountSettings({ initialUser }: AccountSettingsProps) {
                   <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-5">
                     <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#1e40af] text-xl font-bold text-white shadow-xs">
                       {avatarPreview ? (
-                        <img
+                        <Image
                           src={avatarPreview}
                           alt={displayName}
                           className="h-full w-full object-cover"
