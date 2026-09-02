@@ -30,5 +30,5 @@ export function safeNext(next: string | undefined): string | null {
  * back into the funnel. Requiring the object makes that a type error.
  */
 export function homeFor(user: Pick<AuthUser, "shops">): string {
-  return hasShop(user) ? "/dashboard" : "/shop/onboarding";
+  return hasShop(user) ? "/shop/dashboard/overview" : "/";
 }

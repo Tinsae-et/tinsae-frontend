@@ -19,7 +19,7 @@ export async function POST(request: Request) {
 
   try {
     const { access, refresh, user } = await authDriver.login({
-      username: input.username?.trim() ?? "",
+      identifier: input.identifier?.trim() ?? "",
       password: input.password ?? "",
     });
     const res = NextResponse.json({ user });

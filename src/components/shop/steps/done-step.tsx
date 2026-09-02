@@ -58,7 +58,7 @@ export function DoneStep({ state }: { state: OnboardingState }) {
         </div>
 
         <div className="mt-6 flex flex-wrap gap-3">
-          <Pill kind="light" size="md" iconAfter="arrow" onClick={() => router.push("/dashboard")}>
+          <Pill kind="light" size="md" iconAfter="arrow" onClick={() => router.push("/shop/dashboard/overview")}>
             Go to dashboard
           </Pill>
           {/* Stub until the bot ticket lands — see docs/registration.md §3.2. */}

@@ -1,8 +1,12 @@
 import { Pill } from "@/components/tinsae/pill";
+import { hasShop } from "@/lib/auth/roles";
+import type { AuthUser } from "@/lib/auth/types";
 
 // Design block 12. The "8,920 live listings from 412 verified shops" line is
 // demo copy (see StatBand) — static until the backend exposes real metrics.
-export function FinalCTA() {
+export function FinalCTA({ user }: { user?: AuthUser | null }) {
+  const isOwner = Boolean(user && hasShop(user));
+
   return (
     <section className="mx-auto mt-16 max-w-[1240px] px-6 lg:mt-20 lg:px-7">
       <div className="relative overflow-hidden rounded-3xl bg-[linear-gradient(135deg,#CC3000_0%,#E5562A_55%,#FF7A45_100%)] px-7 py-14 text-center sm:px-12 lg:py-16">
@@ -24,14 +28,26 @@ export function FinalCTA() {
             <Pill kind="light" size="lg" iconAfter="arrow" href="/products">
               Browse listings
             </Pill>
-            <Pill
-              kind="ghost"
-              size="lg"
-              href="/signup"
-              className="border-white/60 text-white hover:bg-white/10"
-            >
-              List your shop
-            </Pill>
+            {isOwner ? (
+              <Pill
+                kind="ghost"
+                size="lg"
+                icon="pulse"
+                href="/shop/dashboard/overview"
+                className="border-white/60 text-white hover:bg-white/10"
+              >
+                Shop dashboard
+              </Pill>
+            ) : (
+              <Pill
+                kind="ghost"
+                size="lg"
+                href={user ? "/shop/onboarding" : "/signup"}
+                className="border-white/60 text-white hover:bg-white/10"
+              >
+                List your shop
+              </Pill>
+            )}
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
-import { SignUpFlow } from "@/components/auth/signup-flow";
 import { AuthShell } from "@/components/auth/auth-shell";
+import { RegisterForm } from "@/components/auth/register-form";
 import { safeNext } from "@/lib/auth/redirects";
 
 export const metadata: Metadata = {
@@ -15,10 +15,11 @@ export default async function SignUpPage({
   searchParams: Promise<{ next?: string }>;
 }) {
   const { next } = await searchParams;
+  const to = safeNext(next);
 
   return (
     <AuthShell>
-      <SignUpFlow next={safeNext(next)} />
+      <RegisterForm next={to} />
     </AuthShell>
   );
 }

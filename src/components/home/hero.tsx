@@ -7,6 +7,9 @@ import { DashboardMock } from "./dashboard-mock";
 import { TrustStrip } from "./trust-strip";
 import { NAV_CATEGORIES } from "@/lib/nav-categories";
 
+import { hasShop } from "@/lib/auth/roles";
+import type { AuthUser } from "@/lib/auth/types";
+
 // The social-proof figures below are the design deck's demo copy, not live
 // values — the backend exposes no shop/confirmation aggregates yet.
 const POPULAR = NAV_CATEGORIES.filter((c) =>
@@ -21,7 +24,9 @@ const SHOP_AVATARS = [
   { initial: "G", color: "#5A4A2E" },
 ];
 
-export function Hero() {
+export function Hero({ user }: { user?: AuthUser | null }) {
+  const isOwner = Boolean(user && hasShop(user));
+
   return (
     <section className="relative overflow-hidden bg-[radial-gradient(120%_90%_at_85%_-10%,#FFF1EB_0%,rgba(255,241,235,0)_55%)]">
       <div className="mx-auto grid max-w-[1240px] grid-cols-1 items-center gap-10 px-6 pt-12 pb-10 lg:grid-cols-[1.08fr_0.92fr] lg:px-7 lg:pt-[72px]">
@@ -45,9 +50,20 @@ export function Hero() {
             <Pill kind="solid" size="lg" iconAfter="arrow" href="/products">
               Start browsing
             </Pill>
-            <Pill kind="outline" size="lg" icon="tg" href="/signup">
-              List your shop
-            </Pill>
+            {isOwner ? (
+              <Pill kind="outline" size="lg" icon="pulse" href="/shop/dashboard/overview">
+                Dashboard
+              </Pill>
+            ) : (
+              <Pill
+                kind="outline"
+                size="lg"
+                icon="tg"
+                href={user ? "/shop/onboarding" : "/signup"}
+              >
+                List your shop
+              </Pill>
+            )}
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
