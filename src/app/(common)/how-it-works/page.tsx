@@ -523,7 +523,7 @@ export default function HowItWorksPage() {
               ትንሳኤ
             </span>
             <span className="mt-4 inline-block text-[13px] font-bold tracking-[0.22em] text-white/90">
-              T I N S A E
+              T I N S A 
             </span>
             <div className="mt-2 text-sm italic text-white/80">&ldquo;rising&rdquo;</div>
           </div>
