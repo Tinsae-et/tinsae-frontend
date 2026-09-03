@@ -76,6 +76,16 @@ export async function getProducts(
   return res.json();
 }
 
+export async function getSimilarProducts(slug:string): Promise<Paginated<Product>> {
+  const res = await fetch(`${CATALOG}/similar/${encodeURIComponent(slug)}/`, {
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(`Could not load similar products (${res.status})`);
+  }
+  return res.json();
+}
+
 /**
  * Total registered shops.
  *

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProduct, getProducts } from "@/lib/api";
+import { getProduct, getSimilarProducts } from "@/lib/api";
 import { formatETB, freshness, type FreshnessTone } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/lib/types";
@@ -426,11 +426,7 @@ export default async function ProductDetailPage({ params }: Props) {
   if (product.slug !== slug) notFound();
 
   // Similar products: same category first, pad with anything else.
-  const similar = await getProducts({
-    category: product.category?.slug,
-    ordering: "-last_confirmed_at",
-    pageSize: 8,
-  })
+  const similar = await getSimilarProducts(slug)
     .then((d) => d.results.filter((p) => p.id !== product.id))
     .catch(() => []);
 
