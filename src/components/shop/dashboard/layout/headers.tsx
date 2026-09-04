@@ -163,3 +163,38 @@ export function ProfileHeader({
     </div>
   );
 }
+
+export function VerificationHeader({
+  setShowSidebar,
+}: {
+  setShowSidebar?: (val: boolean) => void;
+}){
+
+  return(
+    <div className="flex justify-between w-full items-center">
+      <div className="flex gap-2 items-center">
+        {setShowSidebar && (
+          <button
+            type="button"
+            onClick={() => setShowSidebar(true)}
+            className="lg:hidden p-1 text-tn-ink hover:text-tn-red cursor-pointer"
+            aria-label="Open sidebar"
+          >
+            <Icon name="menu" size={22} />
+          </button>
+        )}
+        <div className="flex flex-col gap-1">
+          <span className="uppercase text-gray-500 text-sm">Trust</span>
+          <span className="font-bold text-xl">Get Verified</span>
+        </div>  
+      </div>
+
+      <div>
+        <Link href="/shop/dashboard" className="flex items-center gap-1 font-bold border rounded-full px-5 py-3">
+          <Icon name="shield"/>
+          <span>Back to dashboard</span>
+        </Link>
+      </div>
+    </div>
+  )
+}
