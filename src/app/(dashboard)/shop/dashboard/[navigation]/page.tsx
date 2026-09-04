@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import ListingsTable from "@/components/shop/dashboard/listings/listing-table";
 import Overview from "@/components/shop/dashboard/overview/overview";
@@ -67,5 +67,5 @@ export default async function DashboardSection({ params }: Props) {
     );
   }
 
-  return <div>{navigation}</div>;
+  notFound();
 }
