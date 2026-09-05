@@ -123,7 +123,9 @@ function PhoneAndTelegram({ openStep, setOpenStep }: { openStep: string | null; 
 
 function Document({ openStep, setOpenStep }: { openStep: string | null; setOpenStep: (step: string | null) => void }) {
     const isOpen = openStep === "Business documents";
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [license, setLicense] = useState<string | null>(null);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [fayda, setFayda] = useState<string | null>(null);
 
     const uploadLicense = (e: ChangeEvent<HTMLInputElement>) =>{
