@@ -2,23 +2,25 @@ import Link from "next/link";
 import { Icon } from "@/components/tinsae/icon";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { SectionHead } from "./section-head";
+import { getShops } from "@/lib/api";
+import { ShopMetrics } from "@/lib/types";
 
 // Design block 6. Static demo data from the design deck — the shops API doesn't
 // expose rating/reply-time/dist yet, so this stays on the design's dataset
 // until the backend can answer it.
-const SHOPS = [
-  { name: "Almeda Electronics", hood: "Atlas", rating: 4.9, ratings: 312, listings: 142, reply: 14, dist: 0.6, color: "#0F2A4D" },
-  { name: "Sheba Computers", hood: "Japan", rating: 4.9, ratings: 188, listings: 96, reply: 16, dist: 1.1, color: "#2D4A5E" },
-  { name: "Axum Digital Store", hood: "Olympia", rating: 4.8, ratings: 251, listings: 104, reply: 22, dist: 1.4, color: "#3B5742" },
-  { name: "Mosaic Tech Hub", hood: "Friendship", rating: 4.8, ratings: 204, listings: 88, reply: 20, dist: 0.9, color: "#5A3E6E" },
-];
+// const SHOPS = [
+//   { name: "Almeda Electronics", hood: "Atlas", rating: 4.9, ratings: 312, listings: 142, reply: 14, dist: 0.6, color: "#0F2A4D" },
+//   { name: "Sheba Computers", hood: "Japan", rating: 4.9, ratings: 188, listings: 96, reply: 16, dist: 1.1, color: "#2D4A5E" },
+//   { name: "Axum Digital Store", hood: "Olympia", rating: 4.8, ratings: 251, listings: 104, reply: 22, dist: 1.4, color: "#3B5742" },
+//   { name: "Mosaic Tech Hub", hood: "Friendship", rating: 4.8, ratings: 204, listings: 88, reply: 20, dist: 0.9, color: "#5A3E6E" },
+// ];
 
 function initials(name: string) {
   return name
     .split(" ")
     .map((w) => w[0])
     .slice(0, 2)
-    .join("");
+    .join("").toUpperCase();
 }
 
 function Stars({ r }: { r: number }) {
@@ -39,7 +41,11 @@ function Stars({ r }: { r: number }) {
   );
 }
 
-export function TopShops() {
+export async function TopShops({statCounts}:{statCounts: ShopMetrics}) {
+  const shopProductCounts = statCounts?.shop_product_count;
+  const shops = await getShops()
+    .then(s=>s.results.map(d=>({...d, listings: shopProductCounts?.[d.slug]})))
+    .catch(()=>[])
   return (
     <section className="mx-auto mt-16 max-w-[1240px] px-6 lg:mt-[88px] lg:px-7">
       <SectionHead
@@ -49,7 +55,7 @@ export function TopShops() {
         link="All shops"
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-[18px]">
-        {SHOPS.map((s) => (
+        {shops.map((s) => (
           <Link
             key={s.name}
             href="/products"
@@ -57,7 +63,7 @@ export function TopShops() {
           >
             <div
               className="relative h-[62px]"
-              style={{ background: `linear-gradient(120deg, ${s.color} 0%, ${s.color}cc 100%)` }}
+              style={{ background: `linear-gradient(120deg, ${"#0F2A4D"} 0%, ${"#0F2A4D"}cc 100%)` }}
             >
               <div
                 className="absolute inset-0 opacity-[0.18]"
@@ -70,24 +76,24 @@ export function TopShops() {
             <div className="-mt-[22px] px-[18px] pb-[18px]">
               <div
                 className="inline-flex size-12 items-center justify-center rounded-[13px] border-[3px] border-white text-base font-extrabold text-white shadow-[0_4px_12px_rgba(11,11,11,0.12)]"
-                style={{ background: s.color }}
+                style={{ background: "#0F2A4D" }}
               >
                 {initials(s.name)}
               </div>
               <div className="mt-3 flex items-center gap-1.5">
-                <span className="text-tn-ink truncate text-base font-extrabold tracking-[-0.02em]">
+                <span className="text-tn-ink truncate text-base font-extrabold capitalize tracking-[-0.02em]">
                   {s.name}
                 </span>
                 <VerifiedBadge size={12} />
               </div>
               <div className="mt-[7px] flex items-center gap-2">
-                <Stars r={s.rating} />
-                <span className="font-tn-mono text-tn-mute text-xs">({s.ratings})</span>
+                <Stars r={4.9} />
+                <span className="font-tn-mono text-tn-mute text-xs">({4.9})</span>
               </div>
               <div className="text-tn-ink2 mt-2 flex items-center gap-1.5 text-[13px]">
                 <Icon name="pin" size={14} className="text-tn-mute" />
-                Bole · {s.hood}
-                <span className="text-tn-mute">· {s.dist} km</span>
+                Bole · Atlas
+                <span className="text-tn-mute">· {2.5} km</span>
               </div>
               <div className="font-tn-mono text-tn-ink2 mt-3.5 flex items-center gap-3.5 border-t border-tn-hair2 pt-3.5 text-xs">
                 <span>
@@ -96,7 +102,7 @@ export function TopShops() {
                 <span className="text-tn-hair">|</span>
                 <span className="inline-flex items-center gap-1.5">
                   <span className="bg-tn-green size-1.5 rounded-full" />
-                  ~{s.reply}m reply
+                  ~{34}m reply
                 </span>
               </div>
             </div>

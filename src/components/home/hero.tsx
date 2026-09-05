@@ -9,6 +9,7 @@ import { NAV_CATEGORIES } from "@/lib/nav-categories";
 
 import { hasShop } from "@/lib/auth/roles";
 import type { AuthUser } from "@/lib/auth/types";
+import { ShopMetrics } from "@/lib/types";
 
 // The social-proof figures below are the design deck's demo copy, not live
 // values — the backend exposes no shop/confirmation aggregates yet.
@@ -24,7 +25,7 @@ const SHOP_AVATARS = [
   { initial: "G", color: "#5A4A2E" },
 ];
 
-export function Hero({ user }: { user?: AuthUser | null }) {
+export function Hero({ user, statCounts }: { user?: AuthUser | null, statCounts: ShopMetrics }) {
   const isOwner = Boolean(user && hasShop(user));
 
   return (
@@ -93,7 +94,7 @@ export function Hero({ user }: { user?: AuthUser | null }) {
               ))}
             </div>
             <p className="text-tn-ink2 text-[13.5px] leading-snug">
-              <b className="text-tn-ink">412 verified shops</b> in Bole
+              <b className="text-tn-ink">{ Number(statCounts.verified_shops).toLocaleString() } verified shops</b> in Bole
               <br />
               <span className="text-tn-mute">96% reconfirmed their stock today</span>
             </p>

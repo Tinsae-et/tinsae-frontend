@@ -1,10 +1,11 @@
 import { Pill } from "@/components/tinsae/pill";
 import { hasShop } from "@/lib/auth/roles";
 import type { AuthUser } from "@/lib/auth/types";
+import { ShopMetrics } from "@/lib/types";
 
 // Design block 12. The "8,920 live listings from 412 verified shops" line is
 // demo copy (see StatBand) — static until the backend exposes real metrics.
-export function FinalCTA({ user }: { user?: AuthUser | null }) {
+export function FinalCTA({ user, statCounts }: { user?: AuthUser | null, statCounts: ShopMetrics }) {
   const isOwner = Boolean(user && hasShop(user));
 
   return (
@@ -22,7 +23,7 @@ export function FinalCTA({ user }: { user?: AuthUser | null }) {
             <br className="hidden sm:block" /> you can trust.
           </h2>
           <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-white/90 sm:text-lg">
-            Browse 8,920 live listings from 412 verified shops across Bole.
+            Browse { Number(statCounts.verified_shop_products).toLocaleString() } live listings from { Number(statCounts.verified_shops).toLocaleString() } verified shops across Bole.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Pill kind="light" size="lg" iconAfter="arrow" href="/products">
