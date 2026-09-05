@@ -1,6 +1,7 @@
 "use client"
 import { Icon } from "@/components/tinsae/icon"
 import { Pill } from "@/components/tinsae/pill"
+import { VerifiedBadge } from "../tinsae/verified-badge"
 
 interface Shop
     {
@@ -21,7 +22,7 @@ interface ShopProps{
 
 export default  function Shopcard({items}:ShopProps){
     return(
-        <div className="relative rounded-2xl border border-orange-300 bg-gray-100 ">
+        <div className="relative rounded-2xl border border-orange-300 bg-gray-100 hover:shadow-2xl hover:-translate-y-1 transition hover:border-orange-500 ">
                     <div className="h-19 bg-linear-to-r from-gray-500 to-gray-300 rounded-t-2xl border">
                         <div className="flex  justify-end"> 
                             <span className="flex items-center gap-1 mt-2 mr-4 border border-gray-400 rounded-full px-3 bg-gray-500 w-fit text-sm text-white">
@@ -29,13 +30,13 @@ export default  function Shopcard({items}:ShopProps){
                         </div>
                     </div>
                     <div className="absolute top-10 py-4 px-4 ml-8 bg-gray-500 border border-gray-400 rounded-xl w-fit font-bold text-xl text-white">{items.f_car}</div>
-                    <div className="flex justify-end">
-                            <div className="bg-green-100 rounded-full px-2 text-green-700 text-sm font-bold flex items-center gap-2">
-                                <div className="w-2 h-2 bg-green-800 rounded-full inline-block"/>
-                        Confirmed today</div>
+                    <div className="flex justify-end mx-3 ">
+                            <div className="bg-green-100 rounded-full px-2 text-green-700 text-sm font-bold flex items-center gap-2 py-1">
+                                <div className="w-2 h-2 bg-green-800 rounded-full inline-block "/>
+                        Confirmed today </div>
                     </div>
-                    <div className="pl-8 pt-3 ">
-                        <p className="font-bold my-1">{items.name}</p>
+                    <div className="px-5 pt-3 ">
+                        <p className="font-bold my-1 flex gap-2 items-center">{items.name}<VerifiedBadge/></p>
                         <div>
                             <span className="text-yellow-400 flex items-center"><Icon name="star"/><Icon name="star"/><Icon name="star"/><Icon name="star"/><Icon name="star"/>
                                 <span className="font-bold text-black text-sm flex gap-3 px-2 items-center">{items.rate}<p className="text-gray-500 text-sm"> ({items.rate2})</p></span>
@@ -61,11 +62,11 @@ export default  function Shopcard({items}:ShopProps){
                                 <p className="text-gray-500 text-sm">Response</p>
                             </div>
                         </div>
-                        <div className="flex gap-2 py-5">
-                            <Pill kind="outline" size="lg" className="ml-3 px-10 py-1 "  icon="eye" >
+                        <div className="flex py-5 justify-between">
+                            <Pill kind="outline" size="sm" className=" px-7 py-1 text-sm"  icon="eye" >
                             View Shop
                             </Pill>
-                            <Pill size="lg" className="px-10 py-1 "  icon="tg" >
+                            <Pill size="sm" className="px-7 py-1 text-sm"  icon="tg" >
                             contact
                             </Pill>
                         </div>

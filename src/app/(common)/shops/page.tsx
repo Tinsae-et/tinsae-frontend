@@ -10,7 +10,7 @@ export default function ShopsPage(){
         {f_car:"MT" , name: "Mosaic Tech Hub",listings:142, reply:98, response:"14m", distance:"0.6Km" , rate:4.9,rate2:204}
     ]
     return(
-        <div>
+        <div className="max-w-6xl mx-auto">
             <div className="border-b">
                 <div className="flex border rounded-full w-fit px-2 items-center gap-2"><Icon name="shield" className="text-green-500"/> <span>Every shop verified by tinsae</span></div>
                 <p className="font-bold text-xl mt-2">The shops behind Bole&apos;s electronics</p>
@@ -42,7 +42,7 @@ export default function ShopsPage(){
                     </div>
                 </div>
             </div>
-            <div className="grid grid-cols-3 gap-3 pt-2">
+            <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-3 pt-2">
                 {shops.map((item)=>(
                     <Shopcard items={item} key={item.name}/>
                 ))
