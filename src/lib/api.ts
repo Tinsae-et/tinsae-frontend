@@ -129,6 +129,16 @@ export async function getProduct(slug: string, init?: RequestInit): Promise<Prod
   return res.json();
 }
 
+export async function getShop(slug: string): Promise<Shop> {
+  const res = await fetch(`${API_URL}/api/v1/shops/${encodeURIComponent(slug)}/`, {
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(`Could not load shop (${res.status})`);
+  }
+  return res.json();
+}
+
 export type ShopProductQuery = {
   q?: string;
   category?: string;
