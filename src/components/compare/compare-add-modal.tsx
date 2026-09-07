@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Icon } from "@/components/tinsae/icon";
 import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
-import { formatETB } from "@/lib/format";
+import { formatETB, normalizeImageUrl } from "@/lib/format";
 import { getProducts } from "@/lib/api";
 import type { Product } from "@/lib/types";
 import { useCompare } from "@/hooks/use-compare";
@@ -179,7 +179,7 @@ export function CompareAddModal({
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {products.map((product) => {
                 const alreadyAdded = isInCompare(product.slug);
-                const image = product.images?.[0]?.url || null;
+                const image = normalizeImageUrl(product.images?.[0]?.url) || null;
 
                 return (
                   <div

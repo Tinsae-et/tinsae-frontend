@@ -5,10 +5,12 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Icon } from "@/components/tinsae/icon";
 import { Pill } from "@/components/tinsae/pill";
+import { cn } from "@/lib/utils";
 import { ProductGrid } from "./product-grid";
 import { FilterRail } from "./filter-rail";
 import { FilterSheet } from "./filter-sheet";
 import { SortSelect } from "./sort-select";
+import { BackToTop } from "./back-to-top";
 import { useProducts, type InitialProducts } from "@/hooks/use-products";
 import {
   activeFilterCount,
@@ -36,7 +38,18 @@ export function ProductsBrowser({
   const filters = useMemo(() => filtersFromSearchParams(searchParams), [searchParams]);
   const query = useMemo(() => filtersToProductQuery(filters), [filters]);
 
-  const { products, total, loading, error, retry } = useProducts(query, initial);
+  const {
+    products,
+    total,
+    loading,
+    loadingMore,
+    error,
+    loadMoreError,
+    hasMore,
+    loadMore,
+    retry,
+    retryLoadMore,
+  } = useProducts(query, initial);
 
   // Grid / list preference (per-user, not part of the shared URL).
   const [view, setView] = useState<"grid" | "list">("grid");
@@ -57,13 +70,8 @@ export function ProductsBrowser({
   function applyPatch(patch: Partial<SearchFilters>) {
     const current = filtersFromSearchParams(searchParams);
     const next = { ...current, ...patch };
-    if (!("page" in patch)) next.page = undefined; // any filter change resets to page 1
+    next.page = undefined; // any filter change resets infinite scroll
     navigate(filtersToSearchParams(next), "push");
-  }
-
-  function goToPage(page: number) {
-    applyPatch({ page: page > 1 ? page : undefined });
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function clearAll() {
@@ -217,7 +225,7 @@ export function ProductsBrowser({
           onReset={clearAll}
         />
 
-        <div className="min-w-0 flex-1">
+        <div className={cn("min-w-0 flex-1", hasMore && "pb-[40vh]")}>
           {error && !loading ? (
             <ErrorState onRetry={retry} />
           ) : !loading && products.length === 0 ? (
@@ -227,11 +235,14 @@ export function ProductsBrowser({
               products={products}
               total={total}
               loading={loading}
+              loadingMore={loadingMore}
               error={error}
-              page={filters.page ?? 1}
+              loadMoreError={loadMoreError}
+              hasMore={hasMore}
               view={view}
-              onPageChange={goToPage}
+              onLoadMore={loadMore}
               onRetry={retry}
+              onRetryLoadMore={retryLoadMore}
             />
           )}
         </div>
@@ -247,6 +258,8 @@ export function ProductsBrowser({
         onApply={(draft) => navigate(filtersToSearchParams({ ...draft, page: undefined }), "push")}
         resultCount={total}
       />
+
+      <BackToTop />
     </div>
   );
 }

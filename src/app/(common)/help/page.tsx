@@ -1,7 +1,7 @@
 import React from "react"
 import { Phone } from "lucide-react"
 import { Icon, IconName } from "@/components/tinsae/icon";
-import { FaqSection } from "@/components/help/fqa-section";
+import { FaqSection } from "@/components/help/faq-section";
 import SearchBar from "@/components/help/search-bar";
 import Link from "next/link";
 import { Metadata } from "next";

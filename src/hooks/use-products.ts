@@ -11,49 +11,169 @@ export type InitialProducts = { products: Product[]; total: number } | null;
  * Owns the product list for /products.
  *
  * - Uses the server-rendered `initial` list on first mount.
- * - Re-fetches whenever `query` changes (filters / sort / page — the URL is the
- *   single source of truth).
+ * - Starts a fresh list whenever the filters or sort change; the URL remains the
+ *   single source of truth for those.
+ * - Appends further pages through `loadMore`. The page cursor lives here, not in
+ *   the URL, so a filter change always restarts from page 1.
  */
 export function useProducts(query: ProductQuery, initial: InitialProducts) {
+  // `page` is the infinite-scroll cursor, owned here rather than by the URL, so
+  // it is kept out of the key that decides when to start a brand new list.
+  const filterQuery: ProductQuery = { ...query, page: undefined };
+  const filterKey = JSON.stringify(filterQuery);
+
   const [products, setProducts] = useState<Product[]>(initial?.products ?? []);
   const [total, setTotal] = useState(initial?.total ?? 0);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(query.page ?? 1);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(
+    initial ? initial.products.length < initial.total : true,
+  );
 
-  const queryKey = JSON.stringify(query);
-  // The query the currently displayed list was loaded for. Initialized to the
-  // first-render query, which matches the server-rendered `initial` list, so we
-  // refetch only when the query actually changes — not on the first mount or on
-  // StrictMode's simulated remount (refs survive it, so this stays in sync).
-  const loadedKey = useRef(queryKey);
+  // The query the currently displayed list was loaded for.
+  const loadedKey = useRef<string>(initial ? filterKey : "");
+  const firstPageRef = useRef<AbortController | null>(null);
+  const loadMoreRef = useRef<AbortController | null>(null);
 
-  const fetchPage = useCallback(async () => {
+  // Latest filters, read through a ref so `loadMore` does not take the query
+  // object as a dependency. Spreading `query` produces a new object every
+  // render, which would churn `loadMore`'s identity and make the caller tear
+  // down and rebuild its IntersectionObserver on every single render.
+  const filterQueryRef = useRef(filterQuery);
+  // Synced in an effect, not during render. Declared before the fetch effect
+  // below so it is already up to date by the time that one runs.
+  useEffect(() => {
+    filterQueryRef.current = filterQuery;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterKey]);
+
+  // Ids already on screen. Kept in a ref so de-duplication happens before
+  // setState rather than inside the updater — updater functions must stay pure.
+  const seenIdsRef = useRef<Set<number>>(
+    new Set(initial?.products.map((p) => p.id) ?? []),
+  );
+
+  // Appends that produced nothing new, back to back. Two in a row means the
+  // sentinel stays on screen with no new content under it, which would spin the
+  // observer through pages; stop auto-loading instead.
+  const emptyStreak = useRef(0);
+
+  const fetchFirstPage = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     setError(null);
+    setLoadMoreError(null);
+    emptyStreak.current = 0;
     try {
-      const data = await getProducts({ ...query, pageSize: PRODUCTS_PAGE_SIZE });
+      const data = await getProducts(
+        { ...filterQueryRef.current, page: 1, pageSize: PRODUCTS_PAGE_SIZE },
+        { signal },
+      );
+      if (signal?.aborted) return;
+      seenIdsRef.current = new Set(data.results.map((p) => p.id));
       setTotal(data.count);
       setProducts(data.results);
-      setPage(query.page ?? 1);
+      setPage(1);
+      setHasMore(Boolean(data.next) && data.results.length > 0);
     } catch {
+      if (signal?.aborted) return;
       setError("Couldn't load listings. Check your connection and try again.");
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
     }
-  }, [query]);
+  }, []);
 
-  // Refetch whenever the query changes.
+  // Refetch whenever the filters or sorting change.
   useEffect(() => {
-    if (loadedKey.current === queryKey) return;
-    loadedKey.current = queryKey;
-    fetchPage();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryKey]);
+    if (loadedKey.current === filterKey) return;
+    loadedKey.current = filterKey;
 
-  const retry = useCallback(() => fetchPage(), [fetchPage]);
+    // Abandon everything belonging to the previous filters — including a
+    // load-more already in flight, whose page would otherwise be appended
+    // underneath the new list with the wrong total and page cursor.
+    firstPageRef.current?.abort();
+    loadMoreRef.current?.abort();
+    loadMoreRef.current = null;
+    setLoadingMore(false);
+    setLoadMoreError(null);
 
-  return { products, total, loading, error, page, retry };
+    const controller = new AbortController();
+    firstPageRef.current = controller;
+
+    fetchFirstPage(controller.signal);
+    return () => {
+      controller.abort();
+    };
+  }, [filterKey, fetchFirstPage]);
+
+  const loadMore = useCallback(async () => {
+    if (loading || loadingMore || !hasMore) return;
+
+    const controller = new AbortController();
+    loadMoreRef.current = controller;
+    const { signal } = controller;
+
+    setLoadingMore(true);
+    setLoadMoreError(null);
+
+    const nextPage = page + 1;
+    try {
+      const data = await getProducts(
+        { ...filterQueryRef.current, page: nextPage, pageSize: PRODUCTS_PAGE_SIZE },
+        { signal },
+      );
+      if (signal.aborted) return;
+
+      const fresh = data.results.filter((p) => !seenIdsRef.current.has(p.id));
+      for (const p of fresh) seenIdsRef.current.add(p.id);
+      if (fresh.length > 0) {
+        setProducts((prev) => [...prev, ...fresh]);
+      }
+
+      emptyStreak.current = fresh.length === 0 ? emptyStreak.current + 1 : 0;
+
+      setTotal(data.count);
+      setPage(nextPage);
+      setHasMore(
+        Boolean(data.next) && data.results.length > 0 && emptyStreak.current < 2,
+      );
+    } catch {
+      if (signal.aborted) return;
+      setLoadMoreError("Couldn't load more listings. Tap to retry.");
+    } finally {
+      // Only the request that is still current may clear the flag: a newer
+      // load-more, or a filter change, has already taken ownership of it.
+      if (loadMoreRef.current === controller) {
+        loadMoreRef.current = null;
+        setLoadingMore(false);
+      }
+    }
+  }, [hasMore, loading, loadingMore, page]);
+
+  const retry = useCallback(() => fetchFirstPage(), [fetchFirstPage]);
+
+  const retryLoadMore = useCallback(() => {
+    setLoadMoreError(null);
+    loadMore();
+  }, [loadMore]);
+
+  return {
+    products,
+    total,
+    loading,
+    loadingMore,
+    error,
+    loadMoreError,
+    hasMore,
+    page,
+    loadMore,
+    retry,
+    retryLoadMore,
+  };
 }
 
 
@@ -78,26 +198,37 @@ export function useShopProducts(query: ShopProductQuery, slug: string) {
   const queryKey = JSON.stringify(query);
   const loadedKey = useRef<string | null>(null);
 
-  const fetchPage = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getShopProducts(slug, query);
-      setTotal(data.count);
-      setProducts(data.results);
-    } catch {
-      setError("Couldn't load listings. Check your connection and try again.");
-    } finally {
-      setLoading(false);
-    }
-  }, [query, slug]);
+  const fetchPage = useCallback(
+    async (signal?: AbortSignal) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await getShopProducts(slug, query, { signal });
+        if (signal?.aborted) return;
+        setTotal(data.count);
+        setProducts(data.results);
+      } catch {
+        if (signal?.aborted) return;
+        setError("Couldn't load listings. Check your connection and try again.");
+      } finally {
+        if (!signal?.aborted) {
+          setLoading(false);
+        }
+      }
+    },
+    [query, slug],
+  );
 
   // Fetches on mount, then whenever the query changes. The ref survives
   // StrictMode's simulated remount, so this is one request either way.
   useEffect(() => {
     if (loadedKey.current === queryKey) return;
     loadedKey.current = queryKey;
-    fetchPage();
+    const controller = new AbortController();
+    fetchPage(controller.signal);
+    return () => {
+      controller.abort();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryKey]);
 

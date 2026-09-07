@@ -119,7 +119,8 @@
 @media (prefers-reduced-motion: reduce) {
   [data-orbit],
   .tn-rise,
-  .tn-word {
+  .tn-word,
+  .animate-pulse {
     animation: none !important;
   }
 }
@@ -202,5 +203,9 @@
   }
   html {
     @apply font-sans;
+    /* Reserve the scrollbar track always. Without this, a filter that narrows
+       the results to less than one viewport removes the scrollbar and the whole
+       page shifts sideways. */
+    scrollbar-gutter: stable;
   }
 }

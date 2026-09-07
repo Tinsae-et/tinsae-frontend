@@ -32,6 +32,12 @@ export function rejectCrossOrigin(request: Request): NextResponse | null {
  * becomes a 502 rather than leaking a stack trace to the browser.
  */
 export function errorResponse(error: unknown): NextResponse {
+  if (error instanceof SyntaxError) {
+    return NextResponse.json(
+      { detail: "Invalid JSON in request body." },
+      { status: 400 },
+    );
+  }
   if (error instanceof AuthApiError) {
     return NextResponse.json(
       { detail: error.detail, code: error.code, fieldErrors: error.fieldErrors },

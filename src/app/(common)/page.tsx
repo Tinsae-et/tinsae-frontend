@@ -9,20 +9,10 @@ import { HowItWorks } from "@/components/home/how-it-works";
 import { StatBand } from "@/components/home/stat-band";
 import { ShopBand } from "@/components/home/shop-band";
 import { FinalCTA } from "@/components/home/final-cta";
-import { readSession } from "@/lib/auth/session";
-import { authDriver } from "@/lib/auth/driver";
-import type { AuthUser } from "@/lib/auth/types";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export default async function Home() {
-  const { access } = await readSession();
-  let user: AuthUser | null = null;
-  if (access) {
-    try {
-      user = await authDriver.me(access);
-    } catch {
-      user = null;
-    }
-  }
+  const user = await getCurrentUser();
 
   // The landing page must render even with the backend down, so the fetch
   // degrades to empty rather than throwing the whole route.

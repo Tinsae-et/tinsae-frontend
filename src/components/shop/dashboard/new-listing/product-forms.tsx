@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ImageIcon } from "lucide-react";
 import { CATEGORIES } from "@/lib/shop/onboarding-state"
 import Image from "next/image"
@@ -151,10 +151,30 @@ export function ProductImageForm(){
     ]);
     const photoCount = (coverPhoto ? 1 : 0) + extraPhotos.filter(Boolean).length;
 
+    const coverPhotoRef = useRef<string | null>(null);
+    const extraPhotosRef = useRef<(string | null)[]>(extraPhotos);
+
+    useEffect(() => {
+        coverPhotoRef.current = coverPhoto;
+        extraPhotosRef.current = extraPhotos;
+    });
+
+    useEffect(() => {
+        return () => {
+            if (coverPhotoRef.current) URL.revokeObjectURL(coverPhotoRef.current);
+            extraPhotosRef.current.forEach((url) => {
+                if (url) URL.revokeObjectURL(url);
+            });
+        };
+    }, []);
+
     const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        setCoverPhoto(URL.createObjectURL(file));
+        setCoverPhoto((prev) => {
+            if (prev) URL.revokeObjectURL(prev);
+            return URL.createObjectURL(file);
+        });
     };
 
     const handleExtraUpload = (
@@ -165,9 +185,10 @@ export function ProductImageForm(){
         if (!file) return;
         const url = URL.createObjectURL(file);
         setExtraPhotos((prev) => {
-        const next = [...prev];
-        next[index] = url;
-        return next;
+            const next = [...prev];
+            if (next[index]) URL.revokeObjectURL(next[index]!);
+            next[index] = url;
+            return next;
         });
     };
     return(
@@ -194,6 +215,7 @@ export function ProductImageForm(){
                         alt="Cover"
                         width={20}
                         height={20}
+                        unoptimized
                         className="h-32 w-full rounded-lg object-cover"
                     />
                     ) : (
@@ -230,6 +252,7 @@ export function ProductImageForm(){
                             alt={`Photo ${i + 2}`}
                             width={20}
                             height={20}
+                            unoptimized
                             className="h-full w-full rounded-xl object-cover"
                         />
                         ) : (
@@ -428,7 +451,7 @@ export function PriceAndStockForm(){
                 Price negotiable
               </div>
               <div className="text-xs text-neutral-400">
-                Show buyers you&appos;re open to offers
+                Show buyers you&apos;re open to offers
               </div>
             </div>
           </div>
