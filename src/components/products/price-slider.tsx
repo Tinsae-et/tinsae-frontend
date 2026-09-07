@@ -193,6 +193,14 @@ export function PriceSlider({
     window.removeEventListener("pointerup", endDrag);
   }
 
+  const endDragRef = useRef(endDrag);
+  useEffect(() => {
+    endDragRef.current = endDrag;
+  });
+  useEffect(() => {
+    return () => endDragRef.current();
+  }, []);
+
   // Visual position — a value beyond the extent pins to the edge.
   const loPct = Math.max(0, Math.min(100, pct(lo, extent.min, extent.max)));
   const hiPct = Math.max(0, Math.min(100, pct(hi, extent.min, extent.max)));

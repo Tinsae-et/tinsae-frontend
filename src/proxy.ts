@@ -99,5 +99,11 @@ function redirectToLogin(request: NextRequest, from: string) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/shop/:path*", "/signin", "/signup"],
+  matcher: [
+    "/dashboard/:path*",
+    "/shop/:path*",
+    "/account/:path*",
+    "/signin",
+    "/signup",
+  ],
 };

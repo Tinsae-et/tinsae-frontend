@@ -23,6 +23,7 @@
 // Scope is one server process. A multi-instance deployment can still rotate the
 // same token twice, so this narrows the window rather than closing it; closing
 // it needs shared state (Redis) or a grace period on the backend.
+import { createHash } from "node:crypto";
 import type { RefreshResult } from "./types";
 
 /** How long a completed refresh stays available to stragglers. */
@@ -57,13 +58,17 @@ const store = globalThis as typeof globalThis & {
 
 const inflight = (store.__tinsaeRefreshLock ??= new Map<string, Entry>());
 
+function hashToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
+
 function sweep(now: number): void {
-  for (const [token, entry] of inflight) {
+  for (const [key, entry] of inflight) {
     const expired =
       entry.completedAt !== undefined
         ? now - entry.completedAt > RESULT_TTL_MS
         : now - entry.startedAt > STUCK_MS;
-    if (expired) inflight.delete(token);
+    if (expired) inflight.delete(key);
   }
 }
 
@@ -77,10 +82,11 @@ export function refreshOnce(
   token: string,
   refresh: () => Promise<RefreshResult>,
 ): Promise<RefreshResult> {
+  const key = hashToken(token);
   const now = Date.now();
   sweep(now);
 
-  const existing = inflight.get(token);
+  const existing = inflight.get(key);
   if (existing) return existing.promise;
 
   const entry: Entry = {
@@ -91,12 +97,12 @@ export function refreshOnce(
         return result;
       },
       (error: unknown) => {
-        inflight.delete(token);
+        inflight.delete(key);
         throw error;
       },
     ),
   };
 
-  inflight.set(token, entry);
+  inflight.set(key, entry);
   return entry.promise;
 }

@@ -1,47 +1,81 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import type { Product } from "@/lib/types";
-import { ProductCard, ProductRow, ProductCardSkeleton } from "./product-card";
+import {
+  ProductCard,
+  ProductRow,
+  ProductCardSkeleton,
+  ProductRowSkeleton,
+} from "./product-card";
 import { Icon } from "@/components/tinsae/icon";
 import { cn } from "@/lib/utils";
 
 export const PRODUCTS_PAGE_SIZE = 12;
 
-// Windowed page numbers: 1 … (current-1) current (current+1) … last
-function pageWindow(page: number, totalPages: number): (number | "…")[] {
-  if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-  const out: (number | "…")[] = [1];
-  if (page > 3) out.push("…");
-  for (let p = Math.max(2, page - 1); p <= Math.min(totalPages - 1, page + 1); p++) out.push(p);
-  if (page < totalPages - 2) out.push("…");
-  out.push(totalPages);
-  return out;
-}
-
 export function ProductGrid({
   products,
   total,
   loading,
+  loadingMore = false,
   error,
-  page,
+  loadMoreError = null,
+  hasMore = false,
   view,
-  onPageChange,
+  onLoadMore,
   onRetry,
+  onRetryLoadMore,
 }: {
   products: Product[];
   total: number;
   loading: boolean;
+  loadingMore?: boolean;
   error: string | null;
-  page: number;
+  loadMoreError?: string | null;
+  hasMore?: boolean;
   view: "grid" | "list";
-  onPageChange: (page: number) => void;
+  onLoadMore?: () => void;
   onRetry: () => void;
+  onRetryLoadMore?: () => void;
 }) {
-  const totalPages = Math.max(1, Math.ceil(total / PRODUCTS_PAGE_SIZE));
-  const safePage = Math.min(Math.max(1, page), totalPages); // clamp out-of-range ?page=
-  const start = total === 0 ? 0 : (safePage - 1) * PRODUCTS_PAGE_SIZE + 1;
-  const end = Math.min(safePage * PRODUCTS_PAGE_SIZE, total);
-  const window = pageWindow(safePage, totalPages);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  const gridClass = cn(
+    "grid gap-4",
+    view === "grid" ? "grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4" : "grid-cols-1",
+  );
+  const Skeleton = view === "grid" ? ProductCardSkeleton : ProductRowSkeleton;
+
+  const onLoadMoreRef = useRef(onLoadMore);
+  const isFetchingRef = useRef(false);
+
+  useEffect(() => {
+    onLoadMoreRef.current = onLoadMore;
+    isFetchingRef.current = Boolean(loading || loadingMore || loadMoreError);
+  });
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || !hasMore || !onLoadMore) {
+      return;
+    }
+
+    if (typeof IntersectionObserver === "undefined") return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !isFetchingRef.current) {
+          onLoadMoreRef.current?.();
+        }
+      },
+      { rootMargin: "800px" },
+    );
+
+    observer.observe(sentinel);
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasMore, onLoadMore]);
 
   return (
     <>
@@ -50,28 +84,17 @@ export function ProductGrid({
       </p>
 
       {loading ? (
-        <div
-          className={cn(
-            "grid gap-4",
-            view === "grid"
-              ? "grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
-              : "grid-cols-1",
-          )}
-        >
+        <div className={gridClass}>
           {Array.from({ length: 8 }).map((_, i) => (
-            <ProductCardSkeleton key={i} />
+            <Skeleton key={i} />
           ))}
         </div>
       ) : products.length === 0 ? null : (
         <div
           role="region"
           aria-label="Results"
-          className={cn(
-            "grid gap-4",
-            view === "grid"
-              ? "grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
-              : "grid-cols-1",
-          )}
+          data-results-grid={view}
+          className={gridClass}
         >
           {products.map((p) =>
             view === "grid" ? (
@@ -83,8 +106,24 @@ export function ProductGrid({
         </div>
       )}
 
+      {/* Sentinel for infinite scroll prefetching */}
+      {hasMore && !loading && !loadMoreError && (
+        <div ref={sentinelRef} className="h-6 w-full" aria-hidden />
+      )}
+
+      {/* Stable loading-more indicator */}
+      {loadingMore && (
+        <div className="flex flex-col items-center justify-center py-10" aria-live="polite">
+          <div className="flex items-center gap-2.5 rounded-full border border-tn-hair bg-white px-5 py-2.5 shadow-xs">
+            <div className="size-4 animate-spin rounded-full border-2 border-tn-hair2 border-t-tn-red" />
+            <span className="text-xs font-semibold text-tn-mute">Loading more listings…</span>
+          </div>
+        </div>
+      )}
+
+      {/* Error on initial load */}
       {error && (
-        <div className="border-tn-red/30 bg-tn-red-soft text-tn-red-dark mt-6 flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-semibold">
+        <div className="border-tn-red/30 bg-tn-red-soft text-tn-red-dark mt-6 flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm font-semibold">
           <span>{error}</span>
           <button type="button" onClick={onRetry} className="text-tn-red underline underline-offset-2">
             Retry
@@ -92,58 +131,32 @@ export function ProductGrid({
         </div>
       )}
 
-      {/* ── pagination (design) ───────────────────────────── */}
-      {!loading && total > 0 && (
-        <div className="mt-9 flex flex-wrap items-center justify-between gap-3 border-t border-tn-hair pt-[22px]">
-          <span className="font-tn-mono text-tn-mute text-[13px]">
-            Showing {start}–{end} of {total.toLocaleString("en-US")}
-          </span>
-
-          <div className="flex flex-wrap items-center gap-1.5">
+      {/* Error when loading next page */}
+      {loadMoreError && (
+        <div className="border-tn-red/30 bg-tn-red-soft text-tn-red-dark mt-6 flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm font-semibold">
+          <span>{loadMoreError}</span>
+          {onRetryLoadMore && (
             <button
               type="button"
-              onClick={() => onPageChange(page - 1)}
-              disabled={page <= 1}
-              aria-label="Previous page"
-              className="text-tn-ink2 border-tn-hair inline-flex h-10 min-w-[40px] items-center justify-center rounded-full border bg-white px-3 text-[13.5px] font-bold disabled:cursor-not-allowed disabled:opacity-40"
+              onClick={onRetryLoadMore}
+              className="text-tn-red underline underline-offset-2 hover:opacity-80"
             >
-              <Icon name="chevron" size={15} className="-scale-x-100" />
+              Retry
             </button>
+          )}
+        </div>
+      )}
 
-            {window.map((n, i) =>
-              n === "…" ? (
-                <span key={`d${i}`} className="text-tn-mute inline-flex h-10 min-w-[24px] items-center justify-center text-[13.5px] font-bold">
-                  …
-                </span>
-              ) : (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => onPageChange(n)}
-                  aria-current={n === safePage ? "page" : undefined}
-                  className={cn(
-                    "inline-flex h-10 min-w-[40px] items-center justify-center rounded-full px-3 text-[13.5px] font-bold",
-                    n === safePage
-                      ? "bg-tn-ink text-white"
-                      : "border-tn-hair border bg-white text-tn-ink2",
-                  )}
-                >
-                  {n}
-                </button>
-              ),
-            )}
-
-            <button
-              type="button"
-              onClick={() => onPageChange(page + 1)}
-              disabled={page >= totalPages}
-              aria-label="Next page"
-              className="text-tn-ink border-tn-hair ml-1 inline-flex h-10 items-center gap-1.5 rounded-full border bg-white px-4 text-[13.5px] font-bold disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Next
-              <Icon name="chevron" size={15} />
-            </button>
+      {/* End of results indicator */}
+      {!hasMore && products.length > 0 && !loading && (
+        <div className="mt-10 flex flex-col items-center justify-center gap-1 border-t border-tn-hair pt-8 pb-4 text-center">
+          <div className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-tn-mute uppercase">
+            <Icon name="check" size={14} className="text-tn-green" />
+            <span>All listings loaded</span>
           </div>
+          <p className="font-tn-mono text-xs text-tn-mute">
+            Showing all {products.length} of {total.toLocaleString("en-US")} listings
+          </p>
         </div>
       )}
     </>
