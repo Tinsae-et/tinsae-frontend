@@ -10,11 +10,13 @@
 // The access cookie's max-age mirrors the token's own lifetime, so the cookie
 // vanishing *is* the expiry signal. No clock comparison, no decoding a JWT in
 // the middleware.
+import { cache } from "react";
 import { cookies } from "next/headers";
 import type { NextResponse } from "next/server";
 
+import { authDriver } from "./driver";
 import { ACCESS_TTL_SECONDS, REFRESH_TTL_SECONDS } from "./tokens";
-import type { AuthTokens } from "./types";
+import type { AuthTokens, AuthUser } from "./types";
 
 /**
  * Cookies are Secure — and therefore `__Host-` prefixed — wherever the app is
@@ -91,3 +93,14 @@ export async function readSession(): Promise<{
     refresh: jar.get(REFRESH_COOKIE)?.value,
   };
 }
+
+/**
+ * Deduplicated user session fetch for Server Components.
+ * Wrapped in React cache() so concurrent layout/page renders share a single
+ * round trip to authDriver.me() per request.
+ */
+export const getCurrentUser = cache(async (): Promise<AuthUser | null> => {
+  const { access } = await readSession();
+  if (!access) return null;
+  return authDriver.me(access).catch(() => null);
+});

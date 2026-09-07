@@ -26,9 +26,13 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   // the first page, and let the client take over for subsequent changes.
   const filters = filtersFromSearchParams(params);
   const [data, categories, priceBounds] = await Promise.all([
-    getProducts({ ...filtersToProductQuery(filters), pageSize: PRODUCTS_PAGE_SIZE }).catch(
-      () => null,
-    ),
+    // Always page 1: the client owns the scroll cursor from here on, so an old
+    // `?page=3` link degrades to the top of the list rather than desyncing it.
+    getProducts({
+      ...filtersToProductQuery(filters),
+      page: 1,
+      pageSize: PRODUCTS_PAGE_SIZE,
+    }).catch(() => null),
     getCategories().catch(() => null),
     (async () => {
       // True price bounds for the slider track, from the whole catalog — two
