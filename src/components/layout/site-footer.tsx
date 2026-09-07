@@ -69,7 +69,9 @@ export function SiteFooter() {
                                                   ? "/verified-shops"
                                                   : item === "Trust & safety"
                                                     ? "/trust-and-safety"
-                                                    : "#"
+                                                    : item === "Help"
+                                                      ? "/help"
+                                                      : "#"
                     }
                     className="text-tn-ink2 hover:text-tn-red text-sm transition-colors"
                   >

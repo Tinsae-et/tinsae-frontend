@@ -23,7 +23,10 @@ type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const product = await getProduct(slug).catch(() => notFound());
+  const product = await getProduct(slug).catch(() => null);
+  if (!product || product.slug !== slug) {
+    return { title: "Listing not found — Tinsae" };
+  }
   return {
     title: `${product.title} — Tinsae`,
     description:
@@ -93,7 +96,10 @@ function orderSpecs(specs: [string, unknown][]): [string, unknown][] {
 }
 
 /** Split "iPhone 15 Pro 256GB" into name + muted capacity tail when present. */
-function splitCapacity(title: string, specs: Record<string, unknown>): [string, string] {
+function splitCapacity(
+  title: string,
+  specs: Record<string, unknown>,
+): [string, string] {
   const cap = specs.storage;
   if (typeof cap === "string" && cap && title.endsWith(cap)) {
     return [title.slice(0, title.length - cap.length).trim(), cap];
@@ -112,7 +118,14 @@ const initials = (name: string) =>
 
 // Deterministic tile colour from the shop name (design: 42px initials tile).
 function shopColor(name: string): string {
-  const palette = ["#7A2E2E", "#0F2A4D", "#3B5742", "#2D4A5E", "#5A4A2E", "#4A2E5E"];
+  const palette = [
+    "#7A2E2E",
+    "#0F2A4D",
+    "#3B5742",
+    "#2D4A5E",
+    "#5A4A2E",
+    "#4A2E5E",
+  ];
   let h = 0;
   for (const c of name) h = (h * 31 + c.charCodeAt(0)) | 0;
   return palette[Math.abs(h) % palette.length];
@@ -152,7 +165,8 @@ function FreshnessBar({
 }) {
   // One dot per shop, on a track spanning the full confirmation window, so the
   // point where the dot runs out is roughly the point the badge turns "Stale".
-  const pct = hours === null ? null : Math.min(100, (hours / (AXIS_DAYS * 24)) * 100);
+  const pct =
+    hours === null ? null : Math.min(100, (hours / (AXIS_DAYS * 24)) * 100);
   // Coloured by the resolved tone, not by the raw clock: a listing the shop has
   // reported sold out must not sit green on the track just because it is recent.
   const dotColor = TONE_HEX[tone];
@@ -162,7 +176,9 @@ function FreshnessBar({
       <div className="mb-3.5 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Icon name="clock" size={16} className="text-tn-ink2" />
-          <span className="text-[13.5px] font-extrabold text-tn-ink">Stock freshness · last 30 days</span>
+          <span className="text-[13.5px] font-extrabold text-tn-ink">
+            Stock freshness · last 30 days
+          </span>
         </div>
         <span className="text-tn-mute text-xs">
           {responded ? "1 of 1 responded" : "no response yet"}
@@ -198,7 +214,11 @@ const HERO_BADGE: Record<FreshnessTone, string> = {
 };
 
 function ShopComparison({ product, now }: { product: Product; now: number }) {
-  const f = freshness(product.last_confirmed_at, product.confirmation_status, now);
+  const f = freshness(
+    product.last_confirmed_at,
+    product.confirmation_status,
+    now,
+  );
   const hours = product.last_confirmed_at
     ? Math.max(0, (now - new Date(product.last_confirmed_at).getTime()) / 36e5)
     : null;
@@ -213,7 +233,12 @@ function ShopComparison({ product, now }: { product: Product; now: number }) {
     <div>
       {/* ── two-column hero ─────────────────────────────── */}
       <div className="grid items-start gap-[44px] lg:grid-cols-[1fr_1.12fr]">
-        <ProductGallery images={product.images.map((i) => i.url)} kind={kindForSlug(product.category?.slug)} tone={tone} label={f.badge} />
+        <ProductGallery
+          images={product.images.map((i) => i.url)}
+          kind={kindForSlug(product.category?.slug)}
+          tone={tone}
+          label={f.badge}
+        />
 
         <div className="min-w-0">
           <div className="mb-3.5 flex flex-wrap gap-2">
@@ -239,17 +264,26 @@ function ShopComparison({ product, now }: { product: Product; now: number }) {
           </p>
           <h1 className="text-tn-ink mt-1.5 text-[42px] leading-[1.04] font-extrabold tracking-[-0.035em]">
             {(() => {
-              const [name, capacity] = splitCapacity(product.title, product.specs);
+              const [name, capacity] = splitCapacity(
+                product.title,
+                product.specs,
+              );
               return (
                 <>
                   {name}
-                  {capacity && <span className="text-tn-mute font-semibold">{capacity}</span>}
+                  {capacity && (
+                    <span className="text-tn-mute font-semibold">
+                      {capacity}
+                    </span>
+                  )}
                 </>
               );
             })()}
           </h1>
           {product.description && (
-            <p className="text-tn-ink2 mt-2 text-[15px] font-semibold">{product.description}</p>
+            <p className="text-tn-ink2 mt-2 text-[15px] font-semibold">
+              {product.description}
+            </p>
           )}
 
           {/* price panel */}
@@ -262,7 +296,8 @@ function ShopComparison({ product, now }: { product: Product; now: number }) {
                 {formatETB(product.price)}
               </p>
               <p className="text-tn-ink2 mt-2 text-[13.5px]">
-                across <b>{product.shop_verified ? "1 verified shop" : "1 shop"}</b>
+                across{" "}
+                <b>{product.shop_verified ? "1 verified shop" : "1 shop"}</b>
               </p>
             </div>
             <ProductDetailActions slug={product.slug} title={product.title} />
@@ -285,7 +320,9 @@ function ShopComparison({ product, now }: { product: Product; now: number }) {
                     <div className="text-tn-mute text-[10.5px] font-bold tracking-[0.05em] uppercase">
                       {specLabel(key)}
                     </div>
-                    <div className="text-tn-ink mt-1 text-sm font-bold">{String(value)}</div>
+                    <div className="text-tn-ink mt-1 text-sm font-bold">
+                      {String(value)}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -299,7 +336,8 @@ function ShopComparison({ product, now }: { product: Product; now: number }) {
         <div className="mb-[18px] flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-tn-ink text-[32px] font-extrabold tracking-[-0.03em]">
-              Available at {product.shop_verified ? "a verified shop" : "1 shop"}
+              Available at{" "}
+              {product.shop_verified ? "a verified shop" : "1 shop"}
             </h2>
             <p className="text-tn-mute mt-1.5 text-[14.5px]">
               {responded
@@ -335,7 +373,9 @@ function ShopComparison({ product, now }: { product: Product; now: number }) {
                 </div>
                 <div className="flex items-center gap-1">
                   <Icon name="pin" size={11} className="text-tn-mute" />
-                  <span className="text-tn-mute text-[11.5px]">Bole · Addis Ababa</span>
+                  <span className="text-tn-mute text-[11.5px]">
+                    Bole · Addis Ababa
+                  </span>
                 </div>
               </div>
             </div>
@@ -358,11 +398,16 @@ function ShopComparison({ product, now }: { product: Product; now: number }) {
         </div>
 
         <div className="text-tn-ink2 mt-4 flex items-start gap-2.5 rounded-2xl bg-tn-paper px-[18px] py-4 text-[13.5px] leading-[1.55]">
-          <Icon name="shield" size={16} className="mt-0.5 shrink-0 text-tn-green" />
+          <Icon
+            name="shield"
+            size={16}
+            className="mt-0.5 shrink-0 text-tn-green"
+          />
           <p>
-            All shops are <b className="text-tn-ink">verified by Tinsae</b>. Stock is reconfirmed by
-            the shop via Telegram — check the confirmation date above. Tinsae does not handle payment;
-            visit the shop to inspect and complete your purchase.
+            All shops are <b className="text-tn-ink">verified by Tinsae</b>.
+            Stock is reconfirmed by the shop via Telegram — check the
+            confirmation date above. Tinsae does not handle payment; visit the
+            shop to inspect and complete your purchase.
           </p>
         </div>
       </section>
@@ -379,6 +424,7 @@ export default async function ProductDetailPage({ params }: Props) {
   } catch {
     notFound();
   }
+  if (product.slug !== slug) notFound();
 
   // Upgraded suggestion engine: tiered recommendations (brand affinity, price proximity, category peers)
   const initialSuggestions = await getInitialSuggestions(product, 8);
@@ -390,8 +436,13 @@ export default async function ProductDetailPage({ params }: Props) {
   return (
     <main className="text-tn-ink mx-auto max-w-[1240px] px-6 pt-6 lg:px-7">
       {/* breadcrumb */}
-      <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-[7px] text-[12.5px] font-semibold">
-        <Link href="/" className="text-tn-mute hover:text-tn-ink">Home</Link>
+      <nav
+        aria-label="Breadcrumb"
+        className="flex flex-wrap items-center gap-[7px] text-[12.5px] font-semibold"
+      >
+        <Link href="/" className="text-tn-mute hover:text-tn-ink">
+          Home
+        </Link>
         <Icon name="chevron" size={11} className="text-[#B7B5AD]" />
         <Link href="/products" className="text-tn-mute hover:text-tn-ink">
           {product.category?.name ?? "Browse"}
