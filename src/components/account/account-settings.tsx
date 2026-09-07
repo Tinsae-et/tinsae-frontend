@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   User as UserIcon,
@@ -16,10 +17,9 @@ import {
   Loader2,
   AlertCircle,
   ChevronRight,
-  Radio,
-  Tv,
 } from "lucide-react";
 import type { AuthUser } from "@/lib/auth/types";
+import { normalizeImageUrl } from "@/lib/format";
 
 type TabKey = "profile" | "channels" | "notifications" | "security" | "account";
 
@@ -42,7 +42,7 @@ export function AccountSettings({ initialUser }: AccountSettingsProps) {
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(
-    initialUser.avatar || null,
+    normalizeImageUrl(initialUser.avatar) || null,
   );
   const [isSaving, setIsSaving] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -144,10 +144,13 @@ export function AccountSettings({ initialUser }: AccountSettingsProps) {
         message: "Profile changes saved successfully.",
       });
       router.refresh();
-    } catch (err: any) {
+    } catch (err: unknown) {
       setFeedback({
         type: "error",
-        message: err.message || "Something went wrong while saving changes.",
+        message:
+          err instanceof Error
+            ? err.message
+            : "Something went wrong while saving changes.",
       });
     } finally {
       setIsSaving(false);
@@ -200,10 +203,13 @@ export function AccountSettings({ initialUser }: AccountSettingsProps) {
         <div className="mb-8 flex items-center gap-5">
           <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#1e40af] text-2xl font-bold text-white shadow-sm ring-4 ring-white">
             {avatarPreview ? (
-              <img
+              <Image
                 src={avatarPreview}
                 alt={displayName}
+                width={80}
+                height={80}
                 className="h-full w-full object-cover"
+                unoptimized={avatarPreview.startsWith("blob:")}
               />
             ) : (
               <span>{initials}</span>
@@ -350,10 +356,13 @@ export function AccountSettings({ initialUser }: AccountSettingsProps) {
                   <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-5">
                     <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#1e40af] text-xl font-bold text-white shadow-xs">
                       {avatarPreview ? (
-                        <img
+                        <Image
                           src={avatarPreview}
                           alt={displayName}
+                          width={64}
+                          height={64}
                           className="h-full w-full object-cover"
+                          unoptimized={avatarPreview.startsWith("blob:")}
                         />
                       ) : (
                         <span>{initials}</span>

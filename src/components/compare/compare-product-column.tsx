@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Icon } from "@/components/tinsae/icon";
 import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
 import { extractBrand } from "@/lib/compare-helpers";
+import { normalizeImageUrl } from "@/lib/format";
 import type { Product } from "@/lib/types";
 
 export function CompareProductHeader({
@@ -15,7 +16,7 @@ export function CompareProductHeader({
   onRemove: () => void;
 }) {
   const brand = extractBrand(product);
-  const image = product.images?.[0]?.url || null;
+  const image = normalizeImageUrl(product.images?.[0]?.url) || null;
   const storage = typeof product.specs?.storage === "string" ? product.specs.storage : "";
   const color = typeof product.specs?.color === "string" ? product.specs.color : "";
   const subtitle = [storage, color].filter(Boolean).join(" · ") || (product.category?.name ?? "Electronics");

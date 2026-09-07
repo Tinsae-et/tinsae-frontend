@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import SideBar from "@/components/shop/dashboard/layout/side-bar";
-import DashboardHeader from "@/components/shop/dashboard/layout/dashbord-header";
+import DashboardHeader from "@/components/shop/dashboard/layout/dashboard-header";
 
 function ShopDashboardLayout({ children }: { children: React.ReactNode }) {
   const [showSidebar, setShowSidebar] = useState<boolean>(false);

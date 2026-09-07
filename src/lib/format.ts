@@ -11,6 +11,22 @@ export function formatETB(price: string | number): string {
 }
 
 /**
+ * Normalizes backend media image URLs to relative `/media/...` paths so Next.js can
+ * optimize them via the `/media` rewrite regardless of whether the request originated
+ * during SSR (inside Docker at host.docker.internal:8000) or client-side (at localhost:8000).
+ *
+ * External image URLs (e.g. Unsplash) or blob/data URLs are returned as-is.
+ */
+export function normalizeImageUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const match = url.match(/^https?:\/\/[^/]+(\/media\/.*)$/);
+  if (match) {
+    return match[1];
+  }
+  return url;
+}
+
+/**
  * The three states the backend actually publishes —
  * `catalog.models.ConfirmationStatus`, one for one.
  *

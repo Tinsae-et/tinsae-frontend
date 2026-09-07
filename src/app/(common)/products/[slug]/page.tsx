@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProduct, getProducts } from "@/lib/api";
+import { getProduct } from "@/lib/api";
 import { formatETB, freshness, type FreshnessTone } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/lib/types";
 import { kindForSlug } from "@/components/tinsae/prod-placeholder";
 import { ProductGallery } from "@/components/products/product-gallery";
-import { ProductCard } from "@/components/products/product-card";
+import { SimilarProductsInfinite } from "@/components/products/similar-products-infinite";
+import { getInitialSuggestions } from "@/lib/suggestions";
 import { ProductDetailActions } from "@/components/products/product-detail-actions";
 import { Pill } from "@/components/tinsae/pill";
 import { Icon } from "@/components/tinsae/icon";
@@ -379,16 +380,8 @@ export default async function ProductDetailPage({ params }: Props) {
     notFound();
   }
 
-  // Similar products: same category first, pad with anything else.
-  const similar = await getProducts({
-    category: product.category?.slug,
-    ordering: "-last_confirmed_at",
-    pageSize: 8,
-  })
-    .then((d) => d.results.filter((p) => p.id !== product.id))
-    .catch(() => []);
-
-  const related = similar.length >= 4 ? similar.slice(0, 4) : similar;
+  // Upgraded suggestion engine: tiered recommendations (brand affinity, price proximity, category peers)
+  const initialSuggestions = await getInitialSuggestions(product, 8);
 
   // Server component: freshness is relative to request time, rendered once.
   // eslint-disable-next-line react-hooks/purity
@@ -411,19 +404,8 @@ export default async function ProductDetailPage({ params }: Props) {
         <ShopComparison product={product} now={now} />
       </div>
 
-      {/* similar */}
-      {related.length > 0 && (
-        <section className="mt-14">
-          <h2 className="text-tn-ink mb-[18px] text-[32px] font-extrabold tracking-[-0.03em]">
-            Similar {product.category?.name?.toLowerCase() ?? "listings"}
-          </h2>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {related.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        </section>
-      )}
+      {/* Similar & infinite scrolling suggestion feed */}
+      <SimilarProductsInfinite key={product.slug} product={product} initialProducts={initialSuggestions} />
     </main>
   );
 }
