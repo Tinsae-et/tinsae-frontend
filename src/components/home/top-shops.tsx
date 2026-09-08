@@ -45,14 +45,14 @@ export function TopShops() {
       <SectionHead
         eyebrow="Verified sellers"
         title="Top-rated shops in Bole"
-        href="/products"
+        href="/shops"
         link="All shops"
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-[18px]">
         {SHOPS.map((s) => (
           <Link
             key={s.name}
-            href="/products"
+            href="/shops"
             className="overflow-hidden rounded-[18px] border border-tn-hair bg-white transition-[transform,box-shadow,border-color] duration-150 hover:-translate-y-[3px] hover:border-[#E0DDD4] hover:shadow-[0_18px_44px_rgba(11,11,11,0.09)]"
           >
             <div
