@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProduct, getSimilarProducts } from "@/lib/api";
+import { getProduct } from "@/lib/api";
 import { formatETB, freshness, type FreshnessTone } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/lib/types";

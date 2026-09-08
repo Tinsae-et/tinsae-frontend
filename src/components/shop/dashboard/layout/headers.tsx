@@ -170,9 +170,9 @@ export function VerificationHeader({
   setShowSidebar?: (val: boolean) => void;
 }){
 
-  return(
-    <div className="flex justify-between w-full items-center">
-      <div className="flex gap-2 items-center">
+  return (
+    <div className="w-full flex items-center justify-between">
+      <div className="flex items-center gap-3">
         {setShowSidebar && (
           <button
             type="button"
@@ -183,18 +183,21 @@ export function VerificationHeader({
             <Icon name="menu" size={22} />
           </button>
         )}
-        <div className="flex flex-col gap-1">
-          <span className="uppercase text-gray-500 text-sm">Trust</span>
-          <span className="font-bold text-xl">Get Verified</span>
-        </div>  
+        <div className="flex flex-col">
+          <span className="text-[11px] font-bold uppercase tracking-[0.05em] text-tn-mute leading-none">
+            TRUST
+          </span>
+          <h1 className="text-[19px] font-extrabold tracking-[-0.025em] text-tn-ink leading-tight mt-0.5">
+            Get verified
+          </h1>
+        </div>
       </div>
 
-      <div>
-        <Link href="/shop/dashboard" className="flex items-center gap-1 font-bold border rounded-full px-5 py-3">
-          <Icon name="shield"/>
-          <span>Back to dashboard</span>
-        </Link>
+      <div className="flex items-center gap-2.5">
+        <Pill kind="outline" size="sm" icon="shield" href="/shop/dashboard/overview">
+          Back to dashboard
+        </Pill>
       </div>
     </div>
-  )
+  );
 }
