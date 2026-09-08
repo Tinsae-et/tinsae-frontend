@@ -1,6 +1,7 @@
 "use client";
 
 import { useCompare } from "@/hooks/use-compare";
+import { useSaved } from "@/hooks/use-saved";
 import { Pill } from "@/components/tinsae/pill";
 import { Icon } from "@/components/tinsae/icon";
 import { cn } from "@/lib/utils";
@@ -14,6 +15,8 @@ export function ProductDetailActions({
 }) {
   const { isInCompare, toggleCompare } = useCompare();
   const inCompare = isInCompare(slug);
+  const { isSaved, toggleSaved } = useSaved();
+  const saved = isSaved(slug);
 
   return (
     <div className="flex flex-col gap-2.5 sm:w-[220px]">
@@ -36,9 +39,21 @@ export function ProductDetailActions({
         <span>{inCompare ? "In comparison" : "Add to compare"}</span>
       </button>
 
-      <Pill kind="outline" size="md" icon="heart">
-        Save to wishlist
-      </Pill>
+      <button
+        type="button"
+        onClick={() => toggleSaved(slug)}
+        aria-pressed={saved}
+        className="w-full text-left"
+      >
+        <Pill
+          kind={saved ? "solid" : "outline"}
+          size="md"
+          icon="heart"
+          className={cn("w-full justify-center", saved && "bg-tn-red text-white")}
+        >
+          {saved ? "Saved to wishlist" : "Save to wishlist"}
+        </Pill>
+      </button>
     </div>
   );
 }

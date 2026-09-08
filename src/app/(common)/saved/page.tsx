@@ -1,230 +1,243 @@
 "use client";
 
-import {
-  ChevronRight,
-} from "lucide-react";
-import { Icon } from "@/components/tinsae/icon";
-import { Sidebar } from "@/components/home/savedcomp";
-import { ListingRow } from "@/components/home/savedcomp";
-type ListingStatus = "priceDropped" | "backInStock" | "soldOut" | "none";
+import { useEffect, useState, useMemo } from "react";
+import Link from "next/link";
+import { ChevronRight, Trash2 } from "lucide-react";
+import { Pill } from "@/components/tinsae/pill";
+import { useSaved } from "@/hooks/use-saved";
+import { getProduct } from "@/lib/api";
+import { SavedListingRow, type SavedItemData } from "@/components/saved/saved-listing-row";
+import { SavedSidebar } from "@/components/saved/saved-sidebar";
+import { SavedEmptyState } from "@/components/saved/saved-empty-state";
+import { SavedSkeleton } from "@/components/saved/saved-skeleton";
 
-interface Listing {
-  id: string;
-  brand: string;
-  name: string;
-  spec: string;
-  savedAgo: string;
-  shops?: number;
-  priceFrom?: string;
-  originalPrice?: string;
-  status: ListingStatus;
-  statusText?: string;
-  alertPriceDrop: boolean;
-  alertBackInStock: boolean;
-}
-
-/* -------------------------------------------------------------------- */
-/*  Mock data (swap for real data / API results)                        */
-/* -------------------------------------------------------------------- */
-
-const listings: Listing[] = [
-  {
-    id: "iphone-15-pro",
-    brand: "APPLE",
-    name: "iPhone 15 Pro",
-    spec: "256GB, Natural Ti",
-    savedAgo: "Saved 6 days ago",
-    shops: 5,
-    priceFrom: "ETB 142,500",
-    status: "priceDropped",
-    statusText: "ETB 4,000 since saved",
-    alertPriceDrop: true,
-    alertBackInStock: true,
-  },
-  {
-    id: "airpods-pro-2",
-    brand: "APPLE",
-    name: "AirPods Pro 2",
-    spec: "USB-C",
-    savedAgo: "Saved 1 week ago",
-    shops: 9,
-    priceFrom: "ETB 18,500",
-    status: "priceDropped",
-    statusText: "ETB 1,300 since saved",
-    alertPriceDrop: true,
-    alertBackInStock: false,
-  },
-  {
-    id: "ipad-air-13",
-    brand: "APPLE",
-    name: 'iPad Air 13"',
-    spec: "M2, 256GB",
-    savedAgo: "Saved 2 weeks ago",
-    shops: 3,
-    priceFrom: "ETB 88,900",
-    status: "backInStock",
-    statusText: "Back in stock",
-    alertPriceDrop: true,
-    alertBackInStock: true,
-  },
-  {
-    id: "galaxy-s24-ultra",
-    brand: "Samsung",
-    name: "Galaxy S24 Ultra",
-    spec: "256GB, Titanium",
-    savedAgo: "Saved 3 days ago",
-    shops: 5,
-    priceFrom: "ETB 135,000",
-    status: "none",
-    statusText: "No change",
-    alertPriceDrop: true,
-    alertBackInStock: false,
-  },
-  {
-    id: "sony-wh1000xm5",
-    brand: "Sony",
-    name: "Sony WH-1000XM5",
-    spec: "Black",
-    savedAgo: "Saved 2 days ago",
-    originalPrice: "ETB 24,500",
-    status: "soldOut",
-    statusText: "Sold out",
-    alertPriceDrop: false,
-    alertBackInStock: true,
-  },
-  {
-    id: "macbook-pro-14",
-    brand: "APPLE",
-    name: 'MacBook Pro 14"',
-    spec: "M3, 16/512",
-    savedAgo: "Saved 5 days ago",
-    shops: 4,
-    priceFrom: "ETB 198,000",
-    status: "priceDropped",
-    statusText: "ETB 6,000",
-    alertPriceDrop: true,
-    alertBackInStock: false,
-  },
-];
-
-const tabs = [
-  { label: "All saved", count: 6, active: true },
-  { label: "Price dropped", count: 2, active: false },
-  { label: "Back in stock", count: 1, active: false },
-  { label: "Sold out", count: 1, active: false },
-];
-
-
-/* -------------------------------------------------------------------- */
-/*  Types                                                                */
-/* -------------------------------------------------------------------- */
-
-
-/* -------------------------------------------------------------------- */
-/*  Page                                                                 */
-/* -------------------------------------------------------------------- */
+type TabId = "all" | "inStock" | "unavailable";
 
 export default function SavedPage() {
-  const droppedCount = listings.filter((l) => l.status === "priceDropped").length;
-  const totalSaved = "ETB 5,300";
+  const { slugs, records, removeSaved, clearSaved } = useSaved();
+  const [items, setItems] = useState<SavedItemData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<TabId>("all");
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+
+  // Refetch product data on mount and whenever slugs change
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchSavedProducts() {
+      if (slugs.length === 0) {
+        setItems([]);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+
+      const recordMap = new Map(records.map((r) => [r.slug, r.savedAt]));
+
+      const results = await Promise.all(
+        slugs.map(async (slug): Promise<SavedItemData> => {
+          const savedAt = recordMap.get(slug) ?? Date.now();
+          try {
+            const product = await getProduct(slug);
+            return { isAvailable: true, product, savedAt };
+          } catch {
+            return { isAvailable: false, slug, savedAt };
+          }
+        }),
+      );
+
+      if (!cancelled) {
+        setItems(results);
+        setLoading(false);
+      }
+    }
+
+    fetchSavedProducts();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [slugs, records]);
+
+  // Tab counts
+  const counts = useMemo(() => {
+    const total = items.length;
+    const inStock = items.filter((i) => i.isAvailable).length;
+    const unavailable = items.filter((i) => !i.isAvailable).length;
+    return { all: total, inStock, unavailable };
+  }, [items]);
+
+  // Filtered items
+  const filteredItems = useMemo(() => {
+    if (activeTab === "inStock") return items.filter((i) => i.isAvailable);
+    if (activeTab === "unavailable") return items.filter((i) => !i.isAvailable);
+    return items;
+  }, [items, activeTab]);
+
+  const tabs: { id: TabId; label: string; count: number }[] = [
+    { id: "all", label: "All saved", count: counts.all },
+    { id: "inStock", label: "In stock", count: counts.inStock },
+    { id: "unavailable", label: "Unavailable", count: counts.unavailable },
+  ];
 
   return (
-    <main className="min-h-screen bg-gray-50/40 px-6 py-8 lg:px-10">
-      <div className="mx-auto max-w-6xl">
-        {/* Breadcrumb */}
-        <nav className="mb-4 flex items-center gap-1.5 text-xs text-gray-400">
-          <span>Home</span>
-          <ChevronRight className="h-3 w-3" />
-          <span>Hanna</span>
-          <ChevronRight className="h-3 w-3" />
-          <span className="text-gray-600 font-bold">Saved</span>
-        </nav>
+    <>
+      <head>
+        <meta name="robots" content="noindex, nofollow" />
+      </head>
 
-        {/* Title */}
-        <div className="mb-6 flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Saved</h1>
-            <p className="mt-1 text-sm text-gray-500">
-              <span className="text-black font-bold">6</span> listings watched · <span className="text-green-700 font-bold">2</span> dropped in price · <span className="text-orange-700">1</span> back in stock
-            </p>
-          </div>
-
-          <button
-            type="button"
-            className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-          >
-            Browse more
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-
-        {/* Tabs */}
-        <div className="mb-5 flex items-center gap-6 border-b border-gray-200">
-          {tabs.map((tab) => (
-            <button
-              key={tab.label}
-              type="button"
-              className={`relative pb-3 text-sm font-medium ${
-                tab.active
-                  ? "text-gray-900 font-semibold     "
-                  : "text-gray-400 hover:text-gray-600"
-              }`}
+      <div className="min-h-screen bg-white">
+        {/* Hero band */}
+        <div className="border-tn-hair2 bg-[radial-gradient(120%_100%_at_90%_-20%,#FFF1EB_0%,rgba(255,241,235,0)_50%),#FFFFFF] border-b">
+          <div className="mx-auto max-w-[1240px] px-5 pt-6 sm:px-7">
+            {/* Breadcrumb */}
+            <nav
+              aria-label="Breadcrumb"
+              className="mb-4 flex items-center gap-1.5 text-xs text-tn-mute"
             >
-              {tab.label}
-              <span
-                className={`ml-1.5 rounded-full px-1.5 py-0.5 text-xs ${
-                  tab.active
-                    ? "bg-orange-100 text-orange-500"
-                    : "bg-gray-100 text-gray-400"
-                }`}
-              >
-                {tab.count}
-              </span>
-              {tab.active && (
-                <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-orange-500" />
-              )}
-            </button>
-          ))}
+              <Link href="/" className="hover:text-tn-ink transition-colors">
+                Home
+              </Link>
+              <ChevronRight className="size-3 text-[#B7B5AD]" />
+              <span className="font-bold text-tn-ink">Saved</span>
+            </nav>
+
+            {/* Header title & actions */}
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <h1 className="text-tn-ink text-[36px] font-extrabold tracking-[-0.035em] sm:text-[46px] leading-tight">
+                  Saved
+                </h1>
+                <p className="text-tn-mute mt-2 text-[15px] font-medium">
+                  <span className="font-tn-mono text-tn-ink font-semibold">
+                    {slugs.length}
+                  </span>{" "}
+                  {slugs.length === 1 ? "listing" : "listings"} watched
+                  {items.length > 0 && (
+                    <>
+                      {" · "}
+                      <span className="font-tn-mono text-tn-green font-semibold">
+                        {counts.inStock}
+                      </span>{" "}
+                      in stock
+                      {counts.unavailable > 0 && (
+                        <>
+                          {" · "}
+                          <span className="font-tn-mono text-tn-red font-semibold">
+                            {counts.unavailable}
+                          </span>{" "}
+                          unavailable
+                        </>
+                      )}
+                    </>
+                  )}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {slugs.length > 0 && (
+                  <>
+                    {showClearConfirm ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            clearSaved();
+                            setShowClearConfirm(false);
+                          }}
+                          className="bg-tn-red hover:bg-tn-red-dark h-10 rounded-full px-4 text-xs font-bold text-white transition-colors cursor-pointer"
+                        >
+                          Confirm clear
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowClearConfirm(false)}
+                          className="border-tn-hair hover:border-tn-ink h-10 rounded-full border bg-white px-4 text-xs font-bold text-tn-ink transition-colors cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowClearConfirm(true)}
+                        className="border-tn-hair text-tn-mute hover:border-tn-red hover:text-tn-red flex h-10 items-center gap-1.5 rounded-full border bg-white px-4 text-xs font-bold transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="size-3.5" />
+                        <span>Clear all</span>
+                      </button>
+                    )}
+                  </>
+                )}
+
+                <Pill kind="outline" size="md" href="/products" iconAfter="arrow">
+                  Browse more
+                </Pill>
+              </div>
+            </div>
+
+            {/* Tabs */}
+            {slugs.length > 0 && (
+              <div className="mt-5 flex gap-2 border-b border-transparent">
+                {tabs.map((tab) => {
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`relative inline-flex items-center gap-2 px-4 py-3 text-sm font-bold transition-colors cursor-pointer ${
+                        isActive
+                          ? "text-tn-ink border-b-[2.5px] border-tn-red -mb-[1px]"
+                          : "text-tn-mute hover:text-tn-ink"
+                      }`}
+                    >
+                      <span>{tab.label}</span>
+                      <span
+                        className={`font-tn-mono inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[11px] font-extrabold ${
+                          isActive
+                            ? "bg-tn-red-soft text-tn-red"
+                            : "bg-tn-paper text-tn-mute"
+                        }`}
+                      >
+                        {tab.count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="flex gap-6">
-          {/* Main column */}
-          <div className="min-w-0 flex-1">
-            {/* Price drop banner */}
-            <div className="mb-4 flex items-center justify-between rounded-2xl border bg-green-50 px-5 py-4">
-              <div className="flex items-center gap-3">
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg border  text-emerald-600">
-                  <Icon className="h-4 w-4"  name="bolt"/>
-                </span>
-                <div>
-                  <p className="text-sm  text-green-700 font-bold ">
-                    {droppedCount} of your saved phones dropped in price
-                  </p>
-                  <p className="text-xs text-green-700 ">
-                    That&apos;s  <span className="font-bold font-tn-mono">{totalSaved}</span> off since you saved them. Reach out
-                    before the price turns over.
-                  </p>
-                </div>
+        {/* Content body */}
+        <div className="mx-auto flex max-w-[1240px] items-start gap-7 px-5 py-7 sm:px-7 sm:py-8">
+          <main className="min-w-0 flex-1">
+            {loading ? (
+              <SavedSkeleton />
+            ) : slugs.length === 0 ? (
+              <SavedEmptyState />
+            ) : filteredItems.length === 0 ? (
+              <div className="border-tn-hair rounded-[18px] border bg-white p-12 text-center text-tn-mute text-sm">
+                No items found under the {activeTab === "inStock" ? "in stock" : "unavailable"} filter.
               </div>
-              <button
-                type="button"
-                className="shrink-0 rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700"
-              >
-                View drops
-              </button>
-            </div>
+            ) : (
+              <div className="flex flex-col gap-3.5">
+                {filteredItems.map((item) => (
+                  <SavedListingRow
+                    key={item.isAvailable ? item.product.slug : item.slug}
+                    item={item}
+                    onRemove={removeSaved}
+                  />
+                ))}
+              </div>
+            )}
+          </main>
 
-            {/* Listings */}
-            <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
-              {listings.map((item) => (
-                <ListingRow key={item.id} item={item} />
-              ))}
-            </div>
-          </div>
-
-          <Sidebar />
+          <SavedSidebar />
         </div>
       </div>
-    </main>
+    </>
   );
 }
