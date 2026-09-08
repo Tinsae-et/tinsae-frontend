@@ -162,6 +162,18 @@ export async function getShop(slug: string): Promise<Shop> {
   return res.json();
 }
 
+export async function getPublicShopProducts(slug: string, query: ShopProductQuery): Promise<Paginated<Product>> {
+  const params = ShopProductSearchParams(query).toString();
+  const res = await fetch(
+    `${API_URL}/api/v1/shop/${encodeURIComponent(slug)}/products/${params ? `?${params}` : ""}`,
+    { cache: "no-store" }
+  );
+  if (!res.ok) {
+    throw new Error(`Could not load public shop products (${res.status})`);
+  }
+  return res.json();
+}
+
 export type ShopProductQuery = {
   q?: string;
   category?: string;

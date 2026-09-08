@@ -3,7 +3,7 @@ import { Icon } from '../../../../../public/assets/icons/Icon'
 import { Share, Star } from 'lucide-react'
 import { VerifiedBadge } from '@/components/tinsae/verified-badge';
 import TabsBar from '@/components/shop-profile/tabs-bar';
-import { getShop } from '@/lib/api'
+import { getPublicShopProducts, getShop } from '@/lib/api'
 import { Pill } from '@/components/tinsae/pill'
 
 type Stat = {
@@ -34,11 +34,16 @@ async function ShopProfilePage({ params }: props) {
     return null;
   });
 
+  const listings = await getPublicShopProducts(slug, {}).then(res=>res.count).catch((error) => {
+    console.error(error);
+    return null;
+  });
+
 
   const STATS: Stat[] = [
     { value: "98%", label: "Response rate", sublabel: "last 30 days" },
     { value: "~12 min", label: "Avg. response", sublabel: "open hours" },
-    { value: "142", label: "Active listings", sublabel: "138 today" },
+    { value: listings?.toLocaleString() || "0", label: "Active listings", sublabel: "138 today" },
     { value: "3.8 yrs", label: "On Tinsae", sublabel: "since 2022" },
     { value: "4.9", label: "Buyer rating", sublabel: "296 reviews" },
   ];
@@ -83,7 +88,7 @@ async function ShopProfilePage({ params }: props) {
                 <span className="text-neutral-300">|</span>
                 <span className="flex items-center gap-1.5">
                   <Icon name="clock" className="h-4 w-4 text-neutral-400" />
-                  Open today 9:00 – 19:30
+                  Open today 9:00 - 19:30
                 </span>
                 <span className="text-neutral-300">|</span>
                 <span className="flex items-center gap-1.5 font-medium text-emerald-600">

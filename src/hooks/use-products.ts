@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getProducts, getShopProducts, ShopProductQuery, type ProductQuery } from "@/lib/api";
+import { getProducts, getPublicShopProducts, getShopProducts, ShopProductQuery, type ProductQuery } from "@/lib/api";
 import type { Product, ShopProduct } from "@/lib/types";
 import { PRODUCTS_PAGE_SIZE } from "@/components/products/product-grid";
 
@@ -204,6 +204,52 @@ export function useShopProducts(query: ShopProductQuery, slug: string) {
       setError(null);
       try {
         const data = await getShopProducts(slug, query, { signal });
+        if (signal?.aborted) return;
+        setTotal(data.count);
+        setProducts(data.results);
+      } catch {
+        if (signal?.aborted) return;
+        setError("Couldn't load listings. Check your connection and try again.");
+      } finally {
+        if (!signal?.aborted) {
+          setLoading(false);
+        }
+      }
+    },
+    [query, slug],
+  );
+
+  // Fetches on mount, then whenever the query changes. The ref survives
+  // StrictMode's simulated remount, so this is one request either way.
+  useEffect(() => {
+    if (loadedKey.current === queryKey) return;
+    loadedKey.current = queryKey;
+    const controller = new AbortController();
+    fetchPage(controller.signal);
+    return () => {
+      controller.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryKey]);
+
+  return { products, total, loading, error };
+}
+
+export function usePublicShopProducts(query: ShopProductQuery, slug: string) {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const queryKey = JSON.stringify(query);
+  const loadedKey = useRef<string | null>(null);
+
+  const fetchPage = useCallback(
+    async (signal?: AbortSignal) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await getPublicShopProducts(slug, query);
         if (signal?.aborted) return;
         setTotal(data.count);
         setProducts(data.results);
