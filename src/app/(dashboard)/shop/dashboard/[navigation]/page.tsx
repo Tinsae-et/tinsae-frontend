@@ -71,9 +71,9 @@ export default async function DashboardSection({ params }: Props) {
   if (navigation === "get-verified") {
     return (
       <section>
-        <GetVerified/>
+        <GetVerified slug={shop.slug} shop={shop} />
       </section>
-    )
+    );
   }
 
   notFound();
