@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatETB, freshness } from "./format";
+import { formatCount, formatETB, freshness } from "./format";
 
 // A fixed "now" so an age never depends on when the suite runs.
 const NOW = Date.parse("2026-08-31T12:00:00Z");
@@ -75,5 +75,24 @@ describe("formatETB", () => {
 
   it("renders a dash rather than NaN", () => {
     expect(formatETB("abc")).toBe("—");
+  });
+});
+
+describe("formatCount", () => {
+  it("formats numbers with locale grouping", () => {
+    expect(formatCount(8920)).toBe("8,920");
+    expect(formatCount(412)).toBe("412");
+    expect(formatCount("1234567")).toBe("1,234,567");
+  });
+
+  it("handles 0", () => {
+    expect(formatCount(0)).toBe("0");
+  });
+
+  it("returns empty string for null, undefined, or invalid numbers", () => {
+    expect(formatCount(null)).toBe("");
+    expect(formatCount(undefined)).toBe("");
+    expect(formatCount(Number.NaN)).toBe("");
+    expect(formatCount("invalid")).toBe("");
   });
 });

@@ -1,6 +1,6 @@
 // Central place for talking to the backend API.
 // The base URL comes from the environment so it can change per environment.
-import type { Category, Paginated, Product, Shop, ShopProduct } from "./types";
+import type { Category, Paginated, Product, Shop, ShopMetrics, ShopProduct } from "./types";
 import { normalizeImageUrl } from "./format";
 
 // Dual-context base URL:
@@ -132,6 +132,25 @@ export async function getCategories(init?: RequestInit): Promise<Paginated<Categ
   const res = await fetch(`${CATALOG}/categories/`, { cache: "no-store", ...init });
   if (!res.ok) {
     throw new Error(`Could not load categories (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function getShops(): Promise<Paginated<Shop>> {
+  const res = await fetch(`${API_URL}/api/v1/shops/`, { cache: "no-store"});
+  if (!res.ok){
+    throw new Error(`Couldn't load shops (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function getPublicStats(init?: RequestInit): Promise<ShopMetrics> {
+  const res = await fetch(`${CATALOG}/public-stats/`, {
+    next: { revalidate: 3600 },
+    ...init,
+  });
+  if (!res.ok) {
+    throw new Error(`Couldn't load public stats (${res.status})`);
   }
   return res.json();
 }
