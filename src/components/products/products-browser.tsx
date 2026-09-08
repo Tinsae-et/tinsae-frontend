@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Icon } from "@/components/tinsae/icon";
 import { Pill } from "@/components/tinsae/pill";
-import { cn } from "@/lib/utils";
 import { ProductGrid } from "./product-grid";
 import { FilterRail } from "./filter-rail";
 import { FilterSheet } from "./filter-sheet";
