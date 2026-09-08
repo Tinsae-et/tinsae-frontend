@@ -22,14 +22,14 @@ export function FilterRail({
   onReset: () => void;
 }) {
   return (
-    <aside className="hidden w-[268px] shrink-0 lg:block">
-      <div className="sticky top-[90px] rounded-[18px] border border-tn-hair bg-white px-[22px] pt-2 pb-[18px]">
-        <div className="flex items-center justify-between py-4">
+    <aside className="sticky top-[88px] hidden w-[268px] shrink-0 self-start lg:block">
+      <div className="max-h-[calc(100vh-104px)] overflow-y-auto overscroll-contain rounded-[18px] border border-tn-hair bg-white px-[22px] pt-2 pb-[18px] shadow-sm">
+        <div className="sticky top-0 z-10 flex items-center justify-between bg-white py-4">
           <span className="text-tn-ink text-sm font-extrabold tracking-[-0.01em]">Filters</span>
           <button
             type="button"
             onClick={onReset}
-            className="text-tn-red cursor-pointer bg-transparent text-[12.5px] font-bold"
+            className="text-tn-red cursor-pointer bg-transparent text-[12.5px] font-bold hover:underline"
           >
             Reset
           </button>

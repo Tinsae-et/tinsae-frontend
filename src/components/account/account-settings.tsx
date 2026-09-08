@@ -19,6 +19,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import type { AuthUser } from "@/lib/auth/types";
+import { normalizeImageUrl } from "@/lib/format";
 
 type TabKey = "profile" | "channels" | "notifications" | "security" | "account";
 
@@ -41,7 +42,7 @@ export function AccountSettings({ initialUser }: AccountSettingsProps) {
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(
-    initialUser.avatar || null,
+    normalizeImageUrl(initialUser.avatar) || null,
   );
   const [isSaving, setIsSaving] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -143,11 +144,13 @@ export function AccountSettings({ initialUser }: AccountSettingsProps) {
         message: "Profile changes saved successfully.",
       });
       router.refresh();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
+    } catch (err: unknown) {
       setFeedback({
         type: "error",
-        message: err.message || "Something went wrong while saving changes.",
+        message:
+          err instanceof Error
+            ? err.message
+            : "Something went wrong while saving changes.",
       });
     } finally {
       setIsSaving(false);
@@ -203,7 +206,10 @@ export function AccountSettings({ initialUser }: AccountSettingsProps) {
               <Image
                 src={avatarPreview}
                 alt={displayName}
+                width={80}
+                height={80}
                 className="h-full w-full object-cover"
+                unoptimized={avatarPreview.startsWith("blob:")}
               />
             ) : (
               <span>{initials}</span>
@@ -353,7 +359,10 @@ export function AccountSettings({ initialUser }: AccountSettingsProps) {
                         <Image
                           src={avatarPreview}
                           alt={displayName}
+                          width={64}
+                          height={64}
                           className="h-full w-full object-cover"
+                          unoptimized={avatarPreview.startsWith("blob:")}
                         />
                       ) : (
                         <span>{initials}</span>

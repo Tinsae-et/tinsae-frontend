@@ -10,28 +10,28 @@ export async function POST(request: Request) {
   const blocked = rejectCrossOrigin(request);
   if (blocked) return blocked;
 
-  const { phone, email, mode } = (await request.json()) as {
-    phone?: string;
-    email?: string;
-    mode: AuthMode;
-  };
-
-  const destination = email || phone;
-  if (!destination) {
-    return NextResponse.json(
-      { fieldErrors: { email: ["An email address is required."] } },
-      { status: 400 },
-    );
-  }
-
-  if (phone) {
-    const problem = validatePhone(phone);
-    if (problem) {
-      return NextResponse.json({ fieldErrors: { phone: [problem] } }, { status: 400 });
-    }
-  }
-
   try {
+    const { phone, email, mode } = (await request.json()) as {
+      phone?: string;
+      email?: string;
+      mode: AuthMode;
+    };
+
+    const destination = email || phone;
+    if (!destination) {
+      return NextResponse.json(
+        { fieldErrors: { email: ["An email address is required."] } },
+        { status: 400 },
+      );
+    }
+
+    if (phone) {
+      const problem = validatePhone(phone);
+      if (problem) {
+        return NextResponse.json({ fieldErrors: { phone: [problem] } }, { status: 400 });
+      }
+    }
+
     const result = await authDriver.requestOtp({
       phone: phone ? toE164(phone) : (email as string),
       mode: mode === "signup" ? "signup" : "signin",

@@ -129,7 +129,7 @@ function BrowseMenu() {
         <div className="absolute top-full left-0 pt-2">
           <div
             role="menu"
-            className="w-[520px] rounded-[18px] border border-tn-hair bg-white p-4 shadow-[0_266px_64px_rgba(11,11,11,0.18)]"
+            className="w-[520px] rounded-[18px] border border-tn-hair bg-white p-4 shadow-[0_26px_64px_rgba(11,11,11,0.18)]"
           >
             <p className="text-tn-mute mb-3 ml-1.5 text-[10.5px] font-extrabold tracking-[0.09em] uppercase">
               Shop by category
