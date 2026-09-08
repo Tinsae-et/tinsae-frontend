@@ -11,7 +11,7 @@ import { useParams } from 'next/navigation';
 function ListingSection() {
     const params = useParams<{slug: string}>();
     const [query, setQuery] = useState<ShopProductQuery>({});
-    const { products, loading } = usePublicShopProducts(query, params.slug);
+    const { products, loading, total } = usePublicShopProducts(query, params.slug);
     return (
         <div>
             {/* Section header */}
@@ -28,11 +28,11 @@ function ListingSection() {
 
                 <div className="flex items-center gap-2">
                     <div className="flex items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50">
-                        <select>
-                            <option>Sort: Newest</option>
-                            <option>Sort: Oldest</option>
-                            <option>Sort: A - Z</option>
-                            <option>Sort: Z - A</option>
+                        <select onChange={(e)=>setQuery({...query, ordering: e.target.value})}>
+                            <option value="last_confirmed_at">Sort: Newest</option>
+                            <option value="-last_confirmed_at">Sort: Oldest</option>
+                            <option value="name">Sort: A - Z</option>
+                            <option value="-name">Sort: Z - A</option>
                         </select>
                     </div>
                     <div className="flex items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50">
@@ -48,7 +48,7 @@ function ListingSection() {
             </div>
 
             {/* Category chips */}
-            <CategoryChips />
+            <CategoryChips total={total} query={query} setQuery={setQuery}/>
 
             {/* Listing cards */}
             <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-3">

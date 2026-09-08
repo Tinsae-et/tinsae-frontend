@@ -65,6 +65,7 @@ export type Shop = {
   description: string;
   city: string;
   is_verified: boolean;
+  created_at?: string;
 };
 
 export type ShopProduct = {

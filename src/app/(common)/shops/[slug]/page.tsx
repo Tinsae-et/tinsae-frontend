@@ -27,6 +27,22 @@ function initials(name: string | undefined) {
     .join("");
 }
 
+function getTimeSince(timeString:string|undefined) {
+  if (!timeString) return ""
+  const past = new Date(timeString);
+  const now = new Date();
+  const msPerMonth = 60 * 60 * 1000 * 24 * 30; // number of miliseconds in a month
+  const msPerYear = 60 * 60 * 1000 * 24 * 30 * 365; // number of miliseconds in a year
+
+  const elapsed = now.getTime() - past.getTime();
+
+  if (elapsed < msPerYear) {
+      return + Math.round(elapsed / msPerMonth) + ' mon';   
+  } else {
+      return + Math.round(elapsed / msPerYear ) + ' yrs ago';   
+  }
+}
+
 async function ShopProfilePage({ params }: props) {
   const { slug } = await params;
   const shop = await getShop(slug).catch((error) => {
@@ -44,7 +60,7 @@ async function ShopProfilePage({ params }: props) {
     { value: "98%", label: "Response rate", sublabel: "last 30 days" },
     { value: "~12 min", label: "Avg. response", sublabel: "open hours" },
     { value: listings?.toLocaleString() || "0", label: "Active listings", sublabel: "138 today" },
-    { value: "3.8 yrs", label: "On Tinsae", sublabel: "since 2022" },
+    { value: getTimeSince(shop?.created_at), label: "On Tinsae", sublabel: "since " + `${shop?.created_at && new Date(shop?.created_at).getFullYear()}` },
     { value: "4.9", label: "Buyer rating", sublabel: "296 reviews" },
   ];
   return (
