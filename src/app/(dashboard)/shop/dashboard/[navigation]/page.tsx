@@ -6,6 +6,7 @@ import ShopProfile from "@/components/shop/dashboard/shop-profile/shop-profile";
 import { authDriver } from "@/lib/auth/driver";
 import { hasShop } from "@/lib/auth/roles";
 import { readSession } from "@/lib/auth/session";
+import GetVerified from "@/components/shop/dashboard/get-verified/get-verified";
 
 type Props = {
   params: Promise<{ navigation: string }>;
@@ -63,6 +64,14 @@ export default async function DashboardSection({ params }: Props) {
     return (
       <section>
         <ShopProfile />
+      </section>
+    );
+  }
+
+  if (navigation === "get-verified") {
+    return (
+      <section>
+        <GetVerified slug={shop.slug} shop={shop} />
       </section>
     );
   }
