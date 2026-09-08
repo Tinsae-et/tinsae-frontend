@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import React from 'react'
 import { Icon } from '../../../../../public/assets/icons/Icon'
 import { Share, Star } from 'lucide-react'
@@ -12,10 +13,40 @@ type Stat = {
   sublabel: string;
 }
 
-type props = {
-  params: {
-    slug: string;
+type Props = {
+  params: Promise<{ slug: string }>;
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const shop = await getShop(slug).catch(() => null);
+
+  if (!shop) {
+    return {
+      title: 'Shop not found — Tinsae',
+      description: 'The requested shop profile could not be found.',
+    };
   }
+
+  return {
+    title: `${shop.name} — Tinsae`,
+    description:
+      shop.description && shop.description.trim()
+        ? shop.description
+        : `Browse listings from ${shop.name} on Tinsae and discover verified products from this shop.`,
+    alternates: {
+      canonical: `/shops/${slug}`,
+    },
+    openGraph: {
+      title: `${shop.name} — Tinsae`,
+      description:
+        shop.description && shop.description.trim()
+          ? shop.description
+          : `Browse listings from ${shop.name} on Tinsae and discover verified products from this shop.`,
+      type: 'website',
+      url: `/shops/${slug}`,
+    },
+  };
 }
 
 function initials(name: string | undefined) {
@@ -43,7 +74,7 @@ function getTimeSince(timeString:string|undefined) {
   }
 }
 
-async function ShopProfilePage({ params }: props) {
+async function ShopProfilePage({ params }: Props) {
   const { slug } = await params;
   const shop = await getShop(slug).catch((error) => {
     console.error(error);
