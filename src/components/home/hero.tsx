@@ -9,10 +9,9 @@ import { NAV_CATEGORIES } from "@/lib/nav-categories";
 
 import { hasShop } from "@/lib/auth/roles";
 import type { AuthUser } from "@/lib/auth/types";
-import { ShopMetrics } from "@/lib/types";
+import type { ShopMetrics } from "@/lib/types";
+import { formatCount } from "@/lib/format";
 
-// The social-proof figures below are the design deck's demo copy, not live
-// values — the backend exposes no shop/confirmation aggregates yet.
 const POPULAR = NAV_CATEGORIES.filter((c) =>
   ["phones", "laptops", "audio", "cameras"].includes(c.slug),
 );
@@ -25,7 +24,7 @@ const SHOP_AVATARS = [
   { initial: "G", color: "#5A4A2E" },
 ];
 
-export function Hero({ user, statCounts }: { user?: AuthUser | null, statCounts: ShopMetrics }) {
+export function Hero({ user, stats }: { user?: AuthUser | null; stats?: ShopMetrics | null }) {
   const isOwner = Boolean(user && hasShop(user));
 
   return (
@@ -94,9 +93,14 @@ export function Hero({ user, statCounts }: { user?: AuthUser | null, statCounts:
               ))}
             </div>
             <p className="text-tn-ink2 text-[13.5px] leading-snug">
-              <b className="text-tn-ink">{ Number(statCounts.verified_shops).toLocaleString() } verified shops</b> in Bole
+              {stats?.verified_shops != null && stats.verified_shops > 0 ? (
+                <b className="text-tn-ink">{formatCount(stats.verified_shops)} verified shops</b>
+              ) : (
+                <b className="text-tn-ink">Verified shops</b>
+              )}{" "}
+              in Bole
               <br />
-              <span className="text-tn-mute">96% reconfirmed their stock today</span>
+              <span className="text-tn-mute">Stock reconfirmed daily</span>
             </p>
           </div>
         </div>

@@ -1,17 +1,46 @@
-// Design block 10. All four figures are the design deck's demo copy — the
-// backend doesn't expose confirmation-rate or response-time aggregates yet,
-// and per the decision they stay static until it does.
+import type { ShopMetrics } from "@/lib/types";
+import { formatCount } from "@/lib/format";
 
-import { ShopMetrics } from "@/lib/types";
+export function StatBand({ stats }: { stats?: ShopMetrics | null }) {
+  if (!stats) return null;
 
-export async function StatBand({statCounts}:{statCounts: ShopMetrics}) {
-  
-  const STATS: [string, string][] = [
-    [`${Number(statCounts.total_products).toLocaleString()}`, "listings live today"],
-    [`${Number(statCounts.verified_shops).toLocaleString()}`, "verified shops in Bole"],
-    ["96%", "reconfirmed within 24h"],
-    ["~3.4h", "average shop response"],
+  const totalProducts = stats.total_products;
+  const verifiedShops = stats.verified_shops;
+  const verifiedProducts = stats.verified_shop_products;
+  const categoriesCount = stats.category_product_count
+    ? Object.keys(stats.category_product_count).length
+    : 0;
+
+  // If the endpoint fails or is unavailable, the section is hidden
+  // rather than showing zeros or stale placeholders.
+  if (totalProducts == null || verifiedShops == null) {
+    return null;
+  }
+
+  if (totalProducts <= 0 && verifiedShops <= 0) {
+    return null;
+  }
+
+  const items: [string, string][] = [
+    [formatCount(totalProducts), "listings live today"],
+    [formatCount(verifiedShops), "verified shops in Bole"],
   ];
+
+  if (verifiedProducts != null && verifiedProducts > 0) {
+    items.push([formatCount(verifiedProducts), "from verified sellers"]);
+  }
+
+  if (categoriesCount > 0) {
+    items.push([formatCount(categoriesCount), "product categories"]);
+  }
+
+  const gridColsClass =
+    items.length >= 4
+      ? "lg:grid-cols-4"
+      : items.length === 3
+        ? "lg:grid-cols-3"
+        : "lg:grid-cols-2";
+
   return (
     <section className="mx-auto mt-16 max-w-[1240px] px-6 lg:mt-20 lg:px-7">
       <div className="bg-tn-ink relative overflow-hidden rounded-3xl px-7 py-10 sm:px-12 sm:py-13">
@@ -21,8 +50,8 @@ export async function StatBand({statCounts}:{statCounts: ShopMetrics}) {
         >
           ትንሳኤ
         </span>
-        <div className="relative grid grid-cols-2 gap-8 lg:grid-cols-4">
-          {STATS.map(([n, label], i) => (
+        <div className={`relative grid grid-cols-2 gap-8 ${gridColsClass}`}>
+          {items.map(([n, label], i) => (
             <div
               key={label}
               className={i > 0 ? "sm:border-l sm:border-white/15 sm:pl-8 lg:pl-7" : ""}
@@ -38,3 +67,4 @@ export async function StatBand({statCounts}:{statCounts: ShopMetrics}) {
     </section>
   );
 }
+

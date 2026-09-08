@@ -1,12 +1,22 @@
 import { Pill } from "@/components/tinsae/pill";
 import { hasShop } from "@/lib/auth/roles";
 import type { AuthUser } from "@/lib/auth/types";
-import { ShopMetrics } from "@/lib/types";
+import type { ShopMetrics } from "@/lib/types";
+import { formatCount } from "@/lib/format";
 
-// Design block 12. The "8,920 live listings from 412 verified shops" line is
-// demo copy (see StatBand) — static until the backend exposes real metrics.
-export function FinalCTA({ user, statCounts }: { user?: AuthUser | null, statCounts: ShopMetrics }) {
+export function FinalCTA({
+  user,
+  stats,
+}: {
+  user?: AuthUser | null;
+  stats?: ShopMetrics | null;
+}) {
   const isOwner = Boolean(user && hasShop(user));
+  const hasCounts =
+    stats?.verified_shop_products != null &&
+    stats.verified_shop_products > 0 &&
+    stats?.verified_shops != null &&
+    stats.verified_shops > 0;
 
   return (
     <section className="mx-auto mt-16 max-w-[1240px] px-6 lg:mt-20 lg:px-7">
@@ -23,7 +33,14 @@ export function FinalCTA({ user, statCounts }: { user?: AuthUser | null, statCou
             <br className="hidden sm:block" /> you can trust.
           </h2>
           <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-white/90 sm:text-lg">
-            Browse { Number(statCounts.verified_shop_products).toLocaleString() } live listings from { Number(statCounts.verified_shops).toLocaleString() } verified shops across Bole.
+            {hasCounts ? (
+              <>
+                Browse {formatCount(stats.verified_shop_products)} live listings from{" "}
+                {formatCount(stats.verified_shops)} verified shops across Bole.
+              </>
+            ) : (
+              <>Browse live listings from verified shops across Bole.</>
+            )}
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Pill kind="light" size="lg" iconAfter="arrow" href="/products">

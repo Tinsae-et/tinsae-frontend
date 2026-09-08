@@ -27,20 +27,22 @@ export default async function Home() {
 
   const freshest: Product[] = products?.results ?? [];
 
-  const statCounts: ShopMetrics = await getPublicStats()
-    .catch(()=>({}))
+  // Public stats are cached at the fetch level and degrade gracefully to null
+  // if the endpoint fails or is unavailable.
+  const stats: ShopMetrics | null = await getPublicStats().catch(() => null);
 
   return (
     <main>
-      <Hero user={user} statCounts={statCounts}/>
-      <BrowseCategories statCounts={statCounts}/>
-      <TopShops statCounts={statCounts}/>
+      <Hero user={user} stats={stats} />
+      <BrowseCategories stats={stats} />
+      <TopShops />
       <FreshListings products={freshest} />
       <Features />
       <HowItWorks />
-      <StatBand statCounts={statCounts}/>
+      <StatBand stats={stats} />
       <ShopBand />
-      <FinalCTA user={user} statCounts={statCounts}/>
+      <FinalCTA user={user} stats={stats} />
     </main>
   );
 }
+

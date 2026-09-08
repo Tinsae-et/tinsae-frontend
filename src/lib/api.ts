@@ -144,9 +144,12 @@ export async function getShops(): Promise<Paginated<Shop>> {
   return res.json();
 }
 
-export async function getPublicStats(): Promise<ShopMetrics> {
-  const res = await fetch(`${CATALOG}/public-stats/`, { cache: "no-store"});
-  if (!res.ok){
+export async function getPublicStats(init?: RequestInit): Promise<ShopMetrics> {
+  const res = await fetch(`${CATALOG}/public-stats/`, {
+    next: { revalidate: 3600 },
+    ...init,
+  });
+  if (!res.ok) {
     throw new Error(`Couldn't load public stats (${res.status})`);
   }
   return res.json();
