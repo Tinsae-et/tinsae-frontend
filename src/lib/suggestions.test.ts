@@ -114,6 +114,40 @@ describe("getNextSuggestions", () => {
     expect(res.hasMore).toBe(true);
   });
 
+  it("fetches next category page if current category page only contains seen items", async () => {
+    const p2: Product = { ...mockProduct, id: 2 };
+    const p3: Product = { ...mockProduct, id: 3 };
+    const p4: Product = { ...mockProduct, id: 4 };
+
+    const getProductsMock = vi.mocked(api.getProducts);
+    // Page 2: only p2 (already seen)
+    getProductsMock.mockResolvedValueOnce({
+      count: 10,
+      next: "http://test/next-3",
+      previous: null,
+      results: [p2],
+    });
+    // Page 3: p3, p4 (fresh)
+    getProductsMock.mockResolvedValueOnce({
+      count: 10,
+      next: "http://test/next-4",
+      previous: null,
+      results: [p3, p4],
+    });
+
+    const res = await getNextSuggestions(mockProduct, {
+      categoryPage: 2,
+      seenIds: [2],
+      mode: "category",
+      pageSize: 4,
+    });
+
+    expect(res.products.map((p) => p.id)).toEqual([3, 4]);
+    expect(res.nextCategoryPage).toBe(4);
+    expect(res.mode).toBe("category");
+    expect(res.hasMore).toBe(true);
+  });
+
   it("transitions to discovery mode when category has no more pages", async () => {
     const p6: Product = { ...mockProduct, id: 6 };
     const p7: Product = { ...mockProduct, id: 7 };
@@ -224,5 +258,38 @@ describe("getNextSuggestions", () => {
     expect(res.products.map((p) => p.id)).toEqual([9]);
     expect(res.nextDiscoveryPage).toBe(5);
     expect(res.hasMore).toBe(false);
+  });
+
+  it("advances discovery page if first discovery page contains only seen items", async () => {
+    const p2: Product = { ...mockProduct, id: 2 };
+    const p8: Product = { ...mockProduct, id: 8 };
+
+    const getProductsMock = vi.mocked(api.getProducts);
+    // Discovery page 1: only p2 (seen)
+    getProductsMock.mockResolvedValueOnce({
+      count: 20,
+      next: "http://test/discovery-2",
+      previous: null,
+      results: [p2],
+    });
+    // Discovery page 2: p8 (fresh)
+    getProductsMock.mockResolvedValueOnce({
+      count: 20,
+      next: "http://test/discovery-3",
+      previous: null,
+      results: [p8],
+    });
+
+    const res = await getNextSuggestions(mockProduct, {
+      discoveryPage: 1,
+      seenIds: [2],
+      mode: "discovery",
+      pageSize: 4,
+    });
+
+    expect(res.products.map((p) => p.id)).toEqual([8]);
+    expect(res.nextDiscoveryPage).toBe(3);
+    expect(res.mode).toBe("discovery");
+    expect(res.hasMore).toBe(true);
   });
 });

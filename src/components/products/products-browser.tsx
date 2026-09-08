@@ -225,7 +225,7 @@ export function ProductsBrowser({
           onReset={clearAll}
         />
 
-        <div className={cn("min-w-0 flex-1", hasMore && "pb-[40vh]")}>
+        <div className="min-w-0 flex-1">
           {error && !loading ? (
             <ErrorState onRetry={retry} />
           ) : !loading && products.length === 0 ? (

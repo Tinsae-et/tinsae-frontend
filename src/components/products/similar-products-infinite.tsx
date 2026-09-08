@@ -24,7 +24,7 @@ export function SimilarProductsInfinite({
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
-  const [categoryPage, setCategoryPage] = useState(2);
+  const [categoryPage, setCategoryPage] = useState(initialProducts.length > 0 ? 2 : 1);
   const [discoveryPage, setDiscoveryPage] = useState(1);
   const [mode, setMode] = useState<"category" | "discovery">(
     product.category?.slug ? "category" : "discovery",
@@ -35,14 +35,20 @@ export function SimilarProductsInfinite({
   );
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const inFlightRef = useRef<AbortController | null>(null);
+  const isFetchingRef = useRef(false);
+  const hasMoreRef = useRef(hasMore);
+  const loadMoreRef = useRef<() => void>(() => {});
 
-  // Batches that produced nothing new, back to back. Two in a row means the
-  // sentinel would stay on screen with no new content beneath it and the
-  // observer would spin through pages, so treat the stream as finished.
+  useEffect(() => {
+    hasMoreRef.current = hasMore;
+  }, [hasMore]);
+
+  // Batches that produced nothing new, back to back.
   const emptyStreak = useRef(0);
 
   const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore) return;
+    if (isFetchingRef.current || !hasMoreRef.current) return;
+    isFetchingRef.current = true;
 
     const controller = new AbortController();
     inFlightRef.current = controller;
@@ -105,7 +111,9 @@ export function SimilarProductsInfinite({
       setCategoryPage(data.nextCategoryPage);
       setDiscoveryPage(data.nextDiscoveryPage);
       setMode(data.mode);
-      setHasMore(data.hasMore && emptyStreak.current < 2);
+      const nextHasMore = data.hasMore && emptyStreak.current < 4;
+      setHasMore(nextHasMore);
+      hasMoreRef.current = nextHasMore;
     } catch {
       if (signal.aborted) return;
       setError("Couldn't load more suggestions. Check connection and tap retry.");
@@ -113,10 +121,34 @@ export function SimilarProductsInfinite({
       // A newer request, or an unmount, has already taken over the flag.
       if (inFlightRef.current === controller) {
         inFlightRef.current = null;
+        isFetchingRef.current = false;
         setLoadingMore(false);
       }
     }
-  }, [categoryPage, discoveryPage, hasMore, loadingMore, mode, product]);
+  }, [categoryPage, discoveryPage, mode, product]);
+
+  useEffect(() => {
+    loadMoreRef.current = loadMore;
+  }, [loadMore]);
+
+  // Check if sentinel or bottom of page is within trigger distance
+  const checkAndTrigger = useCallback(() => {
+    if (isFetchingRef.current || !hasMoreRef.current) return;
+    const sentinel = sentinelRef.current;
+    if (sentinel) {
+      const rect = sentinel.getBoundingClientRect();
+      if (rect.top <= window.innerHeight + 800) {
+        loadMoreRef.current();
+        return;
+      }
+    }
+    const scrollY = window.scrollY;
+    const innerH = window.innerHeight;
+    const totalH = document.documentElement.scrollHeight;
+    if (scrollY + innerH >= totalH - 800) {
+      loadMoreRef.current();
+    }
+  }, []);
 
   // Abandon any in-flight batch when the section goes away.
   useEffect(() => {
@@ -126,15 +158,7 @@ export function SimilarProductsInfinite({
     };
   }, []);
 
-  const loadMoreRef = useRef(loadMore);
-  const isFetchingRef = useRef(false);
-
-  useEffect(() => {
-    loadMoreRef.current = loadMore;
-    isFetchingRef.current = Boolean(loadingMore || error);
-  });
-
-  // Set up IntersectionObserver on sentinel with stable callback reference
+  // Set up IntersectionObserver on sentinel with generous rootMargin
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel || !hasMore) return;
@@ -143,11 +167,11 @@ export function SimilarProductsInfinite({
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting && !isFetchingRef.current) {
+        if (entries[0]?.isIntersecting && !isFetchingRef.current && hasMoreRef.current) {
           loadMoreRef.current();
         }
       },
-      { rootMargin: "200px" },
+      { rootMargin: "800px" },
     );
 
     observer.observe(sentinel);
@@ -155,6 +179,37 @@ export function SimilarProductsInfinite({
       observer.disconnect();
     };
   }, [hasMore]);
+
+  // Re-check after products append / loading completes to keep auto-generating if still at bottom
+  useEffect(() => {
+    if (!loadingMore && hasMore && !error) {
+      requestAnimationFrame(() => {
+        checkAndTrigger();
+      });
+    }
+  }, [products.length, loadingMore, hasMore, error, checkAndTrigger]);
+
+  // Passive window scroll & resize fallback for fast scroll jumps
+  useEffect(() => {
+    if (!hasMore) return;
+
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        checkAndTrigger();
+      });
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [hasMore, checkAndTrigger]);
 
   // Nothing to show and nothing left to fetch. While more may still arrive the
   // section stays mounted so the sentinel can trigger the first batch.
@@ -196,19 +251,20 @@ export function SimilarProductsInfinite({
           ))}
       </div>
 
-      {/* Sentinel for infinite scroll. Stays mounted across a load: unmounting
-          it mid-fetch changed the document height twice per batch, which is
-          what made the scrollbar jitter. Only the observer is gated. */}
+      {/* Sentinel for infinite scroll. */}
       {hasMore && !error && (
         <div ref={sentinelRef} className="h-10 w-full" aria-hidden />
       )}
 
-      {/* Loading feedback. Announced rather than drawn — the in-grid skeletons
-          already show the pending batch, and a visible block here would add and
-          remove height on every fetch. */}
-      <p aria-live="polite" className="sr-only">
-        {loadingMore ? "Loading more recommendations" : ""}
-      </p>
+      {/* Loading feedback */}
+      {loadingMore && (
+        <div className="flex flex-col items-center justify-center py-8" aria-live="polite">
+          <div className="flex items-center gap-2.5 rounded-full border border-tn-hair bg-white px-5 py-2.5 shadow-xs">
+            <div className="size-4 animate-spin rounded-full border-2 border-tn-hair2 border-t-tn-red" />
+            <span className="text-xs font-semibold text-tn-mute">Loading more recommendations…</span>
+          </div>
+        </div>
+      )}
 
       {/* Error state */}
       {error && (
