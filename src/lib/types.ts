@@ -84,3 +84,11 @@ export type ShopProduct = {
   slug: string;
   specs: Record<string, unknown>;
 };
+
+export type ShopMetrics = {
+  verified_shops?: number;
+  total_products?: number;
+  verified_shop_products?: number;
+  category_product_count?: Record<string, number>;
+  shop_product_count?: Record<string, number>;
+};

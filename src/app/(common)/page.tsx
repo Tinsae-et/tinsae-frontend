@@ -1,5 +1,5 @@
-import { getProducts } from "@/lib/api";
-import type { Product } from "@/lib/types";
+import { getProducts, getPublicStats } from "@/lib/api";
+import type { Product, ShopMetrics } from "@/lib/types";
 import { Hero } from "@/components/home/hero";
 import { BrowseCategories } from "@/components/home/browse-categories";
 import { TopShops } from "@/components/home/top-shops";
@@ -27,17 +27,22 @@ export default async function Home() {
 
   const freshest: Product[] = products?.results ?? [];
 
+  // Public stats are cached at the fetch level and degrade gracefully to null
+  // if the endpoint fails or is unavailable.
+  const stats: ShopMetrics | null = await getPublicStats().catch(() => null);
+
   return (
     <main>
-      <Hero user={user} />
-      <BrowseCategories />
+      <Hero user={user} stats={stats} />
+      <BrowseCategories stats={stats} />
       <TopShops />
       <FreshListings products={freshest} />
       <Features />
       <HowItWorks />
-      <StatBand />
+      <StatBand stats={stats} />
       <ShopBand />
-      <FinalCTA user={user} />
+      <FinalCTA user={user} stats={stats} />
     </main>
   );
 }
+

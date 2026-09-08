@@ -162,32 +162,43 @@ export async function getNextSuggestions(
 
   if (mode === "category" && categorySlug) {
     try {
-      const res = await getProducts({
-        category: categorySlug,
-        ordering: "-last_confirmed_at",
-        page: categoryPage,
-        pageSize,
-      });
+      let hasMore = true;
+      while (newProducts.length < pageSize && hasMore) {
+        const res = await getProducts({
+          category: categorySlug,
+          ordering: "-last_confirmed_at",
+          page: categoryPage,
+          pageSize,
+        });
 
-      addUnique(res.results);
-      categoryPage += 1;
+        addUnique(res.results);
+        categoryPage += 1;
 
-      // While the category still has pages there is definitely more to come.
-      let hasMore = Boolean(res.next) && res.results.length > 0;
+        // While the category still has pages there is definitely more to come.
+        hasMore = Boolean(res.next) && res.results.length > 0;
+        if (newProducts.length > 0 || !hasMore) {
+          break;
+        }
+      }
 
       // Category exhausted: switch to discovery for subsequent scrolls.
       if (!hasMore) {
         mode = "discovery";
         // If we didn't fill the batch, fetch initial discovery listings
         if (newProducts.length < Math.min(4, pageSize)) {
-          const discRes = await getProducts({
-            ordering: "-last_confirmed_at",
-            page: discoveryPage,
-            pageSize,
-          });
-          addUnique(discRes.results);
-          discoveryPage += 1;
-          hasMore = Boolean(discRes.next) && discRes.results.length > 0;
+          while (newProducts.length < Math.min(4, pageSize)) {
+            const discRes = await getProducts({
+              ordering: "-last_confirmed_at",
+              page: discoveryPage,
+              pageSize,
+            });
+            addUnique(discRes.results);
+            discoveryPage += 1;
+            hasMore = Boolean(discRes.next) && discRes.results.length > 0;
+            if (newProducts.length > 0 || !hasMore) {
+              break;
+            }
+          }
         } else {
           // Batch was filled from the category, so discovery is untouched and
           // page 1 of it is still waiting on the next scroll.
@@ -209,20 +220,27 @@ export async function getNextSuggestions(
   }
 
   // Discovery mode (cross-category)
-  const res = await getProducts({
-    ordering: "-last_confirmed_at",
-    page: discoveryPage,
-    pageSize,
-  });
+  let discHasMore = true;
+  while (newProducts.length < pageSize && discHasMore) {
+    const res = await getProducts({
+      ordering: "-last_confirmed_at",
+      page: discoveryPage,
+      pageSize,
+    });
 
-  addUnique(res.results);
-  discoveryPage += 1;
+    addUnique(res.results);
+    discoveryPage += 1;
+    discHasMore = Boolean(res.next) && res.results.length > 0;
+    if (newProducts.length > 0 || !discHasMore) {
+      break;
+    }
+  }
 
   return {
     products: newProducts,
     nextCategoryPage: categoryPage,
     nextDiscoveryPage: discoveryPage,
     mode: "discovery",
-    hasMore: Boolean(res.next) && res.results.length > 0,
+    hasMore: discHasMore,
   };
 }

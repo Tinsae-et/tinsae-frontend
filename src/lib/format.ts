@@ -11,6 +11,17 @@ export function formatETB(price: string | number): string {
 }
 
 /**
+ * Formats an integer counter for display (e.g. 8,920).
+ * Uses 'en-US' explicitly so grouping is deterministic between SSR and client renders.
+ */
+export function formatCount(value: number | string | undefined | null): string {
+  if (value == null) return "";
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n)) return "";
+  return Math.round(n).toLocaleString("en-US");
+}
+
+/**
  * Normalizes backend media image URLs to relative `/media/...` paths so Next.js can
  * optimize them via the `/media` rewrite regardless of whether the request originated
  * during SSR (inside Docker at host.docker.internal:8000) or client-side (at localhost:8000).

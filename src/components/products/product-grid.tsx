@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type { Product } from "@/lib/types";
 import {
   ProductCard,
@@ -54,6 +54,24 @@ export function ProductGrid({
     isFetchingRef.current = Boolean(loading || loadingMore || loadMoreError);
   });
 
+  const checkAndTrigger = useCallback(() => {
+    if (isFetchingRef.current || !hasMore || !onLoadMoreRef.current) return;
+    const sentinel = sentinelRef.current;
+    if (sentinel) {
+      const rect = sentinel.getBoundingClientRect();
+      if (rect.top <= window.innerHeight + 800) {
+        onLoadMoreRef.current();
+        return;
+      }
+    }
+    const scrollY = window.scrollY;
+    const innerH = window.innerHeight;
+    const totalH = document.documentElement.scrollHeight;
+    if (scrollY + innerH >= totalH - 800) {
+      onLoadMoreRef.current();
+    }
+  }, [hasMore]);
+
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel || !hasMore || !onLoadMore) {
@@ -76,6 +94,37 @@ export function ProductGrid({
       observer.disconnect();
     };
   }, [hasMore, onLoadMore]);
+
+  // Re-check after products append / loading completes to keep auto-generating if still at bottom
+  useEffect(() => {
+    if (!loading && !loadingMore && hasMore && !loadMoreError) {
+      requestAnimationFrame(() => {
+        checkAndTrigger();
+      });
+    }
+  }, [products.length, loading, loadingMore, hasMore, loadMoreError, checkAndTrigger]);
+
+  // Passive window scroll & resize fallback for fast scroll jumps
+  useEffect(() => {
+    if (!hasMore || !onLoadMore) return;
+
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        checkAndTrigger();
+      });
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [hasMore, onLoadMore, checkAndTrigger]);
 
   return (
     <>

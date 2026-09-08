@@ -37,6 +37,7 @@ export function useProducts(query: ProductQuery, initial: InitialProducts) {
   const loadedKey = useRef<string>(initial ? filterKey : "");
   const firstPageRef = useRef<AbortController | null>(null);
   const loadMoreRef = useRef<AbortController | null>(null);
+  const isFetchingMoreRef = useRef(false);
 
   // Latest filters, read through a ref so `loadMore` does not take the query
   // object as a dependency. Spreading `query` produces a new object every
@@ -98,6 +99,7 @@ export function useProducts(query: ProductQuery, initial: InitialProducts) {
     firstPageRef.current?.abort();
     loadMoreRef.current?.abort();
     loadMoreRef.current = null;
+    isFetchingMoreRef.current = false;
     setLoadingMore(false);
     setLoadMoreError(null);
 
@@ -111,7 +113,8 @@ export function useProducts(query: ProductQuery, initial: InitialProducts) {
   }, [filterKey, fetchFirstPage]);
 
   const loadMore = useCallback(async () => {
-    if (loading || loadingMore || !hasMore) return;
+    if (loading || loadingMore || isFetchingMoreRef.current || !hasMore) return;
+    isFetchingMoreRef.current = true;
 
     const controller = new AbortController();
     loadMoreRef.current = controller;
@@ -139,7 +142,7 @@ export function useProducts(query: ProductQuery, initial: InitialProducts) {
       setTotal(data.count);
       setPage(nextPage);
       setHasMore(
-        Boolean(data.next) && data.results.length > 0 && emptyStreak.current < 2,
+        Boolean(data.next) && data.results.length > 0 && emptyStreak.current < 4,
       );
     } catch {
       if (signal.aborted) return;
@@ -149,6 +152,7 @@ export function useProducts(query: ProductQuery, initial: InitialProducts) {
       // load-more, or a filter change, has already taken ownership of it.
       if (loadMoreRef.current === controller) {
         loadMoreRef.current = null;
+        isFetchingMoreRef.current = false;
         setLoadingMore(false);
       }
     }
