@@ -1,92 +1,132 @@
-"use client"
+"use client";
 
-import { MapPin } from "lucide-react"
-import { Star } from "lucide-react"
-import { Pill } from "@/components/tinsae/pill"
+import { Icon } from "@/components/tinsae/icon";
+import { Pill } from "@/components/tinsae/pill";
+import { VerifiedBadge } from "@/components/tinsae/verified-badge";
+import { type DirectoryShop, getInitials } from "@/lib/shops-data";
+import { cn } from "@/lib/utils";
 
-interface Shop{
-    f_car:string,
-    name:string,
-    listings:number,
-    reply:number,
-    response:string,
-    distance:string,
-    rate:number,
-    rate2:number,
+interface ShopItemProps {
+  item: DirectoryShop;
+  isSelected?: boolean;
+  onSelect?: () => void;
 }
 
-interface ShopmapProps{
-    item:Shop;
-}
-
-export default function Shops({item}:ShopmapProps){
-    return(
-         <div>
-            <button className="hover:bg-orange-100 bg-white border-t pr-25 p-3">
-                <div className="flex items-start gap-2 ">
-                    <div className="px-2 py-2 bg-gray-600 rounded-xl text-white font-bold">{item.f_car}</div>
-                    <div>
-                        <span className="font-bold">{item.name}</span>
-                        <p className="flex gap-2"><span className="flex items-center font-bold text-sm"> <Star className="text-yellow-500" size={16}/> {item.rate}</span><span className="text-gray-500 text-sm">({item.rate2})</span><span className="flex items-center text-sm text-gray-500 gap-1"><MapPin size={16}/>{item.distance}</span></p>
-                        <div className="flex gap-4"><span className="text-sm bg-green-100 px-2 rounded-full py-1">{item.listings} listings</span>
-                            <div className="text-sm flex gap-2 items-center bg-green-200 rounded-full px-2 font-bold text-green-700"> <div className="w-2 h-2 bg-green-800 rounded-full inline-block"/> {item.reply}% reply</div>
-                        </div>
-                    </div>
-                </div>
-            </button>
+export default function ShopItem({ item, isSelected = false, onSelect }: ShopItemProps) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={cn(
+        "w-full text-left p-3.5 border-b border-tn-hair2 transition-colors cursor-pointer",
+        isSelected ? "bg-tn-red-soft border-l-[3px] border-l-tn-red" : "bg-white hover:bg-tn-paper",
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <div
+          className="size-11 shrink-0 rounded-xl text-white font-bold flex items-center justify-center text-sm shadow-xs"
+          style={{ backgroundColor: item.color }}
+        >
+          {getInitials(item.name)}
         </div>
-    )
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <span className="font-bold text-tn-ink text-[14px] truncate">{item.name}</span>
+            {item.isVerified && <VerifiedBadge size={12} />}
+          </div>
+          <div className="flex items-center gap-2 mt-0.5 text-xs text-tn-mute">
+            <span className="flex items-center font-bold text-tn-ink gap-0.5">
+              <Icon name="star" className="text-[#E8A317]" size={13} /> {item.rating.toFixed(1)}
+            </span>
+            <span className="font-tn-mono">({item.ratings})</span>
+            <span className="flex items-center gap-0.5">
+              <Icon name="pin" size={12} className="text-tn-mute" />
+              {item.dist} km
+            </span>
+          </div>
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-[11px] bg-tn-paper text-tn-ink2 px-2 py-0.5 rounded-full font-medium">
+              {item.listings} listings
+            </span>
+            <span className="text-[11px] flex items-center gap-1 bg-tn-green-soft text-tn-green font-bold px-2 py-0.5 rounded-full">
+              <span className="size-1.5 bg-tn-green rounded-full inline-block" />
+              {item.replyRate}% reply
+            </span>
+          </div>
+        </div>
+      </div>
+    </button>
+  );
 }
 
-export function ShopMap({item}:ShopmapProps){
-    return(
-       
-        <div className="absolute items-end bg-white pt-2   rounded-xl">
-            <div className="p-2">
-                <div className="flex items-start gap-2 ">
-                <div className="px-2 py-2 bg-gray-600 rounded-xl text-white font-bold">{item.f_car}</div>
-                <div className="">
-                    <span className="font-bold">{item.name}</span> 
-                    <span className="text-sm bg-green-200 px-4 py-1 rounded-full text-green-900 font-bold items-center">
-                        <div className="w-2 h-2 bg-green-800 rounded-full items-end inline-block"/> Live</span>
-                    <p className="flex gap-2"><span className="flex items-center font-bold text-sm"> <Star className="text-yellow-500" size={16}/> {item.rate}</span>
-                    <span className="text-gray-500 text-sm">({item.rate2})</span>
-                    <span className="flex items-center text-sm text-gray-500 gap-1"><MapPin size={14}/>Bole Atlas</span></p>
-                </div>
+export function ShopMapPopUp({ item }: { item: DirectoryShop }) {
+  return (
+    <div className="w-[340px] bg-white rounded-2xl shadow-[0_24px_60px_rgba(11,11,11,0.22)] border border-tn-hair overflow-hidden">
+      <div className="p-4">
+        <div className="flex items-start gap-3">
+          <div
+            className="size-12 shrink-0 rounded-xl text-white font-bold flex items-center justify-center text-base"
+            style={{ backgroundColor: item.color }}
+          >
+            {getInitials(item.name)}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-tn-ink text-[15px] truncate">{item.name}</span>
+              {item.isVerified && (
+                <span className="text-[10.5px] bg-tn-green-soft text-tn-green px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-1">
+                  <span className="size-1.5 bg-tn-green rounded-full inline-block" /> Live
+                </span>
+              )}
             </div>
-            <div className= "grid grid-cols-4 gap-2">
-                <div className="border-r px-3 my-2">
-                    <p className="font-tn-mono font-bold">{item.listings}</p>
-                    <p className="text-sm text-gray-500">listings</p>
-                </div>
-                <div className="border-r px-3 my-2">
-                    <p className="font-tn-mono font-bold">{item.reply}%</p>
-                    <p className="text-sm text-gray-500">reply rate</p>
-                </div>
-                <div className="border-r px-3 my-2">
-                    <p className="font-tn-mono font-bold">~{item.response}</p>
-                    <p className="text-sm text-gray-500">response</p>
-                </div>
-                <div className=" px-3 my-2">
-                    <p className="font-tn-mono font-bold">{item.distance}</p>
-                    <p className="text-sm text-gray-500">away</p>
-                </div>
+            <div className="flex items-center gap-2 mt-1 text-xs text-tn-mute">
+              <span className="flex items-center font-bold text-tn-ink gap-0.5">
+                <Icon name="star" className="text-[#E8A317]" size={13} /> {item.rating.toFixed(1)}
+              </span>
+              <span className="font-tn-mono">({item.ratings})</span>
+              <span className="flex items-center gap-0.5">
+                <Icon name="pin" size={12} className="text-tn-mute" /> Bole · {item.hood}
+              </span>
             </div>
-
-            </div>
-            
-            <div className="bg-orange-100 flex gap-2 p-2 px-6 rounded-b-xl">
-                <Pill kind="outline" size="lg" className="ml-3 px-10 py-1 "  icon="eye" >
-                View Shop
-                </Pill>
-                <Pill size="lg" className="px-10 py-1 "  icon="tg" >
-                contact
-                </Pill>
-
-            </div>
-            
-            
+          </div>
         </div>
 
-)
+        <div className="grid grid-cols-4 gap-1 mt-3.5 pt-3 border-t border-tn-hair2 text-center">
+          <div>
+            <p className="font-tn-mono font-bold text-tn-ink text-[13.5px]">{item.listings}</p>
+            <p className="text-[10px] text-tn-mute">listings</p>
+          </div>
+          <div className="border-l border-tn-hair2">
+            <p className="font-tn-mono font-bold text-tn-ink text-[13.5px]">{item.replyRate}%</p>
+            <p className="text-[10px] text-tn-mute">reply rate</p>
+          </div>
+          <div className="border-l border-tn-hair2">
+            <p className="font-tn-mono font-bold text-tn-ink text-[13.5px]">~{item.responseTime}m</p>
+            <p className="text-[10px] text-tn-mute">response</p>
+          </div>
+          <div className="border-l border-tn-hair2">
+            <p className="font-tn-mono font-bold text-tn-ink text-[13.5px]">{item.dist} km</p>
+            <p className="text-[10px] text-tn-mute">away</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-tn-paper flex gap-2 p-3 px-4 border-t border-tn-hair2">
+        <Pill kind="outline" size="sm" icon="eye" href={`/shops/${item.slug}`} className="flex-1">
+          View shop
+        </Pill>
+        <Pill
+          kind="solid"
+          size="sm"
+          icon="tg"
+          href={item.telegramUsername ? `https://t.me/${item.telegramUsername}` : "#"}
+          className="flex-1"
+        >
+          Contact
+        </Pill>
+      </div>
+    </div>
+  );
 }
+
+export { ShopItem as Shops, ShopMapPopUp as ShopMap };

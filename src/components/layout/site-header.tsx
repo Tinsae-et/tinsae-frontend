@@ -129,7 +129,7 @@ function BrowseMenu() {
         <div className="absolute top-full left-0 pt-2">
           <div
             role="menu"
-            className="w-[520px] rounded-[18px] border border-tn-hair bg-white p-4 shadow-[0_266px_64px_rgba(11,11,11,0.18)]"
+            className="w-[520px] rounded-[18px] border border-tn-hair bg-white p-4 shadow-[0_26px_64px_rgba(11,11,11,0.18)]"
           >
             <p className="text-tn-mute mb-3 ml-1.5 text-[10.5px] font-extrabold tracking-[0.09em] uppercase">
               Shop by category
@@ -157,20 +157,18 @@ function BrowseMenu() {
               ))}
             </div>
             <div className="border-tn-hair2 mt-3 flex gap-2 border-t pt-3.5">
-              {(
-                [
-                  ["building", "Shops"],
-                  ["pin", "Map view"],
-                  ["spec", "All categories"],
-                ] as [IconName, string][]
-              ).map(([icon, label]) => (
+              {[
+                { icon: "building", label: "Shops", href: "/shops" },
+                { icon: "pin", label: "Map view", href: "/map" },
+                { icon: "spec", label: "All categories", href: "/products" },
+              ].map(({ icon, label, href }) => (
                 <Link
                   key={label}
-                  href="/products"
+                  href={href}
                   onClick={() => setOpen(false)}
                   className="border-tn-hair text-tn-ink2 inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[10px] border text-[13px] font-bold"
                 >
-                  <Icon name={icon} size={15} className="text-tn-red" />
+                  <Icon name={icon as IconName} size={15} className="text-tn-red" />
                   {label}
                 </Link>
               ))}
@@ -547,7 +545,7 @@ export function SiteHeader({ user }: { user?: AuthUser | null }) {
                   { label: "How it works", href: "/how-it-works" },
                   {
                     label: "Verified shops",
-                    href: "/products?verified_only=1",
+                    href: "/shops",
                   },
                   { label: "Browse listings", href: "/products" },
                   { label: "For shop owners", href: "/signup" },

@@ -6,6 +6,7 @@ import {
   NewListingHeader,
   OverviewHeader,
   ProfileHeader,
+  VerificationHeader,
 } from "./headers";
 
 export default function DashboardHeader({
@@ -31,6 +32,9 @@ export default function DashboardHeader({
       {pathname === "/shop/dashboard/shop-profile" && (
         <ProfileHeader setShowSidebar={setShowSidebar} />
       )}
+      {
+        pathname ==="/shop/dashboard/get-verified" && <VerificationHeader setShowSidebar={setShowSidebar}/>
+      }
     </header>
   );
 }

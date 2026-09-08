@@ -15,9 +15,8 @@ export async function POST(request: Request) {
   const blocked = rejectCrossOrigin(request);
   if (blocked) return blocked;
 
-  const input = (await request.json()) as LoginInput;
-
   try {
+    const input = (await request.json()) as LoginInput;
     const { access, refresh, user } = await authDriver.login({
       identifier: input.identifier?.trim() ?? "",
       password: input.password ?? "",

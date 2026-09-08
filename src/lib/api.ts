@@ -1,6 +1,7 @@
 // Central place for talking to the backend API.
 // The base URL comes from the environment so it can change per environment.
 import type { Category, Paginated, Product, Shop, ShopProduct } from "./types";
+import { normalizeImageUrl } from "./format";
 
 // Dual-context base URL:
 //  - Server components (SSR, inside the dev container) reach the host backend
@@ -60,6 +61,17 @@ function productSearchParams(query: ProductQuery): URLSearchParams {
   return params;
 }
 
+function normalizeProduct(product: Product): Product {
+  if (!product.images || !Array.isArray(product.images)) return product;
+  return {
+    ...product,
+    images: product.images.map((img) => ({
+      ...img,
+      url: normalizeImageUrl(img.url) ?? img.url,
+    })),
+  };
+}
+
 export async function getProducts(
   query: ProductQuery = {},
   init?: RequestInit,
@@ -71,7 +83,27 @@ export async function getProducts(
     ...init,
   });
   if (!res.ok) {
+    // DRF returns 404 when `page` exceeds the total number of pages:
+    // {"detail": "Invalid page."}. In paginated feeds, treating a page > 1 404
+    // as an empty page prevents error banners when simply reaching the end.
+    if (res.status === 404 && query.page && query.page > 1) {
+      return { count: 0, next: null, previous: null, results: [] };
+    }
     throw new Error(`Could not load products (${res.status})`);
+  }
+  const data = (await res.json()) as Paginated<Product>;
+  return {
+    ...data,
+    results: data.results.map(normalizeProduct),
+  };
+}
+
+export async function getSimilarProducts(slug:string): Promise<Paginated<Product>> {
+  const res = await fetch(`${CATALOG}/similar/${encodeURIComponent(slug)}/`, {
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(`Could not load similar products (${res.status})`);
   }
   return res.json();
 }
@@ -116,7 +148,8 @@ export async function getProduct(slug: string, init?: RequestInit): Promise<Prod
   if (!res.ok) {
     throw new Error(`Could not load product (${res.status})`);
   }
-  return res.json();
+  const data = (await res.json()) as Product;
+  return normalizeProduct(data);
 }
 
 export type ShopProductQuery = {
@@ -146,11 +179,12 @@ function ShopProductSearchParams(query: ShopProductQuery): URLSearchParams{
 export async function getShopProducts(
   slug: string,
   query: ShopProductQuery,
+  init?: RequestInit,
 ): Promise<Paginated<ShopProduct>> {
   const params = ShopProductSearchParams(query).toString();
   const res = await fetch(
     `/api/shop/${encodeURIComponent(slug)}/products${params ? `?${params}` : ""}`,
-    { method: "GET", cache: "no-store" },
+    { method: "GET", cache: "no-store", ...init },
   );
   if (!res.ok) {
     throw new Error(`Couldn't load products (${res.status})`);
