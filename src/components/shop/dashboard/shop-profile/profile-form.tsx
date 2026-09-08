@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Icon } from "@/components/tinsae/icon";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { Pill } from "@/components/tinsae/pill";
@@ -24,10 +24,25 @@ export default function ProfileForm() {
     "Verified electronics retailer in Bole, Atlas — phones, laptops and audio. Sealed and open-box stock, confirmed daily. Walk-ins welcome behind Atlas Hotel."
   );
 
+  const logoRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    logoRef.current = logo;
+  });
+
+  useEffect(() => {
+    return () => {
+      if (logoRef.current) URL.revokeObjectURL(logoRef.current);
+    };
+  }, []);
+
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setLogo(URL.createObjectURL(file));
+    setLogo((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -60,6 +75,7 @@ export default function ProfileForm() {
                   alt="Shop logo"
                   width={72}
                   height={72}
+                  unoptimized={logo.startsWith("blob:")}
                   className="object-cover"
                 />
               </div>

@@ -16,13 +16,13 @@ export async function POST(request: Request) {
   const blocked = rejectCrossOrigin(request);
   if (blocked) return blocked;
 
-  const { payload, mode, role } = (await request.json()) as {
-    payload: Record<string, string>;
-    mode: AuthMode;
-    role?: Role;
-  };
-
   try {
+    const { payload, mode, role } = (await request.json()) as {
+      payload: Record<string, string>;
+      mode: AuthMode;
+      role?: Role;
+    };
+
     const { access, refresh, user } = await authDriver.telegram(
       payload ?? {},
       mode === "signup" ? "signup" : "signin",

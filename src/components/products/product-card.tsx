@@ -6,10 +6,11 @@ import Link from "next/link";
 import { Icon } from "@/components/tinsae/icon";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
-import { formatETB, freshness, type FreshnessTone } from "@/lib/format";
+import { formatETB, freshness, normalizeImageUrl, type FreshnessTone } from "@/lib/format";
 import type { Product } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useCompare } from "@/hooks/use-compare";
+import { useSaved } from "@/hooks/use-saved";
 
 // Matches the design's search-result card (design_handoff_search): radius 18,
 // "In stock" (check) / "Aging" status tag, heart save button, "From ETB" price,
@@ -45,7 +46,7 @@ function ProductCardInner({
 
   const fresh = freshness(product.last_confirmed_at, product.confirmation_status);
   const tone = fresh.tone;
-  const image = product.images?.[0]?.url || null;
+  const image = normalizeImageUrl(product.images?.[0]?.url) || null;
 
   const detailHref = `/products/${product.slug}`;
 
@@ -156,19 +157,20 @@ function ProductCardInner({
 }
 
 export function ProductCard({ product }: { product: Product }) {
-  const [saved, setSaved] = useState(false);
-  return <ProductCardInner product={product} saved={saved} onSave={() => setSaved((s) => !s)} />;
+  const { isSaved, toggleSaved } = useSaved();
+  const saved = isSaved(product.slug);
+  return <ProductCardInner product={product} saved={saved} onSave={() => toggleSaved(product.slug)} />;
 }
 
 // ── list view row ──────────────────────────────────────────
 export function ProductRow({ product }: { product: Product }) {
   const { isInCompare, toggleCompare } = useCompare();
   const inCompare = isInCompare(product.slug);
-
-  const [saved, setSaved] = useState(false);
+  const { isSaved, toggleSaved } = useSaved();
+  const saved = isSaved(product.slug);
   const fresh = freshness(product.last_confirmed_at, product.confirmation_status);
   const tone = fresh.tone;
-  const image = product.images?.[0]?.url || null;
+  const image = normalizeImageUrl(product.images?.[0]?.url) || null;
 
   return (
     <div className="border-tn-hair group relative flex items-center gap-[18px] rounded-[18px] border bg-white p-3.5 transition-[transform,box-shadow,border-color] duration-150 hover:-translate-y-[3px] hover:border-[#E0DDD4] hover:shadow-[0_18px_44px_rgba(11,11,11,0.09)]">
@@ -213,9 +215,9 @@ export function ProductRow({ product }: { product: Product }) {
             onClick={(e) => {
               e.stopPropagation();
               e.preventDefault();
-              setSaved((s) => !s);
+              toggleSaved(product.slug);
             }}
-            className="bg-white/95 text-tn-ink2 hover:bg-white absolute top-1.5 right-1.5 z-10 inline-flex size-7 items-center justify-center rounded-lg shadow-[0_2px_8px_rgba(11,11,11,0.06)]"
+            className="bg-white/95 text-tn-ink2 hover:bg-white inline-flex size-7 items-center justify-center rounded-lg shadow-[0_2px_8px_rgba(11,11,11,0.06)]"
           >
             <Icon name="heart" size={14} className={saved ? "text-tn-red" : ""} />
           </button>
@@ -249,6 +251,24 @@ export function ProductRow({ product }: { product: Product }) {
 }
 
 // ── skeleton (design geometry) ─────────────────────────────
+/**
+ * Row-shaped placeholder for list view. Matches ProductRow's box exactly — a
+ * 92px thumbnail inside p-3.5 and a 1px border — so swapping it for a real row
+ * does not change the page height.
+ */
+export function ProductRowSkeleton() {
+  return (
+    <div className="border-tn-hair flex items-center gap-[18px] rounded-[18px] border bg-white p-3.5">
+      <div className="bg-tn-hair2 h-[92px] w-[92px] shrink-0 animate-pulse rounded-xl" />
+      <div className="min-w-0 flex-1">
+        <div className="bg-tn-hair2 h-2.5 w-16 animate-pulse rounded" />
+        <div className="bg-tn-hair2 mt-2.5 h-3.5 w-[60%] animate-pulse rounded" />
+        <div className="bg-tn-hair2 mt-3.5 h-4 w-[30%] animate-pulse rounded" />
+      </div>
+    </div>
+  );
+}
+
 export function ProductCardSkeleton() {
   return (
     <div className="overflow-hidden rounded-[18px] border border-tn-hair bg-white">

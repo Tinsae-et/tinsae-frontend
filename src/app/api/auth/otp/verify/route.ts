@@ -16,21 +16,21 @@ export async function POST(request: Request) {
   const blocked = rejectCrossOrigin(request);
   if (blocked) return blocked;
 
-  const { phone, code, mode, role, full_name, shop_name, city } = (await request.json()) as {
-    phone: string;
-    code: string;
-    mode: AuthMode;
-    role?: Role;
-    full_name?: string;
-    shop_name?: string;
-    city?: string;
-  };
-
-  if (!/^\d{6}$/.test(code ?? "")) {
-    return NextResponse.json({ detail: "Enter all six digits." }, { status: 400 });
-  }
-
   try {
+    const { phone, code, mode, role, full_name, shop_name, city } = (await request.json()) as {
+      phone: string;
+      code: string;
+      mode: AuthMode;
+      role?: Role;
+      full_name?: string;
+      shop_name?: string;
+      city?: string;
+    };
+
+    if (!/^\d{6}$/.test(code ?? "")) {
+      return NextResponse.json({ detail: "Enter all six digits." }, { status: 400 });
+    }
+
     const { access, refresh, user } = await authDriver.verifyOtp({
       phone: toE164(phone),
       code,

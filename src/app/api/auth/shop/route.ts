@@ -29,19 +29,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ detail: "This account already has a shop." }, { status: 409 });
   }
 
-  const input = (await request.json()) as {
-    name: string;
-    city: string;
-    phone: string;
-    description?: string;
-    telegram_chat_id?: string;
-  };
-
-  if (!input.name?.trim()) {
-    return NextResponse.json({ fieldErrors: { name: ["Enter a shop name."] } }, { status: 400 });
-  }
-
   try {
+    const input = (await request.json()) as {
+      name: string;
+      city: string;
+      phone: string;
+      description?: string;
+      telegram_chat_id?: string;
+    };
+
+    if (!input.name?.trim()) {
+      return NextResponse.json({ fieldErrors: { name: ["Enter a shop name."] } }, { status: 400 });
+    }
+
     const shop = await authDriver.createShop(access, {
       name: input.name.trim(),
       city: input.city?.trim() || "Bole, Addis Ababa",
