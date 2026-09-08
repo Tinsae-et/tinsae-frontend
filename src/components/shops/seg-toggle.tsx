@@ -1,11 +1,24 @@
+"use client";
+
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Icon, type IconName } from "@/components/tinsae/icon";
 import { cn } from "@/lib/utils";
 
-export function SegToggle({ active }: { active: "List" | "Map" }) {
+export function SegToggle({
+  active,
+  searchParams: customParams,
+}: {
+  active: "List" | "Map";
+  searchParams?: string;
+}) {
+  const currentParams = useSearchParams();
+  const qs = customParams !== undefined ? customParams : currentParams.toString();
+  const queryStr = qs ? `?${qs}` : "";
+
   const options: [string, IconName, string][] = [
-    ["List", "sort", "/shops"],
-    ["Map", "pin", "/map"],
+    ["List", "sort", `/shops${queryStr}`],
+    ["Map", "pin", `/map${queryStr}`],
   ];
 
   return (
@@ -19,7 +32,7 @@ export function SegToggle({ active }: { active: "List" | "Map" }) {
             className={cn(
               "inline-flex h-[34px] items-center gap-1.5 rounded-full px-4 text-[13px] font-bold transition-colors",
               isActive
-                ? "bg-tn-ink text-white shadow-sm"
+                ? "bg-tn-ink text-white shadow-xs"
                 : "text-tn-ink2 hover:text-tn-ink bg-transparent",
             )}
           >
