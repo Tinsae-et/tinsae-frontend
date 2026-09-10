@@ -5,7 +5,6 @@ export interface VerificationStateResponse {
   shop: number;
   state: VerificationState;
   is_verified: boolean;
-  submited_at?: string | null;
   submitted_at?: string | null;
   reviewed_at?: string | null;
   reviewer?: number | null;
