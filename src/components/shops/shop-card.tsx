@@ -166,11 +166,17 @@ export function ShopCard({
           <Pill
             kind="solid"
             size="sm"
-            icon="tg"
-            href={shop.telegramUsername ? `https://t.me/${shop.telegramUsername}` : "#"}
+            icon={shop.telegramUsername ? "tg" : "phone"}
+            href={
+              shop.telegramUsername
+                ? `https://t.me/${shop.telegramUsername}`
+                : shop.phone
+                  ? `tel:${shop.phone}`
+                  : "#"
+            }
             className="flex-1"
           >
-            Contact
+            {shop.telegramUsername ? "Contact" : shop.phone ? "Call" : "Contact"}
           </Pill>
         </div>
       </div>

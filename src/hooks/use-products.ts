@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getProducts, getPublicShopProducts, getShopProducts, ShopProductQuery, type ProductQuery } from "@/lib/api";
-import type { Product, ShopProduct } from "@/lib/types";
+import type { Paginated, Product, ShopProduct } from "@/lib/types";
 import { PRODUCTS_PAGE_SIZE } from "@/components/products/product-grid";
 
 export type InitialProducts = { products: Product[]; total: number } | null;
@@ -239,24 +239,38 @@ export function useShopProducts(query: ShopProductQuery, slug: string) {
   return { products, total, loading, error };
 }
 
-export function usePublicShopProducts(query: ShopProductQuery, slug: string) {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
+export function usePublicShopProducts(
+  query: ShopProductQuery,
+  slug: string,
+  initial?: Paginated<Product> | null,
+) {
+  const filterQuery: ShopProductQuery = { ...query, page: undefined };
+  const filterKey = JSON.stringify(filterQuery);
+
+  const [products, setProducts] = useState<Product[]>(initial?.results ?? []);
+  const [total, setTotal] = useState(initial?.count ?? 0);
+  const [loading, setLoading] = useState(initial ? false : true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(
+    initial ? initial.results.length < initial.count : true,
+  );
 
-  const queryKey = JSON.stringify(query);
-  const loadedKey = useRef<string | null>(null);
+  const loadedKey = useRef<string>(initial ? filterKey : "");
+  const controllerRef = useRef<AbortController | null>(null);
 
-  const fetchPage = useCallback(
+  const fetchFirstPage = useCallback(
     async (signal?: AbortSignal) => {
       setLoading(true);
       setError(null);
       try {
-        const data = await getPublicShopProducts(slug, query);
+        const data = await getPublicShopProducts(slug, { ...filterQuery, page: 1 }, { signal });
         if (signal?.aborted) return;
         setTotal(data.count);
         setProducts(data.results);
+        setPage(1);
+        setHasMore(Boolean(data.next) && data.results.length > 0 && data.results.length < data.count);
       } catch {
         if (signal?.aborted) return;
         setError("Couldn't load listings. Check your connection and try again.");
@@ -266,21 +280,42 @@ export function usePublicShopProducts(query: ShopProductQuery, slug: string) {
         }
       }
     },
-    [query, slug],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filterKey, slug],
   );
 
-  // Fetches on mount, then whenever the query changes. The ref survives
-  // StrictMode's simulated remount, so this is one request either way.
   useEffect(() => {
-    if (loadedKey.current === queryKey) return;
-    loadedKey.current = queryKey;
+    if (loadedKey.current === filterKey) return;
+    loadedKey.current = filterKey;
+    controllerRef.current?.abort();
     const controller = new AbortController();
-    fetchPage(controller.signal);
+    controllerRef.current = controller;
+    fetchFirstPage(controller.signal);
     return () => {
       controller.abort();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryKey]);
+  }, [fetchFirstPage, filterKey]);
 
-  return { products, total, loading, error };
+  const loadMore = useCallback(async () => {
+    if (loading || loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    const nextPage = page + 1;
+    try {
+      const data = await getPublicShopProducts(slug, { ...filterQuery, page: nextPage });
+      setProducts((prev) => {
+        const existing = new Set(prev.map((p) => p.id));
+        const added = data.results.filter((p) => !existing.has(p.id));
+        const next = [...prev, ...added];
+        setHasMore(Boolean(data.next) && next.length < data.count);
+        return next;
+      });
+      setPage(nextPage);
+    } catch {
+      // keep existing
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [filterQuery, hasMore, loading, loadingMore, page, slug]);
+
+  return { products, total, loading, loadingMore, error, hasMore, loadMore };
 }

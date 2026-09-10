@@ -32,6 +32,7 @@ export type Product = {
   price: string;
   currency: string;
   shop_name: string;
+  shop_slug?: string;
   shop_verified: boolean;
   category: Category | null;
   /** Ordered product images (primary first); empty when unset. */
@@ -64,8 +65,13 @@ export type Shop = {
   slug: string;
   description: string;
   city: string;
+  phone?: string;
+  latitude?: string | number | null;
+  longitude?: string | number | null;
   is_verified: boolean;
+  active_listings_count?: number;
   created_at?: string;
+  updated_at?: string;
 };
 
 export type ShopProduct = {

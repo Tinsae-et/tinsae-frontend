@@ -333,7 +333,7 @@ function ShopComparison({ product, now }: { product: Product; now: number }) {
 
       {/* ── shop comparison ─────────────────────────────── */}
       <section className="pt-14">
-        <div className="mb-[18px] flex flex-wrap items-end justify-between gap-3">
+        <div className="mb-[18px]">
           <div>
             <h2 className="text-tn-ink text-[32px] font-extrabold tracking-[-0.03em]">
               Available at{" "}
@@ -345,30 +345,42 @@ function ShopComparison({ product, now }: { product: Product; now: number }) {
                 : "This shop has not confirmed stock yet"}
             </p>
           </div>
-          <div className="flex gap-2">
-            <Pill kind="outline" size="sm" iconAfter="chevd">
-              Sort: Price
-            </Pill>
-            <Pill kind="outline" size="sm" icon="filter">
-              Filter
-            </Pill>
-          </div>
         </div>
 
         <div className="rounded-2xl border border-tn-red bg-tn-red-soft px-[18px] py-4">
           <div className="grid grid-cols-[2.4fr_1.2fr_1.3fr_1.3fr] items-center gap-4">
             <div className="flex min-w-0 items-center gap-3">
-              <span
-                className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[11px] text-sm font-bold text-white"
-                style={{ background: shopColor(product.shop_name) }}
-              >
-                {initials(product.shop_name)}
-              </span>
+              {product.shop_slug ? (
+                <Link
+                  href={`/shops/${product.shop_slug}`}
+                  aria-label={`View ${product.shop_name}`}
+                  className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[11px] text-sm font-bold text-white transition-transform hover:scale-105"
+                  style={{ background: shopColor(product.shop_name) }}
+                >
+                  {initials(product.shop_name)}
+                </Link>
+              ) : (
+                <span
+                  className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[11px] text-sm font-bold text-white"
+                  style={{ background: shopColor(product.shop_name) }}
+                >
+                  {initials(product.shop_name)}
+                </span>
+              )}
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-tn-ink truncate text-[14.5px] font-extrabold tracking-[-0.01em]">
-                    {product.shop_name}
-                  </span>
+                  {product.shop_slug ? (
+                    <Link
+                      href={`/shops/${product.shop_slug}`}
+                      className="text-tn-ink hover:text-tn-red truncate text-[14.5px] font-extrabold tracking-[-0.01em] transition-colors"
+                    >
+                      {product.shop_name}
+                    </Link>
+                  ) : (
+                    <span className="text-tn-ink truncate text-[14.5px] font-extrabold tracking-[-0.01em]">
+                      {product.shop_name}
+                    </span>
+                  )}
                   {product.shop_verified && <VerifiedBadge size={12} />}
                 </div>
                 <div className="flex items-center gap-1">

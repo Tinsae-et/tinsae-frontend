@@ -18,6 +18,7 @@ import {
   filtersToProductQuery,
   filtersToSearchParams,
   FRESHNESS_OPTIONS,
+  SORT_OPTIONS,
   type SearchFilters,
 } from "@/lib/filters";
 
@@ -98,10 +99,10 @@ export function ProductsBrowser({
       clear: () => applyPatch({ freshness: undefined }),
     });
   if (filters.verifiedOnly) chips.push({ label: "Verified only", clear: () => applyPatch({ verifiedOnly: undefined }) });
-  if (filters.sort !== "fresh")
+  if (filters.sort !== "newest")
     chips.push({
-      label: ({ fresh: "Freshest", "price-asc": "Price low → high", "price-desc": "Price high → low", response: "Response rate" } as const)[filters.sort],
-      clear: () => applyPatch({ sort: "fresh" }),
+      label: SORT_OPTIONS.find((o) => o.value === filters.sort)?.label ?? "Sort",
+      clear: () => applyPatch({ sort: "newest" }),
     });
 
   return (

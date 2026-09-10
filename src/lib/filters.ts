@@ -4,7 +4,7 @@ import type { ProductQuery } from "./api";
 // Every value round-trips through the URL so results are shareable, linkable,
 // and survive refresh / back-button. Matches design_handoff_search/README.md.
 
-export type SortKey = "fresh" | "price-asc" | "price-desc" | "response";
+export type SortKey = "newest" | "oldest" | "price-asc" | "price-desc";
 
 /** The stock-freshness threshold a buyer can pick (single-select, nested). */
 export type FreshnessKey = "today" | "12h" | "24h";
@@ -42,27 +42,24 @@ export type SearchFilters = {
 };
 
 export const DEFAULT_FILTERS: SearchFilters = {
-  sort: "fresh",
+  sort: "newest",
   brands: [],
   conditions: [],
   neighborhoods: [],
 };
 
-// Sort map per the design: Freshest first (default) = -last_confirmed_at;
-// price asc/desc; "Response rate" has no backend field yet → falls back to the
-// API default ordering.
 const SORT_TO_ORDERING: Record<SortKey, string | undefined> = {
-  fresh: "-last_confirmed_at",
+  newest: "-created_at",
+  oldest: "created_at",
   "price-asc": "price",
   "price-desc": "-price",
-  response: undefined,
 };
 
 export const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-  { value: "fresh", label: "Freshest first" },
-  { value: "price-asc", label: "Price: low → high" },
-  { value: "price-desc", label: "Price: high → low" },
-  { value: "response", label: "Response rate" },
+  { value: "newest", label: "Newest" },
+  { value: "oldest", label: "Oldest" },
+  { value: "price-asc", label: "Price: Low to High" },
+  { value: "price-desc", label: "Price: High to Low" },
 ];
 
 const SORT_KEYS: SortKey[] = SORT_OPTIONS.map((o) => o.value);
@@ -81,7 +78,7 @@ export function filtersToSearchParams(f: SearchFilters): URLSearchParams {
     p.set("freshness_window", f.freshness);
   }
   if (f.page && f.page > 1) p.set("page", String(f.page));
-  if (f.sort && f.sort !== "fresh") p.set("sort", f.sort);
+  if (f.sort && f.sort !== "newest") p.set("sort", f.sort);
   if (f.brands?.length) p.set("brand", f.brands.join(","));
   if (f.conditions?.length) p.set("condition", f.conditions.join(","));
   if (f.neighborhoods?.length) p.set("neighborhood", f.neighborhoods.join(","));
@@ -117,7 +114,7 @@ export function filtersFromSearchParams(params: URLSearchParams): SearchFilters 
     brands: parseList(params.get("brand")),
     conditions: parseList(params.get("condition")),
     neighborhoods: parseList(params.get("neighborhood")),
-    sort: (SORT_KEYS as string[]).includes(sort ?? "") ? (sort as SortKey) : "fresh",
+    sort: (SORT_KEYS as string[]).includes(sort ?? "") ? (sort as SortKey) : "newest",
     page: parseNum(params.get("page")) || 1,
   };
 }
@@ -158,6 +155,6 @@ export function activeFilterCount(f: SearchFilters): number {
   if (f.brands?.length) n++;
   if (f.conditions?.length) n++;
   if (f.neighborhoods?.length) n++;
-  if (f.sort !== "fresh") n++;
+  if (f.sort !== "newest") n++;
   return n;
 }
