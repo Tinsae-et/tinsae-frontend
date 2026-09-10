@@ -36,7 +36,7 @@ export type ProductQuery = {
   minPrice?: number;
   maxPrice?: number;
   verifiedOnly?: boolean;
-  /** Backend-defined: only products confirmed within the last 30 days. */
+  /** Backend-defined: only products confirmed within the 48h freshness window. */
   freshOnly?: boolean;
   /** Demo facets — sent for forward-compat; the backend ignores them for now. */
   brand?: string;
@@ -54,7 +54,7 @@ function productSearchParams(query: ProductQuery): URLSearchParams {
   if (query.minPrice !== undefined) params.set("min_price", String(query.minPrice));
   if (query.maxPrice !== undefined) params.set("max_price", String(query.maxPrice));
   if (query.verifiedOnly) params.set("verified_only", "1");
-  if (query.freshOnly) params.set("freshness", "1");
+  if (query.freshOnly) params.set("fresh", "true");
   if (query.brand) params.set("brand", query.brand);
   if (query.condition) params.set("condition", query.condition);
   if (query.neighborhood) params.set("neighborhood", query.neighborhood);

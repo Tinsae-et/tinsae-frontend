@@ -24,8 +24,8 @@ export type SearchFilters = {
   maxPrice?: number;
   verifiedOnly?: boolean;
   /**
-   * "Confirmed stock" threshold — backend `freshness=1` (confirmed within 30
-   * days). Single-select: pick one window, or none.
+   * "Confirmed stock" threshold — backend `fresh=true` (confirmed within 48h).
+   * Single-select: pick one window, or none.
    */
   freshness?: FreshnessKey;
   /**
@@ -75,7 +75,7 @@ export function filtersToSearchParams(f: SearchFilters): URLSearchParams {
   if (f.maxPrice !== undefined) p.set("max_price", String(f.maxPrice));
   if (f.verifiedOnly) p.set("verified_only", "1");
   if (f.freshness) {
-    p.set("freshness", "1");
+    p.set("fresh", "true");
     // Frontend-only: remembers which window was chosen (backend only knows
     // "confirmed recently", so this doesn't affect results).
     p.set("freshness_window", f.freshness);
@@ -103,8 +103,8 @@ export function filtersFromSearchParams(params: URLSearchParams): SearchFilters 
   const freshnessParam = params.get("freshness_window");
   const freshness = (FRESHNESS_KEYS as string[]).includes(freshnessParam ?? "")
     ? (freshnessParam as FreshnessKey)
-    : // Legacy/plain links: `freshness=1` alone defaults to the coarsest window.
-      params.get("freshness") === "1"
+    : // Plain links: `fresh=true` defaults to the coarsest window.
+      params.get("fresh") === "true" || params.get("fresh") === "1"
       ? "today"
       : undefined;
   return {
