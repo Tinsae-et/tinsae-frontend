@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getProducts, getShopProducts, ShopProductQuery, type ProductQuery } from "@/lib/api";
-import type { Product, ShopProduct } from "@/lib/types";
+import { getProducts, getPublicShopProducts, getShopProducts, ShopProductQuery, type ProductQuery } from "@/lib/api";
+import type { Paginated, Product, ShopProduct } from "@/lib/types";
 import { PRODUCTS_PAGE_SIZE } from "@/components/products/product-grid";
 
 export type InitialProducts = { products: Product[]; total: number } | null;
@@ -237,4 +237,85 @@ export function useShopProducts(query: ShopProductQuery, slug: string) {
   }, [queryKey]);
 
   return { products, total, loading, error };
+}
+
+export function usePublicShopProducts(
+  query: ShopProductQuery,
+  slug: string,
+  initial?: Paginated<Product> | null,
+) {
+  const filterQuery: ShopProductQuery = { ...query, page: undefined };
+  const filterKey = JSON.stringify(filterQuery);
+
+  const [products, setProducts] = useState<Product[]>(initial?.results ?? []);
+  const [total, setTotal] = useState(initial?.count ?? 0);
+  const [loading, setLoading] = useState(initial ? false : true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(
+    initial ? initial.results.length < initial.count : true,
+  );
+
+  const loadedKey = useRef<string>(initial ? filterKey : "");
+  const controllerRef = useRef<AbortController | null>(null);
+
+  const fetchFirstPage = useCallback(
+    async (signal?: AbortSignal) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await getPublicShopProducts(slug, { ...filterQuery, page: 1 }, { signal });
+        if (signal?.aborted) return;
+        setTotal(data.count);
+        setProducts(data.results);
+        setPage(1);
+        setHasMore(Boolean(data.next) && data.results.length > 0 && data.results.length < data.count);
+      } catch {
+        if (signal?.aborted) return;
+        setError("Couldn't load listings. Check your connection and try again.");
+      } finally {
+        if (!signal?.aborted) {
+          setLoading(false);
+        }
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filterKey, slug],
+  );
+
+  useEffect(() => {
+    if (loadedKey.current === filterKey) return;
+    loadedKey.current = filterKey;
+    controllerRef.current?.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
+    fetchFirstPage(controller.signal);
+    return () => {
+      controller.abort();
+    };
+  }, [fetchFirstPage, filterKey]);
+
+  const loadMore = useCallback(async () => {
+    if (loading || loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    const nextPage = page + 1;
+    try {
+      const data = await getPublicShopProducts(slug, { ...filterQuery, page: nextPage });
+      setProducts((prev) => {
+        const existing = new Set(prev.map((p) => p.id));
+        const added = data.results.filter((p) => !existing.has(p.id));
+        const next = [...prev, ...added];
+        setHasMore(Boolean(data.next) && next.length < data.count);
+        return next;
+      });
+      setPage(nextPage);
+    } catch {
+      // keep existing
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [filterQuery, hasMore, loading, loadingMore, page, slug]);
+
+  return { products, total, loading, loadingMore, error, hasMore, loadMore };
 }

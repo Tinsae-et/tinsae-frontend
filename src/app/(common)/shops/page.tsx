@@ -2,7 +2,8 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { ShopsBrowser } from "@/components/shops/shops-browser";
 import { ShopCardSkeleton } from "@/components/shops/shop-card";
-import { SHOPS_RICH } from "@/lib/shops-data";
+import { SHOPS_RICH, mapShopToDirectoryShop } from "@/lib/shops-data";
+import { getShops } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "Verified Shops in Bole — Tinsae",
@@ -12,11 +13,21 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function ShopsPage() {
+export default async function ShopsPage() {
+  let shops = SHOPS_RICH;
+  try {
+    const data = await getShops({ pageSize: 100 });
+    if (data?.results && data.results.length > 0) {
+      shops = data.results.map(mapShopToDirectoryShop);
+    }
+  } catch (error) {
+    console.error("Failed to fetch shops from backend, falling back to static shops:", error);
+  }
+
   return (
     <main>
       <Suspense fallback={<ShopDirectorySkeleton />}>
-        <ShopsBrowser initialShops={SHOPS_RICH} />
+        <ShopsBrowser initialShops={shops} />
       </Suspense>
     </main>
   );

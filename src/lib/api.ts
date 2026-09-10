@@ -136,9 +136,28 @@ export async function getCategories(init?: RequestInit): Promise<Paginated<Categ
   return res.json();
 }
 
-export async function getShops(): Promise<Paginated<Shop>> {
-  const res = await fetch(`${API_URL}/api/v1/shops/`, { cache: "no-store"});
-  if (!res.ok){
+export type ShopQuery = {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+  city?: string;
+  verifiedOnly?: boolean;
+  ordering?: string;
+};
+
+export async function getShops(query?: ShopQuery, init?: RequestInit): Promise<Paginated<Shop>> {
+  const params = new URLSearchParams();
+  if (query?.page && query.page > 1) params.set("page", String(query.page));
+  if (query?.pageSize) params.set("page_size", String(query.pageSize));
+  if (query?.q) params.set("q", query.q);
+  if (query?.city) params.set("city", query.city);
+  if (query?.verifiedOnly !== undefined) params.set("verified_only", query.verifiedOnly ? "1" : "0");
+  if (query?.ordering) params.set("ordering", query.ordering);
+
+  const qs = params.toString();
+  const url = `${API_URL}/api/v1/shops/${qs ? `?${qs}` : ""}`;
+  const res = await fetch(url, { cache: "no-store", ...init });
+  if (!res.ok) {
     throw new Error(`Couldn't load shops (${res.status})`);
   }
   return res.json();
@@ -171,15 +190,52 @@ export async function getProduct(slug: string, init?: RequestInit): Promise<Prod
   return normalizeProduct(data);
 }
 
+export async function getShop(slug: string): Promise<Shop> {
+  const res = await fetch(`${API_URL}/api/v1/shops/${encodeURIComponent(slug)}/`, {
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(`Could not load shop (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function getPublicShopProducts(
+  slug: string,
+  query: ShopProductQuery = {},
+  init?: RequestInit,
+): Promise<Paginated<Product>> {
+  const params = ShopProductSearchParams(query).toString();
+  const res = await fetch(
+    `${API_URL}/api/v1/shop/${encodeURIComponent(slug)}/products/${params ? `?${params}` : ""}`,
+    { cache: "no-store", ...init },
+  );
+  if (!res.ok) {
+    if (res.status === 404 && query.page && query.page > 1) {
+      return { count: 0, next: null, previous: null, results: [] };
+    }
+    throw new Error(`Could not load public shop products (${res.status})`);
+  }
+  const data = (await res.json()) as Paginated<Product>;
+  return {
+    ...data,
+    results: data.results.map(normalizeProduct),
+  };
+}
+
 export type ShopProductQuery = {
+  page?: number;
+  pageSize?: number;
   q?: string;
   category?: string;
   ordering?: string;
   status?: string;
-}
+};
 
-function ShopProductSearchParams(query: ShopProductQuery): URLSearchParams{
-  const params = new URLSearchParams()
+function ShopProductSearchParams(query: ShopProductQuery): URLSearchParams {
+  const params = new URLSearchParams();
+  if (query.page && query.page > 1) params.set("page", String(query.page));
+  if (query.pageSize) params.set("page_size", String(query.pageSize));
   if (query.q) params.set("q", query.q);
   if (query.category) params.set("category", query.category);
   if (query.ordering) params.set("ordering", query.ordering);

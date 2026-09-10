@@ -5,12 +5,17 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Icon } from "@/components/tinsae/icon";
 import { Pill } from "@/components/tinsae/pill";
 import { type DirectoryShop, SHOPS_RICH } from "@/lib/shops-data";
+import { SortDropdown } from "@/components/tinsae/sort-dropdown";
 import { SegToggle } from "./seg-toggle";
 import { ShopCard, ShopCardSkeleton } from "./shop-card";
 
-const HOODS = ["All areas", "Atlas", "Friendship", "Olympia", "Japan", "Medhanialem"];
-const SORTS = ["Top rated", "Fastest reply", "Nearest", "Most listings"] as const;
-type SortOption = (typeof SORTS)[number];
+export const SHOP_SORT_OPTIONS = [
+  { value: "Top rated", label: "Top rated" },
+  { value: "Fastest reply", label: "Fastest reply" },
+  { value: "Nearest", label: "Nearest" },
+  { value: "Most listings", label: "Most listings" },
+] as const;
+export type SortOption = (typeof SHOP_SORT_OPTIONS)[number]["value"];
 
 export function ShopsBrowser({
   initialShops = SHOPS_RICH,
@@ -26,6 +31,22 @@ export function ShopsBrowser({
   const currentHood = searchParams.get("area") || "All areas";
   const currentSort = (searchParams.get("sort") || "Top rated") as SortOption;
   const verifiedOnly = searchParams.get("verified_only") === "1";
+
+  const hoods = useMemo(() => {
+    const set = new Set(["All areas"]);
+    const priority = ["Atlas", "Friendship", "Olympia", "Japan", "Medhanialem"];
+    for (const p of priority) {
+      if (initialShops.some((s) => s.hood.toLowerCase() === p.toLowerCase())) {
+        set.add(p);
+      }
+    }
+    for (const s of initialShops) {
+      if (s.hood && s.hood !== "All areas") {
+        set.add(s.hood);
+      }
+    }
+    return Array.from(set);
+  }, [initialShops]);
 
   const updateFilters = (params: { area?: string; sort?: string; verified_only?: string | null }) => {
     const sp = new URLSearchParams(searchParams.toString());
@@ -119,7 +140,7 @@ export function ShopsBrowser({
         <div className="mx-auto flex max-w-[1240px] flex-wrap items-center gap-2.5 px-6 py-3.5 lg:px-7">
           {/* Area Pills */}
           <div className="flex flex-wrap items-center gap-2">
-            {HOODS.map((hood) => {
+            {hoods.map((hood) => {
               const active = currentHood === hood;
               return (
                 <button
@@ -154,28 +175,14 @@ export function ShopsBrowser({
 
           <div className="hidden flex-1 sm:block" />
 
-          {/* Sort Pills */}
+          {/* Sort Dropdown */}
           <div className="flex items-center gap-2">
-            <span className="text-tn-mute text-[13px] font-semibold">Sort</span>
-            <div className="flex flex-wrap items-center gap-1.5">
-              {SORTS.map((sort) => {
-                const active = currentSort === sort;
-                return (
-                  <button
-                    key={sort}
-                    type="button"
-                    onClick={() => updateFilters({ sort })}
-                    className={`h-9 cursor-pointer rounded-full px-3.5 text-[13px] font-bold transition-colors ${
-                      active
-                        ? "bg-tn-red-soft text-tn-red border border-[#FBD9C7]"
-                        : "border-tn-hair text-tn-ink2 hover:border-tn-ink border bg-white"
-                    }`}
-                  >
-                    {sort}
-                  </button>
-                );
-              })}
-            </div>
+            <SortDropdown
+              value={currentSort}
+              onChange={(sort) => updateFilters({ sort: sort as SortOption })}
+              options={SHOP_SORT_OPTIONS}
+              size="sm"
+            />
           </div>
         </div>
       </section>

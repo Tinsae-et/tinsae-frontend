@@ -74,7 +74,7 @@ export default function VerificationPage({ slug = "", shop }: Props) {
 
   const currentState = data?.state ?? "not_submitted";
   const isVerified = Boolean(data?.is_verified || shop?.is_verified);
-  const submittedAt = data?.submitted_at ?? data?.submited_at ?? null;
+  const submittedAt = data?.submitted_at ?? null;
 
   return (
     <div className="mx-auto max-w-6xl">

@@ -74,11 +74,13 @@ export function useSaved() {
       return parsed
         .map((item) => {
           if (typeof item === "string") {
+            // eslint-disable-next-line react-hooks/purity
             return { slug: item, savedAt: Date.now() };
           }
           if (item && typeof item === "object" && typeof item.slug === "string") {
             return {
               slug: item.slug,
+              // eslint-disable-next-line react-hooks/purity
               savedAt: typeof item.savedAt === "number" ? item.savedAt : Date.now(),
             };
           }
