@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import  { useState, useCallback, useEffect, useRef } from "react";
 import CategoryChips from "./category-chips";
 import { Icon } from "@/components/tinsae/icon";
 import { SortDropdown } from "@/components/tinsae/sort-dropdown";
