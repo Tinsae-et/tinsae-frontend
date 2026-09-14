@@ -1,18 +1,18 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { List, LayoutGrid, Pencil } from "lucide-react";
+import { List, LayoutGrid, MoreHorizontal } from "lucide-react";
 import { Icon } from "@/components/tinsae/icon";
 import { ListingRow } from "./listing-row";
 import { ShopProduct } from "@/lib/types";
-import { confirmAllFreshness, ShopProductQuery } from "@/lib/api";
+import { confirmAllFreshness, confirmFreshness, ShopProductQuery } from "@/lib/api";
 import { useShopProducts } from "@/hooks/use-products";
-import { formatETB, freshness } from "@/lib/format";
+import { formatETB, Freshness, freshness } from "@/lib/format";
 import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
 import { Pill } from "@/components/tinsae/pill";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ActionMenu } from "../overview/overview";
 
 type TabKey = "all" | "live" | "needs-attention" | "drafts" | "sold";
 
@@ -221,20 +221,37 @@ function TableHeader({
 
 function ListingGridCard({
   product,
-  isSelected,
+  selected,
+  access,
   toggleOne,
+  openMenuId,
+  setOpenMenuId
 }: {
   product: ShopProduct;
-  isSelected: boolean;
+  selected: string[];
+  access: string;
   toggleOne: (slug: string) => void;
+  openMenuId: number | null;
+  setOpenMenuId: (id: number | null)=>void;
 }) {
-  const fresh = freshness(product.last_confirmed_at, product.confirmation_status);
+  const [fresh, setFresh] = useState<Freshness>(()=>freshness(product.last_confirmed_at, product.confirmation_status))
+  const [needConfirm, setNeedConfirm] = useState<boolean>(()=>(product.is_available && fresh.tone !== "fresh"));
+
   const dotColor =
     fresh.tone === "fresh"
       ? "bg-tn-green shadow-[0_0_0_3px_#1F8A5B22]"
       : fresh.tone === "stale"
       ? "bg-tn-mute"
       : "bg-tn-warn";
+  const isSelected = selected.includes(product.slug);
+  const isMenuOpen = openMenuId === product.id;
+
+  const confirm = async () => {
+      if (!product.shop_slug) return;
+      await confirmFreshness(product.shop_slug, product.slug, access);
+      setNeedConfirm(false);
+      setFresh({...fresh, age: "Just now"})
+    }
 
   return (
     <div
@@ -315,18 +332,23 @@ function ListingGridCard({
           <div className="flex items-center justify-between">
             <span className="font-tn-mono text-xs text-tn-mute">— views · — inq</span>
             <div className="flex items-center gap-2">
-              {product.is_available && fresh.tone !== "fresh" && (
-                <Pill kind="solid" size="sm" icon="check">
+              {needConfirm && (
+                <Pill kind="solid" size="sm" icon="check" onClick={confirm}>
                   Confirm
                 </Pill>
               )}
-              <Link
-                href={`/shop/dashboard/listings/edit?id=${product.id}`}
-                aria-label={`Edit ${product.name}`}
-                className="size-8 rounded-full border border-tn-hair flex items-center justify-center text-tn-mute hover:text-tn-ink hover:border-tn-ink transition-colors bg-white cursor-pointer"
+              <div className="relative inline-block" data-row-action>
+              <button
+                type="button"
+                aria-label="Row actions"
+                aria-expanded={isMenuOpen}
+                onClick={() => setOpenMenuId(isMenuOpen ? null : product.id)}
+                className="size-8 rounded-full border border-tn-hair flex items-center justify-center text-tn-mute hover:border-tn-ink hover:text-tn-ink transition-colors bg-white cursor-pointer"
               >
-                <Pencil className="size-3.5" />
-              </Link>
+                <MoreHorizontal className="size-4" />
+              </button>
+              {isMenuOpen && <ActionMenu product={product} onClose={() => setOpenMenuId(null)} access={access} />}
+            </div>
             </div>
           </div>
         </div>
@@ -522,9 +544,11 @@ dashboard/listings/new"
             <ListingGridCard
               key={item.id}
               product={item}
-              isSelected={selected.includes(item.slug)}
+              selected={selected}
               toggleOne={toggleOne}
-              
+              access={access}
+              setOpenMenuId={setOpenMenuId}
+              openMenuId={openMenuId}
             />
           ))}
         </div>
