@@ -1,5 +1,5 @@
 import { getProducts, getPublicStats, getShops } from "@/lib/api";
-import type { Product, ShopMetrics } from "@/lib/types";
+import type { Product } from "@/lib/types";
 import { mapShopToDirectoryShop } from "@/lib/shops-data";
 import { Hero } from "@/components/home/hero";
 import { BrowseCategories } from "@/components/home/browse-categories";
@@ -24,7 +24,7 @@ export default async function Home() {
       // Postgres (NULLs first on DESC) — the opposite of "freshest".
       freshOnly: true,
       ordering: "-last_confirmed_at",
-      pageSize: 5,
+      pageSize: 6,
     }).catch(() => null),
     getPublicStats().catch(() => null),
     getShops({

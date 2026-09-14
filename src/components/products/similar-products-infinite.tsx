@@ -131,13 +131,28 @@ export function SimilarProductsInfinite({
     loadMoreRef.current = loadMore;
   }, [loadMore]);
 
+  // User scroll gate: suggestions should never auto-fetch on mount unless user actually scrolls
+  const userScrolledRef = useRef(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 120) {
+        userScrolledRef.current = true;
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   // Check if sentinel or bottom of page is within trigger distance
   const checkAndTrigger = useCallback(() => {
     if (isFetchingRef.current || !hasMoreRef.current) return;
+    if (!userScrolledRef.current && window.scrollY < 120) return;
+
     const sentinel = sentinelRef.current;
     if (sentinel) {
       const rect = sentinel.getBoundingClientRect();
-      if (rect.top <= window.innerHeight + 800) {
+      if (rect.top <= window.innerHeight + 150) {
         loadMoreRef.current();
         return;
       }
@@ -145,7 +160,7 @@ export function SimilarProductsInfinite({
     const scrollY = window.scrollY;
     const innerH = window.innerHeight;
     const totalH = document.documentElement.scrollHeight;
-    if (scrollY + innerH >= totalH - 800) {
+    if (scrollY + innerH >= totalH - 150) {
       loadMoreRef.current();
     }
   }, []);
@@ -158,7 +173,7 @@ export function SimilarProductsInfinite({
     };
   }, []);
 
-  // Set up IntersectionObserver on sentinel with generous rootMargin
+  // Set up IntersectionObserver on sentinel with sensible rootMargin (only fires after user scrolls)
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel || !hasMore) return;
@@ -167,11 +182,12 @@ export function SimilarProductsInfinite({
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting && !isFetchingRef.current && hasMoreRef.current) {
+        const canTrigger = userScrolledRef.current || window.scrollY > 120;
+        if (entries[0]?.isIntersecting && !isFetchingRef.current && hasMoreRef.current && canTrigger) {
           loadMoreRef.current();
         }
       },
-      { rootMargin: "800px" },
+      { rootMargin: "150px" },
     );
 
     observer.observe(sentinel);
@@ -180,16 +196,7 @@ export function SimilarProductsInfinite({
     };
   }, [hasMore]);
 
-  // Re-check after products append / loading completes to keep auto-generating if still at bottom
-  useEffect(() => {
-    if (!loadingMore && hasMore && !error) {
-      requestAnimationFrame(() => {
-        checkAndTrigger();
-      });
-    }
-  }, [products.length, loadingMore, hasMore, error, checkAndTrigger]);
-
-  // Passive window scroll & resize fallback for fast scroll jumps
+  // Passive window scroll & resize fallback for scroll jumps
   useEffect(() => {
     if (!hasMore) return;
 

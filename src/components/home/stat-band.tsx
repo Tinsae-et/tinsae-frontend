@@ -42,7 +42,7 @@ export function StatBand({ stats }: { stats?: ShopMetrics | null }) {
         : "lg:grid-cols-2";
 
   return (
-    <section className="mx-auto mt-16 max-w-[1240px] px-6 lg:mt-20 lg:px-7">
+    <section className="mx-auto mt-16 max-w-[1480px] px-6 sm:px-8 lg:mt-24 lg:px-12 xl:px-16">
       <div className="bg-tn-ink relative overflow-hidden rounded-3xl px-7 py-10 sm:px-12 sm:py-13">
         <span
           aria-hidden

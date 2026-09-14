@@ -31,6 +31,7 @@ export type Product = {
   /** DRF renders DecimalField as a string, e.g. "142500.00". */
   price: string;
   currency: string;
+  condition?: string | null;
   shop_name: string;
   shop_slug?: string;
   shop_verified: boolean;

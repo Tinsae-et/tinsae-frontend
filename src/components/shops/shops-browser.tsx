@@ -111,7 +111,7 @@ export function ShopsBrowser({
     <div className="bg-white min-h-screen text-tn-ink pb-20">
       {/* ── HEADER / HERO ── */}
       <section className="border-b border-tn-hair2 bg-[radial-gradient(120%_120%_at_90%_-20%,#FFF1EB_0%,rgba(255,255,255,0)_50%)]">
-        <div className="mx-auto max-w-[1240px] px-6 pt-9 pb-7 lg:px-7">
+        <div className="mx-auto max-w-[1480px] px-6 pt-9 pb-7 sm:px-8 lg:px-12 xl:px-16">
           <div className="flex flex-wrap items-end justify-between gap-5">
             <div>
               <div className="border-tn-hair text-tn-ink2 mb-3.5 inline-flex items-center gap-2 rounded-full border bg-white px-3.5 py-1.5 text-[12.5px] font-bold shadow-[0_2px_8px_rgba(11,11,11,0.03)]">
@@ -123,7 +123,7 @@ export function ShopsBrowser({
               </h1>
               <p className="text-tn-mute mt-2.5 max-w-[560px] text-base leading-relaxed font-medium">
                 Browse <b className="text-tn-ink2">{verifiedCount} verified shops</b> by rating, reply
-                speed and distance — then visit the one you trust.
+                speed, and distance.
               </p>
             </div>
 
@@ -137,7 +137,7 @@ export function ShopsBrowser({
 
       {/* ── STICKY CONTROLS BAR ── */}
       <section className="sticky top-0 z-20 border-b border-tn-hair2 bg-white/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-[1240px] flex-wrap items-center gap-2.5 px-6 py-3.5 lg:px-7">
+        <div className="mx-auto flex max-w-[1480px] flex-wrap items-center gap-2.5 px-6 py-3.5 sm:px-8 lg:px-12 xl:px-16">
           {/* Area Pills */}
           <div className="flex flex-wrap items-center gap-2">
             {hoods.map((hood) => {
@@ -188,15 +188,15 @@ export function ShopsBrowser({
       </section>
 
       {/* ── SHOP CARDS GRID ── */}
-      <section className="mx-auto max-w-[1240px] px-6 pt-7 lg:px-7">
+      <section className="mx-auto max-w-[1480px] px-6 pt-7 sm:px-8 lg:px-12 xl:px-16">
         {isPending ? (
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
               <ShopCardSkeleton key={i} />
             ))}
           </div>
         ) : filteredAndSorted.length > 0 ? (
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredAndSorted.map((shop, i) => (
               <ShopCard
                 key={shop.id}
