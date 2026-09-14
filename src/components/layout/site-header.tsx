@@ -98,12 +98,7 @@ function SearchField({
   // Debounced search suggestions fetch
   useEffect(() => {
     const trimmed = q.trim();
-    if (trimmed.length < 2) {
-      setResults(null);
-      setLoading(false);
-      setIsOpen(false);
-      return;
-    }
+    if (trimmed.length < 2) return;
 
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(async () => {
@@ -220,7 +215,15 @@ function SearchField({
             ref={inputRef}
             autoFocus={autoFocus}
             value={q}
-            onChange={(e) => setQ(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              setQ(val);
+              if (val.trim().length < 2) {
+                setIsOpen(false);
+                setResults(null);
+                setLoading(false);
+              }
+            }}
             onFocus={() => {
               setFocused(true);
               if (results && q.trim().length >= 2) setIsOpen(true);
@@ -411,16 +414,10 @@ function SearchField({
 
 function BrowseMenu({ categoryCounts }: { categoryCounts?: Record<string, number> }) {
   const [open, setOpen] = useState(false);
-  const [counts, setCounts] = useState<Record<string, number> | undefined>(categoryCounts);
+  const [fetchedCounts, setFetchedCounts] = useState<Record<string, number> | undefined>(undefined);
+  const counts = categoryCounts && Object.keys(categoryCounts).length > 0 ? categoryCounts : fetchedCounts;
   const menuRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Synchronize counts when prop updates
-  useEffect(() => {
-    if (categoryCounts && Object.keys(categoryCounts).length > 0) {
-      setCounts(categoryCounts);
-    }
-  }, [categoryCounts]);
 
   // Client-side fallback to fetch live counts if not provided via SSR
   useEffect(() => {
@@ -430,7 +427,7 @@ function BrowseMenu({ categoryCounts }: { categoryCounts?: Record<string, number
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (active && data?.category_product_count) {
-          setCounts(data.category_product_count);
+          setFetchedCounts(data.category_product_count);
         }
       })
       .catch(() => {});

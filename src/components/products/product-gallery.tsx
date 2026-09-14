@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useEffect, useSyncExternalStore } from "react";
 import Image from "next/image";
 import { createPortal } from "react-dom";
 import { Maximize2, ZoomIn, ZoomOut, X, ChevronLeft, ChevronRight } from "lucide-react";
@@ -9,6 +9,15 @@ import { ProdPlaceholder, type ProductKind } from "@/components/tinsae/prod-plac
 import { cn } from "@/lib/utils";
 import type { FreshnessTone } from "@/lib/format";
 import { resolveProductGalleryImages } from "@/lib/product-images";
+
+const emptySubscribe = () => () => {};
+function useIsMounted() {
+  return useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
+}
 
 const TONE_BADGE: Record<FreshnessTone, string> = {
   fresh: "text-[#157049]",
@@ -36,11 +45,7 @@ export function ProductGallery({
   const [failedImages, setFailedImages] = useState<Record<number, boolean>>({});
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useIsMounted();
 
   const activeIdx = Math.min(idx, Math.max(0, total - 1));
   const currentImage = hasImages && !failedImages[activeIdx] ? galleryImages[activeIdx] : null;
@@ -52,15 +57,15 @@ export function ProductGallery({
   const dragStartX = useRef<number | null>(null);
   const hasDraggedFar = useRef<boolean>(false);
 
-  const prevImage = useCallback(() => {
+  const prevImage = () => {
     setIdx((i) => (i - 1 + total) % total);
     setIsZoomed(false);
-  }, [total]);
+  };
 
-  const nextImage = useCallback(() => {
+  const nextImage = () => {
     setIdx((i) => (i + 1) % total);
     setIsZoomed(false);
-  }, [total]);
+  };
 
   // Touch handlers
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -137,9 +142,11 @@ export function ProductGallery({
         setLightboxOpen(false);
         setIsZoomed(false);
       } else if (e.key === "ArrowLeft") {
-        prevImage();
+        setIdx((i) => (i - 1 + total) % total);
+        setIsZoomed(false);
       } else if (e.key === "ArrowRight") {
-        nextImage();
+        setIdx((i) => (i + 1) % total);
+        setIsZoomed(false);
       }
     };
 
@@ -148,7 +155,7 @@ export function ProductGallery({
       document.body.style.overflow = originalOverflow;
       window.removeEventListener("keydown", handleGlobalKeyDown);
     };
-  }, [lightboxOpen, prevImage, nextImage]);
+  }, [lightboxOpen, total]);
 
   const handleImageError = (imageIdx: number) => {
     setFailedImages((prev) => ({ ...prev, [imageIdx]: true }));

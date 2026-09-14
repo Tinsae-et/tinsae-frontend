@@ -19,7 +19,6 @@ export function resolveProductGalleryImages(
  */
 export function resolvePrimaryProductImage(
   firstImage?: string | null,
-  _categorySlug?: string | null,
 ): string | null {
   if (!firstImage) return null;
   const clean = normalizeImageUrl(firstImage);
