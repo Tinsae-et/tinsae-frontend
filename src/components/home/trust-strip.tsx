@@ -3,7 +3,7 @@ const SHOPS = ["Almeda", "Mosaic Tech", "Kuriftu", "Axum Digital", "Gada", "Frie
 
 export function TrustStrip() {
   return (
-    <div className="mx-auto mt-10 max-w-[1180px] border-t border-tn-hair2 px-6 pt-7 pb-14 lg:px-7">
+    <div className="mx-auto mt-10 max-w-[1480px] border-t border-tn-hair2 px-6 pt-7 pb-14 sm:px-8 lg:px-12 xl:px-16">
       <p className="text-tn-mute mb-5 text-center text-xs font-bold tracking-[0.14em] uppercase">
         Trusted by the shops that keep Bole running
       </p>

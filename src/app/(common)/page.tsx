@@ -24,7 +24,7 @@ export default async function Home() {
       // Postgres (NULLs first on DESC) — the opposite of "freshest".
       freshOnly: true,
       ordering: "-last_confirmed_at",
-      pageSize: 5,
+      pageSize: 6,
     }).catch(() => null),
     getPublicStats().catch(() => null),
     getShops({

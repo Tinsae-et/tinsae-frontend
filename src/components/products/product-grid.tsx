@@ -41,8 +41,10 @@ export function ProductGrid({
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const gridClass = cn(
-    "grid gap-4",
-    view === "grid" ? "grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4" : "grid-cols-1",
+    "grid gap-3 sm:gap-4",
+    view === "grid"
+      ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+      : "grid-cols-1",
   );
   const Skeleton = view === "grid" ? ProductCardSkeleton : ProductRowSkeleton;
 

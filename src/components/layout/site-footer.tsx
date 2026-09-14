@@ -11,7 +11,7 @@ const COLUMNS: [string, string[]][] = [
 export function SiteFooter() {
   return (
     <footer className="border-tn-hair mt-20 border-t">
-      <div className="mx-auto grid max-w-[1240px] grid-cols-2 gap-8 px-6 py-14 md:grid-cols-4 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr]">
+      <div className="mx-auto grid max-w-[1480px] grid-cols-2 gap-8 px-6 py-14 sm:px-8 md:grid-cols-4 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr] lg:px-12 xl:px-16">
         <div className="col-span-2 md:col-span-4 lg:col-span-1">
           <div className="mb-3.5">
             <Link href="/" className="inline-block">
@@ -84,8 +84,8 @@ export function SiteFooter() {
         ))}
       </div>
 
-      <div className="border-tn-hair2 border-t px-6 py-5">
-        <div className="text-tn-mute font-tn-mono mx-auto flex max-w-[1240px] flex-col gap-1.5 text-xs tracking-wide sm:flex-row sm:items-center sm:justify-between">
+      <div className="border-tn-hair2 border-t px-6 py-5 sm:px-8 lg:px-12 xl:px-16">
+        <div className="text-tn-mute font-tn-mono mx-auto flex max-w-[1480px] flex-col gap-1.5 text-xs tracking-wide sm:flex-row sm:items-center sm:justify-between">
           <span>© 2026 TINSAE · ADDIS ABABA · ETHIOPIA</span>
           <span>ትንሳኤ · &ldquo;RISING&rdquo;</span>
         </div>

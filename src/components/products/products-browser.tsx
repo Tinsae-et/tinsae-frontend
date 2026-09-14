@@ -109,7 +109,7 @@ export function ProductsBrowser({
     <div>
       {/* ── hero band ─────────────────────────────────────── */}
       <div className="border-b border-tn-hair2 bg-[radial-gradient(120%_100%_at_90%_-20%,#FFF1EB_0%,rgba(255,241,235,0)_50%)]">
-        <div className="mx-auto max-w-[1240px] px-6 pt-6 pb-7 lg:px-7">
+        <div className="mx-auto max-w-[1480px] px-6 pt-6 pb-7 sm:px-8 lg:px-12 xl:px-16">
           <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-[7px] text-[12.5px] font-semibold">
             <Link href="/" className="text-tn-mute">Home</Link>
             <Icon name="chevron" size={11} className="text-[#B7B5AD]" />
@@ -215,7 +215,7 @@ export function ProductsBrowser({
       </div>
 
       {/* ── body: rail + results ──────────────────────────── */}
-      <div className="mx-auto flex max-w-[1240px] items-start gap-[26px] px-6 py-7 lg:px-7">
+      <div className="mx-auto flex max-w-[1480px] items-start gap-7 px-6 py-7 sm:px-8 lg:gap-8 lg:px-12 xl:px-16">
         <FilterRail
           filters={filters}
           categories={categories}

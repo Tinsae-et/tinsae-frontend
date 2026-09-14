@@ -3,16 +3,18 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { Icon, type IconName } from "@/components/tinsae/icon";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
-import { NAV_CATEGORIES } from "@/lib/nav-categories";
+import { NAV_CATEGORIES, LIVE_CATEGORIES, UPCOMING_CATEGORIES } from "@/lib/nav-categories";
 import { useCompare } from "@/hooks/use-compare";
 import { hasShop } from "@/lib/auth/roles";
 import type { AuthUser } from "@/lib/auth/types";
 import { cn } from "@/lib/utils";
-import { LogOut } from "lucide-react";
+import { LogOut, Loader2 } from "lucide-react";
+import { formatCount, formatETB } from "@/lib/format";
+import type { ShopMetrics } from "@/lib/types";
 
 function getInitials(name?: string): string {
   if (!name || !name.trim()) return "U";
@@ -40,10 +42,37 @@ function Logo() {
   );
 }
 
+type SuggestionProduct = {
+  id: number;
+  title: string;
+  slug: string;
+  price: string;
+  currency: string;
+  condition?: string;
+  shopName: string;
+  shopSlug: string;
+  shopVerified: boolean;
+  categoryName: string | null;
+  categorySlug: string | null;
+  imageUrl: string | null;
+};
+
+type SuggestionCategory = {
+  name: string;
+  slug: string;
+  icon: IconName;
+  subtitle: string;
+};
+
+type SearchResults = {
+  products: SuggestionProduct[];
+  categories: SuggestionCategory[];
+  totalProducts: number;
+};
+
 // The search field is the product's primary action. Submitting navigates to
 // /products?q=...; pressing "/" anywhere focuses it; Escape blurs it.
-// Matches the shared-kit nav search (design_handoff_search): search icon,
-// placeholder, red circular search button — no scope chip / kbd hint.
+// Features instant autocomplete with top matching categories and verified products.
 function SearchField({
   autoFocus,
   onSubmitted,
@@ -58,120 +87,575 @@ function SearchField({
   const router = useRouter();
   const [q, setQ] = useState("");
   const [focused, setFocused] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<SearchResults | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortController = useRef<AbortController | null>(null);
+
+  // Debounced search suggestions fetch
+  useEffect(() => {
+    const trimmed = q.trim();
+    if (trimmed.length < 2) {
+      setResults(null);
+      setLoading(false);
+      setIsOpen(false);
+      return;
+    }
+
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(async () => {
+      if (abortController.current) abortController.current.abort();
+      abortController.current = new AbortController();
+      setLoading(true);
+      try {
+        const res = await fetch(
+          `/api/search/suggestions?q=${encodeURIComponent(trimmed)}`,
+          { signal: abortController.current.signal },
+        );
+        if (res.ok) {
+          const data: SearchResults = await res.json();
+          setResults(data);
+          setIsOpen(true);
+          setSelectedIndex(-1);
+        }
+      } catch (err: unknown) {
+        if ((err as Error)?.name !== "AbortError") {
+          setResults(null);
+        }
+      } finally {
+        setLoading(false);
+      }
+    }, 180);
+
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  }, [q]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const totalCategories = results?.categories.length ?? 0;
+  const totalProducts = results?.products.length ?? 0;
+  const totalItems = totalCategories + totalProducts + (results ? 1 : 0);
+
+  const handleSelect = (idx: number) => {
+    if (!results) return;
+    if (idx >= 0 && idx < totalCategories) {
+      const cat = results.categories[idx];
+      router.push(`/products?q=${encodeURIComponent(q.trim())}&category=${encodeURIComponent(cat.slug)}`);
+      setIsOpen(false);
+      onSubmitted?.();
+    } else if (idx >= totalCategories && idx < totalCategories + totalProducts) {
+      const prod = results.products[idx - totalCategories];
+      router.push(`/products/${prod.slug}`);
+      setIsOpen(false);
+      onSubmitted?.();
+    } else {
+      router.push(
+        q.trim() ? `/products?q=${encodeURIComponent(q.trim())}` : "/products",
+      );
+      setIsOpen(false);
+      onSubmitted?.();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!isOpen || !results) {
+      if (e.key === "ArrowDown" && q.trim().length >= 2) {
+        setIsOpen(true);
+      }
+      return;
+    }
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev + 1) % totalItems);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev - 1 + totalItems) % totalItems);
+    } else if (e.key === "Escape") {
+      setIsOpen(false);
+      e.preventDefault();
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedIndex >= 0) {
+      handleSelect(selectedIndex);
+    } else {
+      router.push(
+        q.trim() ? `/products?q=${encodeURIComponent(q.trim())}` : "/products",
+      );
+      setIsOpen(false);
+      onSubmitted?.();
+    }
+  };
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        router.push(
-          q.trim()
-            ? `/products?q=${encodeURIComponent(q.trim())}`
-            : "/products",
-        );
-        onSubmitted?.();
-      }}
-      role="search"
-      className={cn("min-w-0 flex-1", className)}
-    >
-      <div
-        className={cn(
-          "border-tn-hair flex h-11 items-center gap-2.5 rounded-full border-[1.5px] bg-white pl-4 pr-1.5 transition-[border-color,box-shadow] duration-150",
-          focused && "border-tn-red shadow-[0_0_0_4px_#FFF1EB]",
-        )}
-      >
-        <Icon name="search" size={17} className="text-tn-mute shrink-0" />
-        <input
-          ref={inputRef}
-          autoFocus={autoFocus}
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          placeholder="Search verified shops & products in Bole"
-          aria-label="Search products"
-          className="text-tn-ink placeholder:text-tn-mute min-w-0 flex-1 bg-transparent text-[14.5px] font-medium outline-none"
-        />
-        <button
-          type="submit"
-          aria-label="Search"
-          className="bg-tn-red hover:bg-tn-red-dark inline-flex size-[34px] shrink-0 items-center justify-center rounded-full text-white transition-colors"
+    <div ref={containerRef} className={cn("relative min-w-0 flex-1", className)}>
+      <form onSubmit={handleSubmit} role="search" className="w-full">
+        <div
+          className={cn(
+            "border-tn-hair flex h-11 items-center gap-2.5 rounded-full border-[1.5px] bg-white pl-4 pr-1.5 transition-[border-color,box-shadow] duration-150",
+            (focused || isOpen) && "border-tn-red shadow-[0_0_0_4px_#FFF1EB]",
+          )}
         >
-          <Icon name="search" size={17} />
-        </button>
-      </div>
-    </form>
+          <Icon name="search" size={17} className="text-tn-mute shrink-0" />
+          <input
+            ref={inputRef}
+            autoFocus={autoFocus}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onFocus={() => {
+              setFocused(true);
+              if (results && q.trim().length >= 2) setIsOpen(true);
+            }}
+            onBlur={() => setFocused(false)}
+            onKeyDown={handleKeyDown}
+            placeholder="Search verified shops & products in Bole"
+            aria-label="Search products"
+            className="text-tn-ink placeholder:text-tn-mute min-w-0 flex-1 bg-transparent text-[14.5px] font-medium outline-none"
+          />
+          {loading ? (
+            <span className="inline-flex size-[34px] shrink-0 items-center justify-center text-tn-red">
+              <Loader2 className="size-4 animate-spin" />
+            </span>
+          ) : (
+            <button
+              type="submit"
+              aria-label="Search"
+              className="bg-tn-red hover:bg-tn-red-dark inline-flex size-[34px] shrink-0 items-center justify-center rounded-full text-white transition-colors cursor-pointer"
+            >
+              <Icon name="search" size={17} />
+            </button>
+          )}
+        </div>
+      </form>
+
+      {/* Autocomplete Dropdown Popover */}
+      {isOpen && (results || loading) && (
+        <div
+          role="listbox"
+          className="absolute top-[calc(100%+8px)] left-0 right-0 z-50 rounded-[20px] bg-white border border-tn-hair shadow-[0_16px_48px_rgba(11,11,11,0.16)] overflow-hidden animate-in fade-in zoom-in-95 duration-150 divide-y divide-tn-hair max-h-[72vh] overflow-y-auto"
+        >
+          {loading && !results && (
+            <div className="flex items-center justify-center gap-2.5 py-7 text-[13.5px] text-tn-mute">
+              <Loader2 className="size-4 animate-spin text-tn-red" />
+              <span>Searching verified products & shops...</span>
+            </div>
+          )}
+
+          {/* Categories Matches */}
+          {results && results.categories.length > 0 && (
+            <div className="p-2">
+              <p className="px-3 pt-2 pb-1 text-[10.5px] font-extrabold uppercase tracking-wider text-tn-mute">
+                Matching Categories
+              </p>
+              {results.categories.map((cat, i) => {
+                const isSelected = selectedIndex === i;
+                return (
+                  <button
+                    key={cat.slug}
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      handleSelect(i);
+                    }}
+                    className={cn(
+                      "w-full flex items-center justify-between rounded-xl px-3 py-2 text-left transition-colors cursor-pointer",
+                      isSelected ? "bg-[#F5F4F0]" : "hover:bg-[#FAF9F6]",
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="size-8 rounded-lg bg-tn-sand flex items-center justify-center text-tn-ink2 shrink-0">
+                        <Icon name={cat.icon} size={16} />
+                      </span>
+                      <div>
+                        <div className="text-[13.5px] font-semibold text-tn-ink">
+                          Search &ldquo;{q}&rdquo; in{" "}
+                          <span className="text-tn-red">{cat.name}</span>
+                        </div>
+                        <div className="text-[11.5px] text-tn-mute">
+                          {cat.subtitle}
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-tn-mute text-xs font-semibold">
+                      Category →
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Product Results */}
+          {results && results.products.length > 0 && (
+            <div className="p-2">
+              <p className="px-3 pt-2 pb-1 text-[10.5px] font-extrabold uppercase tracking-wider text-tn-mute">
+                Products
+              </p>
+              {results.products.map((prod, i) => {
+                const globalIdx = totalCategories + i;
+                const isSelected = selectedIndex === globalIdx;
+                return (
+                  <button
+                    key={prod.id}
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      handleSelect(globalIdx);
+                    }}
+                    className={cn(
+                      "w-full flex items-center gap-3.5 rounded-xl px-3 py-2.5 text-left transition-colors cursor-pointer",
+                      isSelected ? "bg-[#F5F4F0]" : "hover:bg-[#FAF9F6]",
+                    )}
+                  >
+                    {/* Thumbnail */}
+                    <div className="relative size-11 shrink-0 rounded-lg overflow-hidden bg-[#F6F5F2] border border-tn-hair flex items-center justify-center">
+                      {prod.imageUrl ? (
+                        <Image
+                          src={prod.imageUrl}
+                          alt=""
+                          fill
+                          sizes="44px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <Icon name="box" size={18} className="text-tn-mute" />
+                      )}
+                    </div>
+
+                    {/* Meta */}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13.5px] font-semibold text-tn-ink truncate">
+                        {prod.title}
+                      </p>
+                      <div className="flex items-center gap-1.5 text-[11.5px] text-tn-ink2">
+                        <span className="truncate max-w-[130px] sm:max-w-[180px]">
+                          {prod.shopName}
+                        </span>
+                        {prod.shopVerified && (
+                          <VerifiedBadge size={12} />
+                        )}
+                        {prod.condition && (
+                          <>
+                            <span className="text-tn-hair">•</span>
+                            <span className="capitalize">{prod.condition}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Price */}
+                    <div className="font-tn-mono text-[13px] font-bold text-tn-ink shrink-0">
+                      {formatETB(prod.price)}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Empty State */}
+          {results && results.products.length === 0 && results.categories.length === 0 && !loading && (
+            <div className="py-7 px-4 text-center">
+              <p className="text-sm font-medium text-tn-ink2">
+                No matching products found for &ldquo;{q.trim()}&rdquo;
+              </p>
+              <p className="text-xs text-tn-mute mt-1">
+                Press Enter to search all products in catalog
+              </p>
+            </div>
+          )}
+
+          {/* Footer View All Action */}
+          {results && (
+            <button
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleSelect(totalItems - 1);
+              }}
+              className={cn(
+                "w-full px-4 py-3 bg-[#FAF9F6] flex items-center justify-between text-[13px] font-bold text-tn-red transition-colors cursor-pointer",
+                selectedIndex === totalItems - 1 ? "bg-[#F3EFE6]" : "hover:bg-[#F4F2EC]",
+              )}
+            >
+              <span>
+                View all {results.totalProducts > 0 ? `${results.totalProducts} ` : ""}results for &ldquo;{q.trim()}&rdquo;
+              </span>
+              <Icon name="arrow" size={15} />
+            </button>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
-function BrowseMenu() {
+function BrowseMenu({ categoryCounts }: { categoryCounts?: Record<string, number> }) {
   const [open, setOpen] = useState(false);
+  const [counts, setCounts] = useState<Record<string, number> | undefined>(categoryCounts);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Synchronize counts when prop updates
+  useEffect(() => {
+    if (categoryCounts && Object.keys(categoryCounts).length > 0) {
+      setCounts(categoryCounts);
+    }
+  }, [categoryCounts]);
+
+  // Client-side fallback to fetch live counts if not provided via SSR
+  useEffect(() => {
+    if (counts && Object.keys(counts).length > 0) return;
+    let active = true;
+    fetch("/api/public-stats")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (active && data?.category_product_count) {
+          setCounts(data.category_product_count);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [counts]);
+
+  const handleMouseEnter = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      setOpen(false);
+    }, 200);
+  };
+
+  const handleClick = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setOpen((prev) => !prev);
+  };
+
+  // Close browse menu on outside click or Escape key
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
     <div
+      ref={menuRef}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       className="relative hidden lg:block"
-      onMouseLeave={() => setOpen(false)}
     >
       <button
         type="button"
-        onMouseEnter={() => setOpen(true)}
-        onClick={() => setOpen((o) => !o)}
+        onClick={handleClick}
         aria-expanded={open}
         aria-haspopup="menu"
         className={cn(
-          "inline-flex h-10 items-center gap-1.5 rounded-[10px] border-none px-3.5 text-[14.5px] font-bold transition-colors",
-          open ? "bg-tn-paper" : "bg-transparent",
+          "inline-flex h-10 items-center gap-1.5 rounded-[10px] border-none px-3.5 text-[14.5px] font-bold transition-colors cursor-pointer",
+          open
+            ? "bg-tn-paper text-tn-ink"
+            : "bg-transparent text-tn-ink2 hover:bg-tn-paper hover:text-tn-ink",
         )}
       >
         Browse
-        <Icon name="chevd" size={15} className="text-tn-mute" />
+        <Icon
+          name="chevd"
+          size={15}
+          className={cn(
+            "text-tn-mute transition-transform duration-150",
+            open && "rotate-180 text-tn-ink",
+          )}
+        />
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 pt-2">
+        <div className="absolute top-full left-0 z-50 pt-2 animate-[tnRise_0.15s_ease_both]">
+          {/* Invisible hit bridge to prevent cursor gap drop */}
+          <div className="absolute -top-3 inset-x-0 h-3" />
           <div
             role="menu"
-            className="w-[520px] rounded-[18px] border border-tn-hair bg-white p-4 shadow-[0_26px_64px_rgba(11,11,11,0.18)]"
+            className="w-[740px] overflow-hidden rounded-[20px] border border-tn-hair bg-white shadow-[0_26px_64px_rgba(11,11,11,0.18)]"
           >
-            <p className="text-tn-mute mb-3 ml-1.5 text-[10.5px] font-extrabold tracking-[0.09em] uppercase">
-              Shop by category
-            </p>
-            <div className="grid grid-cols-2 gap-1.5">
-              {NAV_CATEGORIES.map((c) => (
-                <Link
-                  key={c.slug}
-                  href={`/products?category=${c.slug}`}
-                  onClick={() => setOpen(false)}
-                  className="hover:bg-tn-paper flex items-center gap-3 rounded-xl px-3 py-2.5"
-                >
-                  <span className="bg-tn-paper inline-flex size-10 shrink-0 items-center justify-center rounded-[11px]">
-                    <Icon name={c.icon} size={20} className="text-tn-ink" />
+            <div className="grid grid-cols-12">
+              {/* Left 8 columns: All Live Categories */}
+              <div className="col-span-8 p-5">
+                <div className="mb-3 flex items-center justify-between px-1">
+                  <p className="text-tn-mute text-[10.5px] font-extrabold tracking-[0.09em] uppercase">
+                    All Categories
+                  </p>
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-tn-green">
+                    <span className="size-1.5 rounded-full bg-tn-green animate-pulse" />
+                    Verified Addis Inventory
                   </span>
-                  <span>
-                    <span className="text-tn-ink block text-sm font-extrabold tracking-tight">
-                      {c.label}
-                    </span>
-                    <span className="font-tn-mono text-tn-mute mt-0.5 block text-[11.5px]">
-                      {c.count} listings
-                    </span>
-                  </span>
-                </Link>
-              ))}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {LIVE_CATEGORIES.map((c) => {
+                    const count = counts?.[c.slug];
+                    const countLabel =
+                      count != null && count > 0
+                        ? `${formatCount(count)} ${count === 1 ? "listing" : "listings"}`
+                        : "Browse all";
+                    return (
+                      <Link
+                        key={c.slug}
+                        href={`/products?category=${c.slug}`}
+                        onClick={() => setOpen(false)}
+                        className="group flex items-start gap-3 rounded-xl p-2.5 transition-colors hover:bg-tn-paper"
+                      >
+                        <span className="bg-tn-paper text-tn-ink group-hover:bg-white group-hover:shadow-sm inline-flex size-10 shrink-0 items-center justify-center rounded-[11px] transition-all">
+                          <Icon name={c.icon} size={20} />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="text-tn-ink group-hover:text-tn-red block text-[13.5px] font-extrabold tracking-tight transition-colors">
+                            {c.label}
+                          </span>
+                          <span className="text-tn-mute line-clamp-1 text-[11px]">
+                            {c.subtitle}
+                          </span>
+                          <span className="font-tn-mono text-tn-ink2/75 mt-0.5 block text-[11px] font-medium">
+                            {countLabel}
+                          </span>
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Right 4 columns: Upcoming Verticals & Marketplace Shortcuts */}
+              <div className="col-span-4 border-l border-tn-hair2 bg-[#FAF8F5]/80 p-5 flex flex-col justify-between">
+                <div>
+                  <p className="text-tn-mute text-[10.5px] font-extrabold tracking-[0.09em] uppercase mb-2.5 px-1">
+                    Coming to Tinsae
+                  </p>
+                  <div className="space-y-1">
+                    {UPCOMING_CATEGORIES.map((c) => (
+                      <div
+                        key={c.slug}
+                        className="flex items-center justify-between rounded-lg px-2.5 py-2 text-[12.5px] text-tn-ink2"
+                      >
+                        <span className="flex items-center gap-2 font-semibold">
+                          <Icon name={c.icon} size={15} className="text-tn-mute" />
+                          {c.label}
+                        </span>
+                        <span className="rounded bg-amber-100/90 px-1.5 py-0.5 text-[10px] font-extrabold text-amber-900">
+                          {c.badge || "Soon"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="my-3 border-t border-tn-hair2" />
+
+                  <p className="text-tn-mute text-[10.5px] font-extrabold tracking-[0.09em] uppercase mb-2 px-1">
+                    Marketplace Hub
+                  </p>
+                  <div className="space-y-1">
+                    <Link
+                      href="/shops"
+                      onClick={() => setOpen(false)}
+                      className="hover:bg-white flex items-center justify-between rounded-lg px-2.5 py-2 text-[13px] font-bold text-tn-ink transition-colors hover:shadow-xs"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Icon name="building" size={15} className="text-tn-green" />
+                        Verified Shops
+                      </span>
+                      <Icon name="arrow" size={13} className="text-tn-mute" />
+                    </Link>
+                    <Link
+                      href="/map"
+                      onClick={() => setOpen(false)}
+                      className="hover:bg-white flex items-center justify-between rounded-lg px-2.5 py-2 text-[13px] font-bold text-tn-ink transition-colors hover:shadow-xs"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Icon name="pin" size={15} className="text-tn-red" />
+                        Shop Map
+                      </span>
+                      <Icon name="arrow" size={13} className="text-tn-mute" />
+                    </Link>
+                    <Link
+                      href="/compare"
+                      onClick={() => setOpen(false)}
+                      className="hover:bg-white flex items-center justify-between rounded-lg px-2.5 py-2 text-[13px] font-bold text-tn-ink transition-colors hover:shadow-xs"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Icon name="sliders" size={15} className="text-tn-ink" />
+                        Compare Specs
+                      </span>
+                      <Icon name="arrow" size={13} className="text-tn-mute" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="border-tn-hair2 mt-3 flex gap-2 border-t pt-3.5">
-              {[
-                { icon: "building", label: "Shops", href: "/shops" },
-                { icon: "pin", label: "Map view", href: "/map" },
-                { icon: "spec", label: "All categories", href: "/products" },
-              ].map(({ icon, label, href }) => (
-                <Link
-                  key={label}
-                  href={href}
-                  onClick={() => setOpen(false)}
-                  className="border-tn-hair text-tn-ink2 inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[10px] border text-[13px] font-bold"
-                >
-                  <Icon name={icon as IconName} size={15} className="text-tn-red" />
-                  {label}
-                </Link>
-              ))}
+
+            {/* Bottom banner: View All Products */}
+            <div className="border-t border-tn-hair2 bg-tn-paper/70 px-5 py-3 flex items-center justify-between">
+              <span className="text-[12px] text-tn-mute font-medium">
+                Browse verified electronics, vehicles, and tech across Addis Ababa
+              </span>
+              <Link
+                href="/products"
+                onClick={() => setOpen(false)}
+                className="hover:text-tn-red text-tn-ink inline-flex items-center gap-1.5 text-xs font-extrabold transition-colors"
+              >
+                <span>View all listings & filters</span>
+                <Icon name="arrow" size={13} />
+              </Link>
             </div>
           </div>
         </div>
@@ -180,8 +664,20 @@ function BrowseMenu() {
   );
 }
 
-export function SiteHeader({ user }: { user?: AuthUser | null }) {
+export function SiteHeader({
+  user,
+  stats,
+}: {
+  user?: AuthUser | null;
+  stats?: ShopMetrics | null;
+}) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isProductPage =
+    pathname === "/products" ||
+    pathname.startsWith("/products/") ||
+    pathname.startsWith("/products?");
+
   const { count } = useCompare();
   const [scrolled, setScrolled] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -269,11 +765,11 @@ export function SiteHeader({ user }: { user?: AuthUser | null }) {
       )}
     >
       {/* Desktop bar */}
-      <div className="mx-auto hidden h-[72px] max-w-[1280px] items-center gap-[18px] px-7 lg:flex">
+      <div className="mx-auto hidden h-[72px] max-w-[1480px] items-center gap-5 px-6 sm:px-8 lg:px-12 xl:px-16 lg:flex">
         <Logo />
-        <BrowseMenu />
+        <BrowseMenu categoryCounts={stats?.category_product_count} />
         <SearchField
-          className="hidden max-w-[560px] lg:block"
+          className="hidden max-w-[760px] flex-1 lg:block"
           inputRef={searchRef}
         />
 
@@ -462,8 +958,52 @@ export function SiteHeader({ user }: { user?: AuthUser | null }) {
         </div>
       </div>
 
+      {/* Category Channel Strip - ONLY shown on products catalog & product detail */}
+      {isProductPage && (
+        <div className="border-t border-tn-hair/70 hidden lg:block bg-white/60 backdrop-blur-sm">
+          <div className="mx-auto flex h-10 max-w-[1480px] items-center gap-6 px-6 sm:px-8 lg:px-12 xl:px-16 text-[13px] font-semibold text-tn-ink2">
+            <Link
+              href="/products"
+              className="hover:text-tn-red flex items-center gap-1.5 transition-colors shrink-0"
+            >
+              <Icon name="spec" size={14} className="text-tn-mute" />
+              <span>All Categories</span>
+            </Link>
+            <div className="h-3.5 w-px bg-tn-hair shrink-0" />
+            <div className="flex items-center gap-5 overflow-x-auto scrollbar-none py-1 min-w-0">
+              {NAV_CATEGORIES.map((c) => (
+                <Link
+                  key={c.slug}
+                  href={`/products?category=${c.slug}`}
+                  className="hover:text-tn-red whitespace-nowrap transition-colors text-tn-mute hover:font-bold"
+                >
+                  {c.label}
+                </Link>
+              ))}
+            </div>
+            <div className="ml-auto flex items-center gap-4 text-xs font-bold shrink-0">
+              <Link
+                href="/shops"
+                className="text-tn-ink hover:text-tn-red flex items-center gap-1.5 transition-colors"
+              >
+                <Icon name="building" size={13} className="text-tn-green" />
+                <span>Verified Bole Shops</span>
+              </Link>
+              <span className="text-tn-hair">•</span>
+              <Link
+                href="/map"
+                className="text-tn-mute hover:text-tn-ink flex items-center gap-1 transition-colors"
+              >
+                <Icon name="pin" size={13} />
+                <span>Shop Map</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile bar */}
-      <div className="mx-auto flex h-16 max-w-[1280px] items-center gap-3 px-5 lg:hidden">
+      <div className="mx-auto flex h-16 max-w-[1480px] items-center gap-3 px-6 sm:px-8 lg:hidden">
         <Logo />
         <div className="flex-1" />
         <button
@@ -519,23 +1059,45 @@ export function SiteHeader({ user }: { user?: AuthUser | null }) {
                 <p className="text-tn-mute mt-6 mb-2 text-[10.5px] font-extrabold tracking-[0.09em] uppercase">
                   Categories
                 </p>
-                {NAV_CATEGORIES.map((c) => (
-                  <Link
+                {NAV_CATEGORIES.map((c) => {
+                  const count = stats?.category_product_count?.[c.slug];
+                  return (
+                    <Link
+                      key={c.slug}
+                      href={`/products?category=${c.slug}`}
+                      onClick={() => setDrawerOpen(false)}
+                      className="border-tn-hair2 text-tn-ink flex items-center gap-3 border-b py-3"
+                    >
+                      <span className="bg-tn-paper inline-flex size-9 shrink-0 items-center justify-center rounded-[10px]">
+                        <Icon name={c.icon} size={18} className="text-tn-ink" />
+                      </span>
+                      <span className="flex-1 text-[15px] font-bold">
+                        {c.label}
+                      </span>
+                      {count != null && (
+                        <span className="font-tn-mono text-tn-mute text-xs">
+                          {formatCount(count)}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+                <p className="text-tn-mute mt-6 mb-2 text-[10.5px] font-extrabold tracking-[0.09em] uppercase">
+                  Coming Soon
+                </p>
+                {UPCOMING_CATEGORIES.map((c) => (
+                  <div
                     key={c.slug}
-                    href={`/products?category=${c.slug}`}
-                    onClick={() => setDrawerOpen(false)}
-                    className="border-tn-hair2 text-tn-ink flex items-center gap-3 border-b py-3"
+                    className="border-tn-hair2 text-tn-ink2 flex items-center justify-between border-b py-2.5 text-[14px]"
                   >
-                    <span className="bg-tn-paper inline-flex size-9 shrink-0 items-center justify-center rounded-[10px]">
-                      <Icon name={c.icon} size={18} className="text-tn-ink" />
-                    </span>
-                    <span className="flex-1 text-[15px] font-bold">
+                    <span className="flex items-center gap-2.5 font-medium">
+                      <Icon name={c.icon} size={16} className="text-tn-mute" />
                       {c.label}
                     </span>
-                    <span className="font-tn-mono text-tn-mute text-xs">
-                      {c.count}
+                    <span className="rounded bg-amber-100/90 px-1.5 py-0.5 text-[10px] font-extrabold text-amber-900">
+                      {c.badge || "Soon"}
                     </span>
-                  </Link>
+                  </div>
                 ))}
                 <p className="text-tn-mute mt-6 mb-2 text-[10.5px] font-extrabold tracking-[0.09em] uppercase">
                   More

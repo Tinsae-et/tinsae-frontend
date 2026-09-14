@@ -6,6 +6,7 @@ import { Icon } from "@/components/tinsae/icon";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
 import { formatETB, freshness, normalizeImageUrl, type FreshnessTone } from "@/lib/format";
+import { resolvePrimaryProductImage } from "@/lib/product-images";
 import type { Product } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useCompare } from "@/hooks/use-compare";
@@ -45,7 +46,7 @@ function ProductCardInner({
 
   const fresh = freshness(product.last_confirmed_at, product.confirmation_status);
   const tone = fresh.tone;
-  const image = normalizeImageUrl(product.images?.[0]?.url) || null;
+  const image = resolvePrimaryProductImage(product.images?.[0]?.url, product.category?.slug);
 
   const detailHref = `/products/${product.slug}`;
 
@@ -169,7 +170,7 @@ export function ProductRow({ product }: { product: Product }) {
   const saved = isSaved(product.slug);
   const fresh = freshness(product.last_confirmed_at, product.confirmation_status);
   const tone = fresh.tone;
-  const image = normalizeImageUrl(product.images?.[0]?.url) || null;
+  const image = resolvePrimaryProductImage(product.images?.[0]?.url, product.category?.slug);
 
   return (
     <div className="border-tn-hair group relative flex items-center gap-[18px] rounded-[18px] border bg-white p-3.5 transition-[transform,box-shadow,border-color] duration-150 hover:-translate-y-[3px] hover:border-[#E0DDD4] hover:shadow-[0_18px_44px_rgba(11,11,11,0.09)]">
