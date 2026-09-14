@@ -52,9 +52,6 @@ export const ListingHeader = ({
 }: {
   setShowSidebar: (val: boolean) => void;
 }) => {
-  const confirm = async () => {
-    
-  }
   return (
     <div className="w-full flex items-center justify-between">
       <div className="flex items-center gap-3">
@@ -77,7 +74,7 @@ export const ListingHeader = ({
       </div>
 
       <div className="flex items-center gap-2.5">
-        <Pill kind="outline" size="sm" icon="check" type="button" onClick={confirm}>
+        <Pill kind="outline" size="sm" icon="check">
           Confirm all stock
         </Pill>
         <Pill kind="solid" size="sm" icon="plus" href="/shop/dashboard/listings/new">
