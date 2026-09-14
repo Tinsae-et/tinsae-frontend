@@ -1,17 +1,18 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { List, LayoutGrid, Pencil } from "lucide-react";
 import { Icon } from "@/components/tinsae/icon";
 import { ListingRow } from "./listing-row";
 import { ShopProduct } from "@/lib/types";
-import { ShopProductQuery } from "@/lib/api";
+import { confirmAllFreshness, ShopProductQuery } from "@/lib/api";
 import { useShopProducts } from "@/hooks/use-products";
 import { formatETB, freshness } from "@/lib/format";
 import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
 import { Pill } from "@/components/tinsae/pill";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 type TabKey = "all" | "live" | "needs-attention" | "drafts" | "sold";
 
@@ -225,7 +226,7 @@ function ListingGridCard({
 }: {
   product: ShopProduct;
   isSelected: boolean;
-  toggleOne: (id: number) => void;
+  toggleOne: (slug: string) => void;
 }) {
   const fresh = freshness(product.last_confirmed_at, product.confirmation_status);
   const dotColor =
@@ -253,7 +254,7 @@ function ListingGridCard({
           role="checkbox"
           aria-checked={isSelected}
           aria-label={`Select ${product.name}`}
-          onClick={() => toggleOne(product.id)}
+          onClick={() => toggleOne(product.slug)}
           className={cn(
             "size-[22px] rounded-[7px] border flex items-center justify-center absolute top-2.5 left-2.5 transition-colors cursor-pointer z-10",
             isSelected
@@ -334,11 +335,12 @@ function ListingGridCard({
   );
 }
 
-export default function ListingsTable({ slug }: { slug: string }) {
-  const [selected, setSelected] = useState<number[]>([]);
+export default function ListingsTable({ slug, access }: { slug: string, access: string }) {
+  const [selected, setSelected] = useState<string[]>([]);
   const [query, setQuery] = useState<ShopProductQuery>({});
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [view, setView] = useState<"rows" | "grid">("rows");
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
 
   const { products: apiProducts } = useShopProducts(query, slug);
 
@@ -346,6 +348,11 @@ export default function ListingsTable({ slug }: { slug: string }) {
   // allowlist and shops/views.py. Re-filtering here would only ever disagree
   // with it, so the fetched list is the list.
   const baseProducts = apiProducts;
+
+  const confirmStocks = async () => {
+    await confirmAllFreshness(slug, access, selected);
+    redirect("/shop/dashboard/overview/")
+  }
 
   const displayedProducts = useMemo(() => {
     return baseProducts.filter((p) => {
@@ -364,25 +371,44 @@ export default function ListingsTable({ slug }: { slug: string }) {
 
   const allVisibleSelected =
     displayedProducts.length > 0 &&
-    displayedProducts.every((p) => selected.includes(p.id));
+    displayedProducts.every((p) => selected.includes(p.slug));
 
   const toggleAll = () => {
     if (allVisibleSelected) {
-      const visibleIds = new Set(displayedProducts.map((p) => p.id));
-      setSelected(selected.filter((id) => !visibleIds.has(id)));
+      const visibleIds = new Set(displayedProducts.map((p) => p.slug));
+      setSelected(selected.filter((slug) => !visibleIds.has(slug)));
     } else {
-      const newSelected = new Set([...selected, ...displayedProducts.map((p) => p.id)]);
+      const newSelected = new Set([...selected, ...displayedProducts.map((p) => p.slug)]);
       setSelected(Array.from(newSelected));
     }
   };
 
-  const toggleOne = (id: number) => {
-    if (selected.includes(id)) {
-      setSelected(selected.filter((i) => i !== id));
+  const toggleOne = (slug: string) => {
+    if (selected.includes(slug)) {
+      setSelected(selected.filter((i) => i !== slug));
     } else {
-      setSelected([...selected, id]);
+      setSelected([...selected, slug]);
     }
   };
+
+  useEffect(() => {
+      if (openMenuId === null) return;
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") setOpenMenuId(null);
+      };
+      const handleClickOutside = (e: MouseEvent) => {
+        const target = e.target as HTMLElement;
+        if (!target.closest("[data-row-action]")) {
+          setOpenMenuId(null);
+        }
+      };
+      window.addEventListener("keydown", handleKeyDown);
+      window.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        window.removeEventListener("keydown", handleKeyDown);
+        window.removeEventListener("mousedown", handleClickOutside);
+      };
+    }, [openMenuId]);
 
   const isFiltered =
     activeTab !== "all" || Boolean(query.q) || Boolean(query.category);
@@ -418,9 +444,7 @@ export default function ListingsTable({ slug }: { slug: string }) {
             <div className="flex items-center gap-4">
               <button
                 type="button"
-                onClick={() => {
-                  // TODO: Bulk confirm stock mutation
-                }}
+                onClick={confirmStocks}
                 className="flex items-center gap-1.5 text-xs font-bold text-tn-green hover:underline cursor-pointer"
               >
                 <Icon name="check" size={14} /> Confirm stock
@@ -474,7 +498,8 @@ export default function ListingsTable({ slug }: { slug: string }) {
               kind="solid"
               size="md"
               icon="plus"
-              href="/shop/dashboard/listings/new"
+              href="/shop/    return baseProducts.filter((p) => {
+dashboard/listings/new"
             >
               Add a listing
             </Pill>
@@ -497,8 +522,9 @@ export default function ListingsTable({ slug }: { slug: string }) {
             <ListingGridCard
               key={item.id}
               product={item}
-              isSelected={selected.includes(item.id)}
+              isSelected={selected.includes(item.slug)}
               toggleOne={toggleOne}
+              
             />
           ))}
         </div>
@@ -517,6 +543,9 @@ export default function ListingsTable({ slug }: { slug: string }) {
                     selected={selected}
                     product={item}
                     toggleOne={toggleOne}
+                    access={access}
+                    openMenuId={openMenuId}
+                    setOpenMenuId={setOpenMenuId}
                   />
                 ))}
               </tbody>

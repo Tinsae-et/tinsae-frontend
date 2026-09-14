@@ -5,11 +5,14 @@ import { DailyStockCheckIn, RecentActivities } from "./activities";
 import { MoreHorizontal, Pencil, Trash } from "lucide-react";
 import { ShopProduct } from "@/lib/types";
 import { useShopProducts } from "@/hooks/use-products";
-import { formatETB, freshness } from "@/lib/format";
+import { formatETB, Freshness, freshness } from "@/lib/format";
 import { Pill } from "@/components/tinsae/pill";
 import { Icon } from "@/components/tinsae/icon";
 import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { confirmFreshness } from "@/lib/api";
+import DeleteListing from "../listings/delete-listing";
 
 type KpiItem = {
   label: string;
@@ -226,28 +229,33 @@ function ListingTableHeader({
   );
 }
 
-function ActionMenu({ onClose }: { onClose: () => void }) {
+export function ActionMenu({ onClose, product, access }: { onClose: () => void, product: ShopProduct, access: string }) {
+  const [deleteItem, setDeleteItem] = useState<boolean>(false);
+
   return (
     <div
       data-row-action
       className="absolute right-0 top-full mt-1 z-30 min-w-[120px] rounded-[12px] border border-tn-hair bg-white p-1.5 shadow-[0_8px_24px_rgba(11,11,11,0.12)] flex flex-col gap-1"
     >
-      <button
-        type="button"
+      <Link
+        href={`/shop/dashboard/listings/edit?id=${product.id}`}
         onClick={onClose}
         className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-semibold text-tn-ink hover:bg-tn-paper cursor-pointer"
       >
         <Pencil className="size-3.5 text-tn-mute" />
         Edit
-      </button>
+      </Link>
       <button
         type="button"
-        onClick={onClose}
+        onClick={()=>setDeleteItem(true)}
         className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-semibold text-tn-red hover:bg-tn-red-soft cursor-pointer"
       >
         <Trash className="size-3.5 text-tn-red" />
         Remove
       </button>
+      {
+        deleteItem && <DeleteListing product={product} setDeleteItem={setDeleteItem} access={access}/>
+      }
     </div>
   );
 }
@@ -258,15 +266,19 @@ function TableRow({
   toggleOne,
   openMenuId,
   setOpenMenuId,
+  access,
 }: {
   product: ShopProduct;
   isSelected: boolean;
   toggleOne: (id: number) => void;
   openMenuId: number | null;
   setOpenMenuId: (id: number | null) => void;
+  access: string;
 }) {
-  const fresh = freshness(product.last_confirmed_at, product.confirmation_status);
+  const [fresh, setFresh] = useState<Freshness>(()=>freshness(product.last_confirmed_at, product.confirmation_status))
   const isMenuOpen = openMenuId === product.id;
+  const [needConfirm, setNeedConfirm] = useState<boolean>(()=>(product.is_available && fresh.tone !== "fresh"));
+
 
   const dotColor =
     fresh.tone === "fresh"
@@ -275,6 +287,12 @@ function TableRow({
       ? "bg-tn-mute"
       : "bg-tn-warn";
 
+    const confirm = async () => {
+      if (!product.shop_slug) return;
+      await confirmFreshness(product.shop_slug, product.slug, access);
+      setNeedConfirm(false);
+      setFresh({...fresh, tone: "fresh"})
+    }
   return (
     <tr
       className={cn(
@@ -347,8 +365,8 @@ function TableRow({
       {/* Action */}
       <td className="py-[13px] pl-2 pr-5 text-right">
         <div className="flex justify-end items-center">
-          {fresh.tone !== "fresh" ? (
-            <Pill kind="solid" size="sm" icon="check">
+          {needConfirm ? (
+            <Pill kind="solid" size="sm" icon="check" onClick={confirm}>
               Confirm
             </Pill>
           ) : (
@@ -362,7 +380,7 @@ function TableRow({
               >
                 <MoreHorizontal className="size-4" />
               </button>
-              {isMenuOpen && <ActionMenu onClose={() => setOpenMenuId(null)} />}
+              {isMenuOpen && <ActionMenu product={product} onClose={() => setOpenMenuId(null)} access={access} />}
             </div>
           )}
         </div>
@@ -371,7 +389,7 @@ function TableRow({
   );
 }
 
-function ListingsTable({ products }: { products: ShopProduct[] }) {
+function ListingsTable({ products, access }: { products: ShopProduct[], access:string }) {
   const [selected, setSelected] = useState<number[]>([]);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
 
@@ -433,6 +451,7 @@ function ListingsTable({ products }: { products: ShopProduct[] }) {
                   toggleOne={toggleOne}
                   openMenuId={openMenuId}
                   setOpenMenuId={setOpenMenuId}
+                  access={access}
                 />
               );
             })}
@@ -515,9 +534,11 @@ function Numbers({
 export default function Overview({
   slug,
   shopName,
+  access,
 }: {
   slug: string;
   shopName: string;
+  access: string;
 }) {
   const { products } = useShopProducts({}, slug);
 
@@ -528,7 +549,7 @@ export default function Overview({
         <DailyStockCheckIn products={products} />
         <RecentActivities />
       </div>
-      <ListingsTable products={products} />
+      <ListingsTable products={products} access={access}/>
     </div>
   );
 }

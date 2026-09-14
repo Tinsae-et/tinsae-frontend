@@ -82,6 +82,7 @@ export type ShopProduct = {
   price: string;
   currency: string;
   shop: number;
+  shop_slug?: string;
   category: string;
   condition: string;
   is_available: boolean;

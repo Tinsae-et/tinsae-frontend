@@ -266,3 +266,46 @@ export async function getShopProducts(
   }
   return res.json();
 }
+
+export async function confirmFreshness(s_slug: string, p_slug: string, access: string): Promise<ShopProduct>{
+  const res = await fetch(`${API_URL}/api/v1/shops/${encodeURIComponent(s_slug)}/products/${encodeURIComponent(p_slug)}/confirm/`, { 
+    method: "POST", 
+    headers : { 
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${access}`
+    }
+  });
+  if (!res.ok){
+    throw new Error(`Couldn't confirm freshness (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function confirmAllFreshness(s_slug: string, access: string, slugs: string[]): Promise<{confirmed: unknown[], not_found: unknown[]}>{
+  const res = await fetch(`${API_URL}/api/v1/shops/${encodeURIComponent(s_slug)}/products/confirm-all/`, {
+    method: "POST", 
+    headers : { 
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${access}`
+    },
+    body: JSON.stringify({slugs: slugs}),
+  });
+  if (!res.ok){
+    throw new Error(`Couldn't confirm all products (${res.status})`)
+  }
+  return res.json();
+}
+
+export async function deleteProduct(s_slug: string | undefined, p_slug: string, access: string): Promise<unknown> {
+  const res = await fetch(`${API_URL}/api/v1/shops/${s_slug}/products/${p_slug}/`, {
+    method: "DELETE",
+    headers : { 
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${access}`
+    }
+  })
+  if(!res.ok){
+    throw new Error(`An error occured when deleting (${res.status})`)
+  }
+  return res;
+}
