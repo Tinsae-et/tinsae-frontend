@@ -13,7 +13,6 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { confirmFreshness, markSold } from "@/lib/api";
 import DeleteListing from "../listings/delete-listing";
-import { setServers } from "dns";
 
 type KpiItem = {
   label: string;
