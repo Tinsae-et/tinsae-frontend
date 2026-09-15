@@ -93,6 +93,20 @@ export type ShopProduct = {
   specs: Record<string, unknown>;
 };
 
+export type NewProduct = {
+  name: string;
+  brand: string;
+  description: string;
+  price: string | number;
+  currency: string;
+  category: string;
+  condition: string;
+  is_available: boolean;
+  stock: number;
+  specs: Record<string, unknown>;
+  status: string;
+}
+
 export type ShopMetrics = {
   verified_shops?: number;
   total_products?: number;

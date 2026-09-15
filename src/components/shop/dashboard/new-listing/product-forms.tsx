@@ -5,6 +5,8 @@ import { ImageIcon } from "lucide-react";
 import { CATEGORIES } from "@/lib/shop/onboarding-state"
 import Image from "next/image"
 import { Icon } from "@/components/tinsae/icon";
+import { Category } from "@/lib/types";
+import { getCategories } from "@/lib/api";
 
 type Storage = "64GB" | "128GB" | "256GB" | "512GB" | "1TB";
 type Color = "Black" | "White" | "Blue" | "Natural Ti" | "Gold";
@@ -45,32 +47,39 @@ function Pill<T extends string>({
 }
 
 
-export function ProductForm(){
+function ProductForm(){
     const [category, setCategory] = useState<string>("")
     const [productName, setProductName] = useState<string>("");
     const [brand, setBrand] = useState<string>("");
     const [model, setModel] = useState<string>("");
     const [description, setDescription] = useState<string>("");
+    const [categories, setCategories] = useState<Category[]>([]);
 
+    useEffect(()=>{
+      getCategories()
+        .then(res=>setCategories(res.results))
+        .catch(error=>console.log(error))
+    },[])
+    
     return (
-        <form className="flex-col gap-2 border border-gray-200 bg-white p-5 rounded-2xl inline-block">
+        <div className="flex-col gap-2 border border-gray-200 bg-white p-5 rounded-2xl block">
             <h1 className="font-bold text-black">Product</h1>
             <div className="flex flex-col gap-2">
                 <span className="text-sm my-1 font-bold">Category</span>
                 <div className="flex flex-wrap gap-2">
                     {
-                        CATEGORIES.map((c)=>(
+                        categories.map((c)=>(
                             <button
-                                key={c}
-                                onClick={()=>{setCategory(c)}}
+                                key={c.id}
+                                onClick={()=>{setCategory(c.slug)}}
                                 type="button"
                                 className={`flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-sm font-medium transition-colors ${
-                                category === c
+                                category === c.slug
                                     ? "border-neutral-900 bg-neutral-900 text-white"
                                     : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"
                                 }`}
                             >
-                                {c}
+                                {c.name}
                             </button>
                         ))
                     }
@@ -136,11 +145,11 @@ export function ProductForm(){
                 className="w-full resize-y rounded-xl border border-neutral-200 px-3.5 py-2.5 text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-300"
                 />
             </div>
-        </form>
+        </div>
     )
 }
 
-export function ProductImageForm(){
+function ProductImageForm(){
     const MAX_PHOTOS = 5;
     const [coverPhoto, setCoverPhoto] = useState<string | null>(null);
     const [extraPhotos, setExtraPhotos] = useState<(string | null)[]>([
@@ -192,7 +201,7 @@ export function ProductImageForm(){
         });
     };
     return(
-        <form className="rounded-2xl border border-neutral-200 bg-white p-6 inline-block">
+        <div className="rounded-2xl border border-neutral-200 bg-white p-6 block">
             <div >
                 <div className="flex items-center justify-between">
                     <h2 className="text-base font-semibold text-neutral-900">Photos</h2>
@@ -262,18 +271,18 @@ export function ProductImageForm(){
                     ))}
                 </div>
             </div>
-        </form>
+        </div>
     )
 }
 
-export function ProductSpecificationForm(){
+function ProductSpecificationForm(){
   const [storage, setStorage] = useState<Storage | null>(null);
   const [color, setColor] = useState<Color | null>(null);
   const [sim, setSim] = useState<Sim | null>(null);
   const [warranty, setWarranty] = useState("");
 
     return (
-        <form className="rounded-2xl border border-neutral-200 bg-white p-6">
+        <div className="rounded-2xl border border-neutral-200 bg-white p-6">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold text-neutral-900">
               Specifications
@@ -354,11 +363,11 @@ export function ProductSpecificationForm(){
               </div>
             </div>
           </div>
-        </form>
+        </div>
     )
 }
 
-export function PriceAndStockForm(){
+function PriceAndStockForm(){
     
     const [price, setPrice] = useState("");
     const [stockCount, setStockCount] = useState("1");
@@ -366,7 +375,7 @@ export function PriceAndStockForm(){
     const [negotiable, setNegotiable] = useState(false);
 
     return(
-        <form className="rounded-2xl border border-neutral-200 bg-white p-6">
+        <div className="rounded-2xl border border-neutral-200 bg-white p-6">
           <h2 className="text-base font-semibold text-neutral-900">
             Price &amp; stock
           </h2>
@@ -455,6 +464,19 @@ export function PriceAndStockForm(){
               </div>
             </div>
           </div>
-        </form>
+        </div>
     )
+}
+
+export function Form() {
+  
+
+  return (
+    <form className="flex flex-col gap-3">
+      <ProductForm />
+      <ProductImageForm />
+      <ProductSpecificationForm />
+      <PriceAndStockForm />
+    </form>
+  )
 }
