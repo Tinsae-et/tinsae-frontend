@@ -5,7 +5,7 @@ import { List, LayoutGrid, MoreHorizontal } from "lucide-react";
 import { Icon } from "@/components/tinsae/icon";
 import { ListingRow } from "./listing-row";
 import { ShopProduct } from "@/lib/types";
-import { confirmAllFreshness, confirmFreshness, ShopProductQuery } from "@/lib/api";
+import { confirmSelectedFreshness, confirmFreshness, ShopProductQuery } from "@/lib/api";
 import { useShopProducts } from "@/hooks/use-products";
 import { formatETB, Freshness, freshness } from "@/lib/format";
 import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
@@ -373,7 +373,7 @@ export default function ListingsTable({ slug, access }: { slug: string, access: 
   const baseProducts = apiProducts;
 
   const confirmStocks = async () => {
-    await confirmAllFreshness(slug, access, selected);
+    await confirmSelectedFreshness(slug, access, selected);
     redirect("/shop/dashboard/overview/")
   }
 

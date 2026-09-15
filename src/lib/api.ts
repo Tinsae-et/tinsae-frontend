@@ -281,7 +281,7 @@ export async function confirmFreshness(s_slug: string, p_slug: string, access: s
   return res.json();
 }
 
-export async function confirmAllFreshness(s_slug: string, access: string, slugs: string[]): Promise<{confirmed: string[], not_found: string[]}>{
+export async function confirmSelectedFreshness(s_slug: string, access: string, slugs: string[]): Promise<{confirmed: string[], not_found: string[]}>{
   const res = await fetch(`${API_URL}/api/v1/shops/${encodeURIComponent(s_slug)}/products/confirm-all/`, {
     method: "POST", 
     headers : { 
