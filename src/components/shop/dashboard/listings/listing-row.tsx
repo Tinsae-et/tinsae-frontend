@@ -29,6 +29,7 @@ export function ListingRow({
   const isSelected = selected.includes(product.slug);
   const [fresh, setFresh] = useState<Freshness>(()=>freshness(product.last_confirmed_at, product.confirmation_status))
   const [needConfirm, setNeedConfirm] = useState<boolean>(()=>(product.is_available && fresh.tone !== "fresh"));
+  const [available, setAvailable] = useState<boolean>(product.is_available)
   const isMenuOpen = openMenuId === product.id;
 
   const dotColor =
@@ -96,7 +97,7 @@ export function ListingRow({
       <td className="whitespace-nowrap px-3 py-[13px]">
         <div className="flex items-center gap-2">
           <span className="font-tn-mono text-[13px] font-semibold text-tn-mute">—</span>
-          {product.is_available ? (
+          {available ? (
             <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-tn-green-soft text-tn-green">
               Live
             </span>
@@ -157,7 +158,7 @@ export function ListingRow({
               >
                 <MoreHorizontal className="size-4" />
               </button>
-              {isMenuOpen && <ActionMenu product={product} onClose={() => setOpenMenuId(null)} access={access} />}
+              {isMenuOpen && <ActionMenu product={product} onClose={() => setOpenMenuId(null)} access={access} setAvailable={setAvailable} />}
             </div>
         </div>
       </td>

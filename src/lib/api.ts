@@ -305,7 +305,21 @@ export async function deleteProduct(s_slug: string | undefined, p_slug: string, 
     }
   })
   if(!res.ok){
-    throw new Error(`An error occured when deleting (${res.status})`)
+    throw new Error(`An error occured when deleting a product (${res.status})`)
   }
   return res;
+}
+
+export async function markSold(s_slug: string, p_slug: string, access: string): Promise<ShopProduct> {
+  const res = await fetch(`${API_URL}/api/v1/shops/${encodeURIComponent(s_slug)}/products/${encodeURIComponent(p_slug)}/mark-sold/`, {
+    method: "POST",
+    headers : { 
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${access}`
+    }
+  })
+  if(!res.ok){
+    throw new Error(`An error occured when marking sold a product (${res.status})`)
+  }
+  return res.json();
 }

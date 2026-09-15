@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { DailyStockCheckIn, RecentActivities } from "./activities";
-import { MoreHorizontal, Pencil, Trash } from "lucide-react";
+import { MoreHorizontal, Pencil, Tag, Trash } from "lucide-react";
 import { ShopProduct } from "@/lib/types";
 import { useShopProducts } from "@/hooks/use-products";
 import { formatETB, Freshness, freshness } from "@/lib/format";
@@ -11,8 +11,9 @@ import { Icon } from "@/components/tinsae/icon";
 import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { confirmFreshness } from "@/lib/api";
+import { confirmFreshness, markSold } from "@/lib/api";
 import DeleteListing from "../listings/delete-listing";
+import { setServers } from "dns";
 
 type KpiItem = {
   label: string;
@@ -97,18 +98,25 @@ function Sparkline({ data }: { data: number[] }) {
   );
 }
 
-function StatusPill({ tone }: { tone: "fresh" | "stale" | "unconfirmed" }) {
-  if (tone === "fresh") {
+function StatusPill({ tone, product }: { tone: "fresh" | "stale" | "unconfirmed", product: ShopProduct }) {
+  if (tone === "fresh" && product.is_available) {
     return (
       <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-tn-green-soft text-tn-green">
         Visible
       </span>
     );
   }
-  if (tone === "stale") {
+  if (tone === "stale" && product.is_available) {
     return (
       <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-tn-paper text-tn-mute">
         Stale · hidden
+      </span>
+    );
+  }
+  if (!product.is_available) {
+    return (
+      <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-tn-paper text-tn-mute">
+        Sold
       </span>
     );
   }
@@ -229,9 +237,14 @@ function ListingTableHeader({
   );
 }
 
-export function ActionMenu({ onClose, product, access }: { onClose: () => void, product: ShopProduct, access: string }) {
+export function ActionMenu({ onClose, product, access, setAvailable }: { onClose: () => void, product: ShopProduct, access: string, setAvailable?: (val: boolean)=>void }) {
   const [deleteItem, setDeleteItem] = useState<boolean>(false);
 
+  const markSoldProduct = async () => {
+    if (!setAvailable || !product.shop_slug) return;
+    await markSold(product.shop_slug, product.slug, access)
+    setAvailable(!product.is_available)
+  }
   return (
     <div
       data-row-action
@@ -253,6 +266,17 @@ export function ActionMenu({ onClose, product, access }: { onClose: () => void, 
         <Trash className="size-3.5 text-tn-red" />
         Remove
       </button>
+      {
+        (setAvailable && product.is_available) &&(
+          <button
+            onClick={markSoldProduct}
+            className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-semibold text-blue-800 hover:bg-blue-50 cursor-pointer"
+          >
+            <Tag className="size-3.5 "/>
+            Mark sold
+          </button>
+        )
+      }
       {
         deleteItem && <DeleteListing product={product} setDeleteItem={setDeleteItem} access={access}/>
       }
@@ -354,7 +378,7 @@ function TableRow({
 
       {/* Status */}
       <td className="px-3 py-[13px]">
-        <StatusPill tone={fresh.tone} />
+        <StatusPill tone={fresh.tone} product={product}/>
       </td>
 
       {/* Views · Inq */}
@@ -380,7 +404,7 @@ function TableRow({
               >
                 <MoreHorizontal className="size-4" />
               </button>
-              {isMenuOpen && <ActionMenu product={product} onClose={() => setOpenMenuId(null)} access={access} />}
+              {isMenuOpen && <ActionMenu product={product} onClose={() => setOpenMenuId(null)} access={access}/>}
             </div>
           )}
         </div>
