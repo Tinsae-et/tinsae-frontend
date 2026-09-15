@@ -2,6 +2,8 @@ import React from "react";
 import { Icon } from "@/components/tinsae/icon";
 import { Pill } from "@/components/tinsae/pill";
 import Link from "next/link";
+import { Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export const OverviewHeader = ({
   setShowSidebar,
@@ -119,9 +121,14 @@ export const NewListingHeader = ({
         <Pill kind="outline" size="sm">
           Save draft
         </Pill>
-        <Pill kind="solid" size="sm" icon="check">
+        <button 
+          className="inline-flex items-center justify-center gap-2 rounded-full font-bold tracking-[-0.01em] whitespace-nowrap transition-[transform,box-shadow,background] duration-150 hover:-translate-y-px hover:bg-red-800 bg-red-700 py-2 px-4 text-white"
+          type="submit"
+          form="product-form"
+        >
+          <Check className="w-5"/>
           Publish listing
-        </Pill>
+        </button>
       </div>
     </div>
   );
