@@ -6,10 +6,10 @@ import { hasShop } from "@/lib/auth/roles";
 import { Form } from "@/components/shop/dashboard/new-listing/product-forms";
 
 type Props = {
-  params: Promise<{action: string}>
+  params: Promise<{action: string, navigation: string}>
 }
 async function NewListing(props: Props) {
-  const { action } = await props.params
+  const { action, navigation } = await props.params
   const { access } = await readSession()
     if (!access) redirect(`/signin?next=/shop/dashboard/${navigation}`);
     let user;
