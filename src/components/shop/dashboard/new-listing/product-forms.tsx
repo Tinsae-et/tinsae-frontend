@@ -6,7 +6,7 @@ import { useForm, UseFormRegister, Controller, FieldErrors, Control } from "reac
 import Image from "next/image"
 import { Icon } from "@/components/tinsae/icon";
 import { Category, NewProduct, ShopProductImage } from "@/lib/types";
-import { createListing, getCategories, getProductImages, getShopProduct, uploadListingImage } from "@/lib/api";
+import { createListing, getCategories, getProductImages, getShopProduct, updateListing, uploadListingImage } from "@/lib/api";
 import { BeforePublication, DailyStockCheckIn, ProductPreview } from "./buyer-preview";
 import { useSearchParams } from "next/navigation";
 
@@ -121,12 +121,7 @@ function ProductForm({ register, errors, control }: { register: UseFormRegister<
             </label>
             <div className="relative">
               <select
-                {...register("brand", {
-                  required: {
-                    value: true,
-                    message: "brand is required"
-                  }
-                })}
+                {...register("brand", {})}
                 className="w-full appearance-none rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-300"
               >
                 <option value="">Select brand</option>
@@ -195,15 +190,6 @@ function ProductImageForm({
     extraPhotosRef.current = extraPhotos;
   });
 
-  useEffect(() => {
-    return () => {
-      if (coverPhotoRef.current) URL.revokeObjectURL(coverPhotoRef.current.preview);
-      extraPhotosRef.current.forEach((url) => {
-        if (url) URL.revokeObjectURL(url.preview);
-      });
-    };
-  }, []);
-
   const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -234,6 +220,15 @@ function ProductImageForm({
       return next;
     });
   };
+
+  const getImageSrc = (photo: ShopProductImage | null) => {
+    if (!photo) return "";
+    if (typeof photo.preview === "string" && photo.preview) return photo.preview;
+    if (typeof photo.image === "string" && photo.image) return photo.image;
+    if (photo.image instanceof File) return URL.createObjectURL(photo.image);
+    return "";
+  };
+
   return (
     <div className="rounded-2xl border border-neutral-200 bg-white p-6 block">
       <div >
@@ -254,7 +249,7 @@ function ProductImageForm({
           />
           {coverPhoto ? (
             <Image
-              src={coverPhoto.preview ? coverPhoto.preview : coverPhoto.image}
+              src={getImageSrc(coverPhoto)}
               alt="Cover"
               width={20}
               height={20}
@@ -291,7 +286,7 @@ function ProductImageForm({
               />
               {photo ? (
                 <Image
-                  src={photo.preview ? photo.preview: photo.image}
+                  src={getImageSrc(photo)}
                   alt={`Photo ${i + 2}`}
                   width={20}
                   height={20}
@@ -611,7 +606,7 @@ export function Form({access, shopSlug, action}:{access: string, shopSlug: strin
       getProductImages(slug, shopSlug, access)
         .then(res=>{
           setCoverPhoto(res.results[0]);
-          setExtraPhotos(res.results.slice(1))
+          if (res.results.length > 1) setExtraPhotos(res.results.slice(1))
         })
     }
   }, [])
@@ -619,19 +614,23 @@ export function Form({access, shopSlug, action}:{access: string, shopSlug: strin
 
   const submit = async (data: NewProduct) => {
     setUploading(true);
-    const res = await createListing(data, shopSlug, access);
+    if (action === "new"){
+      const res = await createListing(data, shopSlug, access);
 
-    if (coverPhoto) await uploadListingImage(res.slug, shopSlug, coverPhoto, access);
-    await Promise.all(
-      extraPhotos
-        .filter((photo): photo is ShopProductImage => photo !== null)
-        .map(async (photo) => {
-          await uploadListingImage(res.slug, shopSlug, photo, access);
-        })
-    );
-    reset(defaultValues);
-    setCoverPhoto(null);
-    setExtraPhotos([null, null, null, null])
+      if (coverPhoto) await uploadListingImage(res.slug, shopSlug, coverPhoto, access);
+      await Promise.all(
+        extraPhotos
+          .filter((photo) => photo !== null)
+          .map(async (photo) => {
+            await uploadListingImage(res.slug, shopSlug, photo, access);
+          })
+      );  
+      reset(defaultValues);
+      setCoverPhoto(null);
+      setExtraPhotos([null, null, null, null])
+    }
+    else await updateListing(data, shopSlug, access);
+
     setUploading(false);
   }
 

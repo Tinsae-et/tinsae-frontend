@@ -341,24 +341,3 @@ export async function uploadListingImage(p_slug: string, s_slug: string, image: 
   }
   return res.json();
 }
-
-export async function updateListingImage(p_slug: string, s_slug: string, image: ShopProductImage, access: string): Promise<ProductImage> {
-  const formData = new FormData();
-  formData.append("image", image.image);
-  formData.append("display_order", String(image.display_order));
-  formData.append("is_primary", String(image.is_primary));
-
-  const res = await fetch(`${API_URL}/api/v1/shops/${s_slug}/products/${p_slug}/images/`, {
-    method: "PATCH",
-    headers: {
-      "Authorization": `Bearer ${access}`,
-    },
-    body: formData,
-  }
-  );
-
-  if (!res.ok) {
-    throw new Error(`Failed uploading product image (${res.status})`);
-  }
-  return res.json();
-}
