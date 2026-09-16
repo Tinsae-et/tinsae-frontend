@@ -6,8 +6,9 @@ import { useForm, UseFormRegister, Controller, FieldErrors, Control } from "reac
 import Image from "next/image"
 import { Icon } from "@/components/tinsae/icon";
 import { Category, NewProduct, ShopProductImage } from "@/lib/types";
-import { createListing, getCategories, uploadListingImage } from "@/lib/api";
+import { createListing, getCategories, getProductImages, getShopProduct, uploadListingImage } from "@/lib/api";
 import { BeforePublication, DailyStockCheckIn, ProductPreview } from "./buyer-preview";
+import { useSearchParams } from "next/navigation";
 
 type Storage = "64GB" | "128GB" | "256GB" | "512GB" | "1TB";
 type Color = "Black" | "White" | "Blue" | "Natural Ti" | "Gold";
@@ -47,7 +48,7 @@ function Pill<T extends string>({
 }
 
 
-function ProductForm({ register, errors, control }: { register: UseFormRegister<NewProduct>, errors: FieldErrors<NewProduct>, control: Control<NewProduct, any, NewProduct> }) {
+function ProductForm({ register, errors, control }: { register: UseFormRegister<NewProduct>, errors: FieldErrors<NewProduct>, control: Control<NewProduct, NewProduct> }) {
   const [model, setModel] = useState<string>("");
   const [categories, setCategories] = useState<Category[]>([]);
 
@@ -177,7 +178,9 @@ function ProductImageForm({
 }:{
   coverPhoto: ShopProductImage | null, 
   extraPhotos: (ShopProductImage | null)[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setCoverPhoto: (val: (ShopProductImage | null) | ((val: any)=>ShopProductImage))=>void,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setExtraPhotos: (val: any[] | ((prev: any) => any[]))=>void,
 }) {
   const MAX_PHOTOS = 5;
@@ -251,7 +254,7 @@ function ProductImageForm({
           />
           {coverPhoto ? (
             <Image
-              src={coverPhoto.preview}
+              src={coverPhoto.preview ? coverPhoto.preview : coverPhoto.image}
               alt="Cover"
               width={20}
               height={20}
@@ -288,7 +291,7 @@ function ProductImageForm({
               />
               {photo ? (
                 <Image
-                  src={photo.preview}
+                  src={photo.preview ? photo.preview: photo.image}
                   alt={`Photo ${i + 2}`}
                   width={20}
                   height={20}
@@ -306,11 +309,8 @@ function ProductImageForm({
   )
 }
 
-function ProductSpecificationForm({ register, errors, control }: { register: UseFormRegister<NewProduct>, errors: FieldErrors<NewProduct>, control: Control<NewProduct, any, NewProduct> }) {
-  const [storage, setStorage] = useState<Storage | null>(null);
-  const [color, setColor] = useState<Color | null>(null);
-  const [sim, setSim] = useState<Sim | null>(null);
-  const [warranty, setWarranty] = useState("");
+function ProductSpecificationForm({ control }: { control: Control<NewProduct, NewProduct> }) {
+
 
   return (
     <div className="rounded-2xl border border-neutral-200 bg-white p-6">
@@ -435,7 +435,7 @@ function ProductSpecificationForm({ register, errors, control }: { register: Use
   )
 }
 
-function PriceAndStockForm({ register, errors, control }: { register: UseFormRegister<NewProduct>, errors: FieldErrors<NewProduct>, control: Control<NewProduct, any, NewProduct> }) {
+function PriceAndStockForm({ register, errors, control }: { register: UseFormRegister<NewProduct>, errors: FieldErrors<NewProduct>, control: Control<NewProduct, NewProduct> }) {
   const [negotiable, setNegotiable] = useState(false);
 
   return (
@@ -563,6 +563,7 @@ function PriceAndStockForm({ register, errors, control }: { register: UseFormReg
 }
 
 export function Form({access, shopSlug, action}:{access: string, shopSlug: string, action: string}) {
+  const searchParams = useSearchParams();
   const defaultValues = {
       name: "",
       brand: "",
@@ -579,11 +580,7 @@ export function Form({access, shopSlug, action}:{access: string, shopSlug: strin
   const { register, handleSubmit, control, watch, reset, formState: { errors } } = useForm<NewProduct>({
     defaultValues: defaultValues,
   });
-
-  if (action === "edit"){
-    
-  }
-
+  
   const [uploading, setUploading] = useState<boolean>(false);
   const [coverPhoto, setCoverPhoto] = useState<ShopProductImage | null>(null);
   const [extraPhotos, setExtraPhotos] = useState<(ShopProductImage | null)[]>([
@@ -592,6 +589,33 @@ export function Form({access, shopSlug, action}:{access: string, shopSlug: strin
     null,
     null,
   ]);
+  useEffect(()=>{
+    if (action === "edit"){
+      const slug = searchParams.get("slug");
+      if (!slug) return;
+      getShopProduct(slug, shopSlug, access)
+        .then(res=>reset({
+          name: res.name,
+          brand: res.brand,
+          description:res.description,
+          price: res.price,
+          currency: res.currency,
+          category: res.category,
+          condition: res.condition,
+          stock: res?.stock,
+          specs: res.specs,
+          slug: res.slug,
+        }))
+        .catch(error=>console.log(error))
+      
+      getProductImages(slug, shopSlug, access)
+        .then(res=>{
+          setCoverPhoto(res.results[0]);
+          setExtraPhotos(res.results.slice(1))
+        })
+    }
+  }, [])
+
 
   const submit = async (data: NewProduct) => {
     setUploading(true);
@@ -624,7 +648,7 @@ export function Form({access, shopSlug, action}:{access: string, shopSlug: strin
               <form onSubmit={handleSubmit(submit)} className="flex flex-col gap-3" id="product-form">
                 <ProductForm register={register} errors={errors} control={control} />
                 <ProductImageForm coverPhoto={coverPhoto} extraPhotos={extraPhotos} setCoverPhoto={setCoverPhoto} setExtraPhotos={setExtraPhotos} />
-                <ProductSpecificationForm register={register} errors={errors} control={control} />
+                <ProductSpecificationForm control={control} />
                 <PriceAndStockForm register={register} errors={errors} control={control} />
               </form>
             )

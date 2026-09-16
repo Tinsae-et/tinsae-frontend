@@ -200,6 +200,30 @@ export async function getShop(slug: string): Promise<Shop> {
   return res.json();
 }
 
+export async function getShopProduct(slug: string, s_slug: string, access: string): Promise<ShopProduct> {
+  const res = await fetch(`${API_URL}/api/v1/shops/${s_slug}/products/${slug}/`, {
+    headers:{
+      "Authorization": `Bearer ${access}`
+    }
+  })
+  if(!res.ok){
+    throw new Error(`Couldn't load product (${res.status})`)
+  }
+  return res.json()
+}
+
+export async function getProductImages(slug: string, s_slug: string, access: string): Promise<Paginated<ShopProductImage>> {
+  const res = await fetch(`${API_URL}/api/v1/shops/${s_slug}/products/${slug}/images/`, {
+    headers:{
+      "Authorization": `Bearer ${access}`
+    }
+  })
+  if(!res.ok){
+    throw new Error(`Couldn't load product images (${res.status})`)
+  }
+  return res.json()
+}
+
 export async function getPublicShopProducts(
   slug: string,
   query: ShopProductQuery = {},
@@ -282,6 +306,21 @@ export async function createListing(product: NewProduct, s_slug: string, access:
   return res.json()
 }
 
+export async function updateListing(product: NewProduct, s_slug: string, access: string): Promise<ShopProduct> {
+  const res = await fetch(`${API_URL}/api/v1/shops/${s_slug}/products/${product.slug}/`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${access}`,
+    },
+    body: JSON.stringify(product)
+  })
+  if (!res.ok){
+    throw new Error(`Can not create new listing (${res.status})`)
+  }
+  return res.json()
+}
+
 export async function uploadListingImage(p_slug: string, s_slug: string, image: ShopProductImage, access: string): Promise<ProductImage> {
   const formData = new FormData();
   formData.append("image", image.image);
@@ -290,6 +329,27 @@ export async function uploadListingImage(p_slug: string, s_slug: string, image: 
 
   const res = await fetch(`${API_URL}/api/v1/shops/${s_slug}/products/${p_slug}/images/`, {
     method: "POST",
+    headers: {
+      "Authorization": `Bearer ${access}`,
+    },
+    body: formData,
+  }
+  );
+
+  if (!res.ok) {
+    throw new Error(`Failed uploading product image (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function updateListingImage(p_slug: string, s_slug: string, image: ShopProductImage, access: string): Promise<ProductImage> {
+  const formData = new FormData();
+  formData.append("image", image.image);
+  formData.append("display_order", String(image.display_order));
+  formData.append("is_primary", String(image.is_primary));
+
+  const res = await fetch(`${API_URL}/api/v1/shops/${s_slug}/products/${p_slug}/images/`, {
+    method: "PATCH",
     headers: {
       "Authorization": `Bearer ${access}`,
     },

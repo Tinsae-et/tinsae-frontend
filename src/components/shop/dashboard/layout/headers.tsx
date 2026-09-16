@@ -3,7 +3,6 @@ import { Icon } from "@/components/tinsae/icon";
 import { Pill } from "@/components/tinsae/pill";
 import Link from "next/link";
 import { Check } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 export const OverviewHeader = ({
   setShowSidebar,

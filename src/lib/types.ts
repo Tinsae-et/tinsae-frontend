@@ -90,6 +90,7 @@ export type ShopProduct = {
   last_confirmed_at: string | null;
   freshness: string;
   slug: string;
+  stock?: number;
   specs: Record<string, unknown>;
 };
 
@@ -97,7 +98,7 @@ export type NewProduct = {
   name: string;
   brand: string;
   description: string;
-  price?: number;
+  price: string;
   currency: string;
   category: string;
   condition: string;
@@ -105,6 +106,7 @@ export type NewProduct = {
   stock: number;
   specs: Record<string, unknown>;
   status: string;
+  slug?: string;
 }
 
 export type ShopProductImage = {
