@@ -5,6 +5,9 @@ import { Icon } from "@/components/tinsae/icon";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { Pill } from "@/components/tinsae/pill";
 import Image from "next/image";
+import { getShop, updateShopProfile } from "@/lib/api";
+import { ShopProfile } from "@/lib/types";
+
 
 function getInitials(name: string): string {
   const trimmed = name.trim();
@@ -16,13 +19,9 @@ function getInitials(name: string): string {
   return trimmed.slice(0, 2).toUpperCase();
 }
 
-export default function ProfileForm() {
+export default function ProfileForm({slug, access}:{slug :string,access:string}) {
   const [shopName, setShopName] = useState<string>("Almeda Electronics");
-  const [telegram, setTelegram] = useState<string>("@AlmedaElectronics");
   const [logo, setLogo] = useState<string | null>(null);
-  const [about, setAbout] = useState<string>(
-    "Verified electronics retailer in Bole, Atlas — phones, laptops and audio. Sealed and open-box stock, confirmed daily. Walk-ins welcome behind Atlas Hotel."
-  );
 
   const logoRef = useRef<string | null>(null);
 
@@ -44,10 +43,33 @@ export default function ProfileForm() {
       return URL.createObjectURL(file);
     });
   };
+  const [formdata , setformdata] = useState<ShopProfile|null>(null)
+  useEffect(()=>{
+    getShop(slug)
+    .then((res)=>setformdata(res))
+    .catch((error)=>console.log(error))
+  },[slug])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const changehandler = (e: React.ChangeEvent<HTMLInputElement> |  React.ChangeEvent<HTMLTextAreaElement>) => {
+    setformdata((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        [e.target.name]: e.target.value,
+      };
+    });
+  };
+
+  
+
+  const  handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Save shop profile mutation
+    if (!formdata) return 
+    const Fd = new FormData()
+    Fd.append("name", String(formdata?.name))
+    Fd.append("telegram_chat_id", String(formdata?.telegram_chat_id))
+    Fd.append("description", String(formdata?.description))
+    await updateShopProfile(slug  ,Fd , access)
   };
 
   return (
@@ -118,8 +140,9 @@ export default function ProfileForm() {
             </label>
             <input
               type="text"
-              value={shopName}
-              onChange={(e) => setShopName(e.target.value)}
+              name="name"
+              value={formdata?.name}
+              onChange={changehandler}
               placeholder="e.g. Almeda Electronics"
               className="h-12 w-full rounded-xl border-[1.5px] border-tn-hair bg-white px-3.5 text-[14.5px] text-tn-ink placeholder:text-tn-mute focus:outline-none focus:border-tn-ink"
             />
@@ -131,8 +154,9 @@ export default function ProfileForm() {
             </label>
             <input
               type="text"
-              value={telegram}
-              onChange={(e) => setTelegram(e.target.value)}
+              name="telegram_chat_id"
+              value={formdata?.telegram_chat_id}
+              
               placeholder="e.g. @AlmedaElectronics"
               className="font-tn-mono h-12 w-full rounded-xl border-[1.5px] border-tn-hair bg-white px-3.5 text-[14.5px] text-tn-ink placeholder:text-tn-mute focus:outline-none focus:border-tn-ink"
             />
@@ -145,8 +169,9 @@ export default function ProfileForm() {
             About
           </label>
           <textarea
-            value={about}
-            onChange={(e) => setAbout(e.target.value)}
+            name="description"
+            value={formdata?.description}
+            onChange={changehandler}
             placeholder="About your shop..."
             rows={3}
             className="w-full rounded-xl border-[1.5px] border-tn-hair bg-white p-3.5 text-[14.5px] text-tn-ink placeholder:text-tn-mute focus:outline-none focus:border-tn-ink resize-y"
@@ -162,10 +187,7 @@ export default function ProfileForm() {
           onClick={() => {
             // Reset to defaults
             setShopName("Almeda Electronics");
-            setTelegram("@AlmedaElectronics");
-            setAbout(
-              "Verified electronics retailer in Bole, Atlas — phones, laptops and audio. Sealed and open-box stock, confirmed daily. Walk-ins welcome behind Atlas Hotel."
-            );
+
           }}
         >
           Cancel

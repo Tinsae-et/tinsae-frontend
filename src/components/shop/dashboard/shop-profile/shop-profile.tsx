@@ -6,7 +6,6 @@ import ContactForm from "./contact-form";
 import { Icon, IconName } from "@/components/tinsae/icon";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-
 type NavItem = {
   text: string;
   href: string;
@@ -21,7 +20,7 @@ const NAV_ITEMS: NavItem[] = [
   { text: "Team", href: "#", icon: "msg" },
 ];
 
-export default function ShopProfile() {
+export default function ShopProfile({slug,access}:{slug :string,access:string}) {
   const [activeSection, setActiveSection] = useState("Profile");
 
   return (
@@ -65,8 +64,8 @@ export default function ShopProfile() {
 
       {/* Panels Column */}
       <div className="flex-1 max-w-[660px] flex flex-col gap-6">
-        <ProfileForm />
-        <ContactForm />
+        <ProfileForm slug={slug} access={access} />
+        <ContactForm slug={slug} access={access}/>
       </div>
     </div>
   );

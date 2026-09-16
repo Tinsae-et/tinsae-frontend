@@ -1,15 +1,34 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Pill } from "@/components/tinsae/pill";
+import { ShopProfile } from "@/lib/types";
+import { getShop, updateShopProfile } from "@/lib/api";
 
-export default function ContactForm() {
-  const [phone, setPhone] = useState<string>("+251 91 142 5006");
+export default function ContactForm({slug,access}:{slug:string,access:string}) {
+
   const [email, setEmail] = useState<string>("sales@almeda.et");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [formdata ,setformdata] =useState<ShopProfile|null>(null)
+  useEffect(()=>{
+    getShop(slug)
+    .then((res)=>setformdata(res))
+    .catch((error)=>console.log(error))
+  },[slug])
+  const changehandler = (e:React.ChangeEvent<HTMLInputElement>) =>{
+    setformdata({
+      ...formdata,
+      [e.target.name]:e.target.value
+    })
+  }
+
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Save contact mutation
+    const Fd = new FormData()
+    Fd.append("phone",String(formdata?.phone))
+    await updateShopProfile(slug,Fd,access)
+    
   };
 
   return (
@@ -34,8 +53,9 @@ export default function ContactForm() {
             </label>
             <input
               type="text"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              name="phone"
+              value={formdata?.phone}
+              onChange={changehandler}
               placeholder="e.g. +251 91 142 5006"
               className="font-tn-mono h-12 w-full rounded-xl border-[1.5px] border-tn-hair bg-white px-3.5 text-[14.5px] text-tn-ink placeholder:text-tn-mute focus:outline-none focus:border-tn-ink"
             />

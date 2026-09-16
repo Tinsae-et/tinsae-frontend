@@ -63,7 +63,7 @@ export default async function DashboardSection({ params }: Props) {
   if (navigation === "shop-profile") {
     return (
       <section>
-        <ShopProfile />
+        <ShopProfile slug={shop.slug} access={access} />
       </section>
     );
   }

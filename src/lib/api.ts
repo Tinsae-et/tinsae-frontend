@@ -1,7 +1,8 @@
 // Central place for talking to the backend API.
 // The base URL comes from the environment so it can change per environment.
-import type { Category, Paginated, Product, Shop, ShopMetrics, ShopProduct } from "./types";
+import type { Category, Paginated, Product, Shop, ShopMetrics, ShopProduct} from "./types";
 import { normalizeImageUrl } from "./format";
+
 
 // Dual-context base URL:
 //  - Server components (SSR, inside the dev container) reach the host backend
@@ -196,6 +197,21 @@ export async function getShop(slug: string): Promise<Shop> {
   });
   if (!res.ok) {
     throw new Error(`Could not load shop (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function updateShopProfile(slug: string, s_profile:FormData,access:string): Promise<Shop> {
+  const res = await fetch(`${API_URL}/api/v1/shops/${encodeURIComponent(slug)}/`, {
+    cache: "no-store",
+    method:"PATCH",
+    headers:{
+      "Authorization":`Bearer ${access}`
+    },
+    body: s_profile
+  });
+  if (!res.ok) {
+    throw new Error(`Could not update shop (${res.status})`);
   }
   return res.json();
 }

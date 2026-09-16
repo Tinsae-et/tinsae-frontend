@@ -100,3 +100,10 @@ export type ShopMetrics = {
   category_product_count?: Record<string, number>;
   shop_product_count?: Record<string, number>;
 };
+export type ShopProfile ={
+  name ?:string;
+  telegram_chat_id?:string;
+  description?:string;
+  phone?:string
+
+}
