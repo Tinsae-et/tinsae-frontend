@@ -5,8 +5,8 @@ import { ImageIcon } from "lucide-react";
 import { useForm, UseFormRegister, Controller, FieldErrors, Control } from "react-hook-form";
 import Image from "next/image"
 import { Icon } from "@/components/tinsae/icon";
-import { Category, NewProduct } from "@/lib/types";
-import { createListing, getCategories } from "@/lib/api";
+import { Category, NewProduct, ShopProductImage } from "@/lib/types";
+import { createListing, getCategories, uploadListingImage } from "@/lib/api";
 
 type Storage = "64GB" | "128GB" | "256GB" | "512GB" | "1TB";
 type Color = "Black" | "White" | "Blue" | "Natural Ti" | "Gold";
@@ -168,19 +168,23 @@ function ProductForm({ register, errors, control }: { register: UseFormRegister<
   )
 }
 
-function ProductImageForm() {
+function ProductImageForm({
+  coverPhoto, 
+  extraPhotos,
+  setCoverPhoto,
+  setExtraPhotos,
+}:{
+  coverPhoto: ShopProductImage | null, 
+  extraPhotos: (ShopProductImage | null)[],
+  setCoverPhoto: (val: (ShopProductImage | null) | ((val: any)=>ShopProductImage))=>void,
+  setExtraPhotos: (val: any[] | ((prev: any) => any[]))=>void,
+}) {
   const MAX_PHOTOS = 5;
-  const [coverPhoto, setCoverPhoto] = useState<string | null>(null);
-  const [extraPhotos, setExtraPhotos] = useState<(string | null)[]>([
-    null,
-    null,
-    null,
-    null,
-  ]);
+  
   const photoCount = (coverPhoto ? 1 : 0) + extraPhotos.filter(Boolean).length;
 
-  const coverPhotoRef = useRef<string | null>(null);
-  const extraPhotosRef = useRef<(string | null)[]>(extraPhotos);
+  const coverPhotoRef = useRef<ShopProductImage | null>(null);
+  const extraPhotosRef = useRef<(ShopProductImage | null)[]>(extraPhotos);
 
   useEffect(() => {
     coverPhotoRef.current = coverPhoto;
@@ -189,9 +193,9 @@ function ProductImageForm() {
 
   useEffect(() => {
     return () => {
-      if (coverPhotoRef.current) URL.revokeObjectURL(coverPhotoRef.current);
+      if (coverPhotoRef.current) URL.revokeObjectURL(coverPhotoRef.current.preview);
       extraPhotosRef.current.forEach((url) => {
-        if (url) URL.revokeObjectURL(url);
+        if (url) URL.revokeObjectURL(url.preview);
       });
     };
   }, []);
@@ -199,9 +203,11 @@ function ProductImageForm() {
   const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setCoverPhoto((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return URL.createObjectURL(file);
+    setCoverPhoto({
+      preview: URL.createObjectURL(file),
+      display_order: 0,
+      is_primary: true,
+      image: file,
     });
   };
 
@@ -211,11 +217,16 @@ function ProductImageForm() {
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
+    const p_image: ShopProductImage = {
+      image: file,
+      display_order: index + 1,
+      is_primary: false,
+      preview: URL.createObjectURL(file)
+    }
     setExtraPhotos((prev) => {
       const next = [...prev];
       if (next[index]) URL.revokeObjectURL(next[index]!);
-      next[index] = url;
+      next[index] = p_image;
       return next;
     });
   };
@@ -239,7 +250,7 @@ function ProductImageForm() {
           />
           {coverPhoto ? (
             <Image
-              src={coverPhoto}
+              src={coverPhoto.preview}
               alt="Cover"
               width={20}
               height={20}
@@ -276,7 +287,7 @@ function ProductImageForm() {
               />
               {photo ? (
                 <Image
-                  src={photo}
+                  src={photo.preview}
                   alt={`Photo ${i + 2}`}
                   width={20}
                   height={20}
@@ -551,9 +562,7 @@ function PriceAndStockForm({ register, errors, control }: { register: UseFormReg
 }
 
 export function Form({access, shopSlug}:{access: string, shopSlug: string}) {
-
-  const { register, handleSubmit, control, formState: { errors } } = useForm<NewProduct>({
-    defaultValues: {
+  const defaultValues = {
       name: "",
       brand: "",
       description: "",
@@ -566,19 +575,54 @@ export function Form({access, shopSlug}:{access: string, shopSlug: string}) {
       specs: {},
       status: "live"
     }
+  const { register, handleSubmit, control, reset, formState: { errors } } = useForm<NewProduct>({
+    defaultValues: defaultValues,
   });
 
+  const [coverPhoto, setCoverPhoto] = useState<ShopProductImage | null>(null);
+  const [uploading, setUploading] = useState<boolean>(false);
+  const [extraPhotos, setExtraPhotos] = useState<(ShopProductImage | null)[]>([
+    null,
+    null,
+    null,
+    null,
+  ]);
+
   const submit = async (data: NewProduct) => {
+    setUploading(true);
     const res = await createListing(data, shopSlug, access);
-    console.log(res)
+    const fd = new FormData();
+
+    if (coverPhoto) await uploadListingImage(res.slug, shopSlug, coverPhoto, access);
+    await Promise.all(
+      extraPhotos
+        .filter((photo): photo is ShopProductImage => photo !== null)
+        .map(async (photo) => {
+          await uploadListingImage(res.slug, shopSlug, photo, access);
+        })
+    );
+    reset(defaultValues);
+    setCoverPhoto(null);
+    setExtraPhotos([null, null, null, null])
+    setUploading(false);
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} className="flex flex-col gap-3" id="product-form">
-      <ProductForm register={register} errors={errors} control={control} />
-      <ProductImageForm />
-      <ProductSpecificationForm register={register} errors={errors} control={control} />
-      <PriceAndStockForm register={register} errors={errors} control={control} />
-    </form>
+    <>
+      {
+        uploading ? (
+          <div className="h-full, w-full flex items-center justify-center">
+            Uploading...
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit(submit)} className="flex flex-col gap-3" id="product-form">
+            <ProductForm register={register} errors={errors} control={control} />
+            <ProductImageForm coverPhoto={coverPhoto} extraPhotos={extraPhotos} setCoverPhoto={setCoverPhoto} setExtraPhotos={setExtraPhotos}/>
+            <ProductSpecificationForm register={register} errors={errors} control={control} />
+            <PriceAndStockForm register={register} errors={errors} control={control} />
+          </form>    
+        )
+      }
+    </>
   )
 }

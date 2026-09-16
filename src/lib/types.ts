@@ -107,6 +107,15 @@ export type NewProduct = {
   status: string;
 }
 
+export type ShopProductImage = {
+  id?: number;
+  image: File;
+  is_primary: boolean;
+  display_order: number;
+  preview: string;
+  product?: ShopProduct;
+}
+
 export type ShopMetrics = {
   verified_shops?: number;
   total_products?: number;

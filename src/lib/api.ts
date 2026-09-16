@@ -1,6 +1,6 @@
 // Central place for talking to the backend API.
 // The base URL comes from the environment so it can change per environment.
-import type { Category, NewProduct, Paginated, Product, Shop, ShopMetrics, ShopProduct } from "./types";
+import type { Category, NewProduct, Paginated, Product, ProductImage, Shop, ShopMetrics, ShopProduct, ShopProductImage } from "./types";
 import { normalizeImageUrl } from "./format";
 
 // Dual-context base URL:
@@ -280,4 +280,25 @@ export async function createListing(product: NewProduct, s_slug: string, access:
     throw new Error(`Can not create new listing (${res.status})`)
   }
   return res.json()
+}
+
+export async function uploadListingImage(p_slug: string, s_slug: string, image: ShopProductImage, access: string): Promise<ProductImage> {
+  const formData = new FormData();
+  formData.append("image", image.image);
+  formData.append("display_order", String(image.display_order));
+  formData.append("is_primary", String(image.is_primary));
+
+  const res = await fetch(`${API_URL}/api/v1/shops/${s_slug}/products/${p_slug}/images/`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${access}`,
+    },
+    body: formData,
+  }
+  );
+
+  if (!res.ok) {
+    throw new Error(`Failed uploading product image (${res.status})`);
+  }
+  return res.json();
 }
