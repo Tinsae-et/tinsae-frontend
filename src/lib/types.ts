@@ -97,7 +97,7 @@ export type NewProduct = {
   name: string;
   brand: string;
   description: string;
-  price: number;
+  price?: number;
   currency: string;
   category: string;
   condition: string;

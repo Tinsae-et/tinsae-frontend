@@ -1,11 +1,15 @@
 import React from "react"
-import NewProductForm from "@/components/shop/dashboard/new-listing/new-listing";
 import { readSession } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
 import { authDriver } from "@/lib/auth/driver";
 import { hasShop } from "@/lib/auth/roles";
+import { Form } from "@/components/shop/dashboard/new-listing/product-forms";
 
-async function NewListing() {
+type Props = {
+  params: Promise<{action: string}>
+}
+async function NewListing(props: Props) {
+  const { action } = await props.params
   const { access } = await readSession()
     if (!access) redirect(`/signin?next=/shop/dashboard/${navigation}`);
     let user;
@@ -21,7 +25,7 @@ async function NewListing() {
       const shop = user.shops[0];
   return (
     <section className="">
-      <NewProductForm access={access} shopSlug={shop.slug}/>
+      <Form access={access} shopSlug={shop.slug} action={action}/>
     </section>
   )
 }

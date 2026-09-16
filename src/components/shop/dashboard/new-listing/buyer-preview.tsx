@@ -2,21 +2,15 @@
 
 import { Icon } from "@/components/tinsae/icon";
 import { kindForSlug, ProdPlaceholder } from "@/components/tinsae/prod-placeholder";
+import { ShopProductImage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
 interface ChecklistItem {
     id: string;
     label: string;
-    done: boolean;
+    done: boolean | string;
 }
-
-const CHECKLIST: ChecklistItem[] = [
-    { id: "name", label: "Product name", done: false },
-    { id: "photo", label: "At least one photo", done: false },
-    { id: "price", label: "Price set", done: false },
-    { id: "condition", label: "Condition", done: true },
-];
 
 
 export function ProductPreview() {
@@ -114,7 +108,15 @@ export function DailyStockCheckIn() {
     )
 }
 
-export function BeforePublication() {
+export function BeforePublication({watch, coverPhoto, extraPhotos}:{watch: (val: string)=>boolean, coverPhoto: ShopProductImage | null, extraPhotos: (ShopProductImage | null)[]}) {
+
+    const photo = Boolean(coverPhoto || extraPhotos.find(p=>p !== null))
+    const CHECKLIST: ChecklistItem[] = [
+        { id: "name", label: "Product name", done: watch("name") },
+        { id: "photo", label: "At least one photo", done: photo},
+        { id: "price", label: "Price set", done: watch("price") },
+        { id: "condition", label: "Condition", done: watch("condition") },
+    ];
     const allDone = CHECKLIST.every((item) => item.done);
 
     return (
@@ -145,8 +147,9 @@ export function BeforePublication() {
             </ul>
 
             <button
-                type="button"
+                type="submit"
                 disabled={!allDone}
+                form="product-form"
                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-full border border-neutral-200 py-2.5 text-sm font-medium text-neutral-400 disabled:cursor-not-allowed enabled:text-neutral-800 enabled:hover:bg-neutral-50"
             >
                 <Icon name="check" className="h-4 w-4" />

@@ -7,6 +7,7 @@ import Image from "next/image"
 import { Icon } from "@/components/tinsae/icon";
 import { Category, NewProduct, ShopProductImage } from "@/lib/types";
 import { createListing, getCategories, uploadListingImage } from "@/lib/api";
+import { BeforePublication, DailyStockCheckIn, ProductPreview } from "./buyer-preview";
 
 type Storage = "64GB" | "128GB" | "256GB" | "512GB" | "1TB";
 type Color = "Black" | "White" | "Blue" | "Natural Ti" | "Gold";
@@ -561,12 +562,12 @@ function PriceAndStockForm({ register, errors, control }: { register: UseFormReg
   )
 }
 
-export function Form({access, shopSlug}:{access: string, shopSlug: string}) {
+export function Form({access, shopSlug, action}:{access: string, shopSlug: string, action: string}) {
   const defaultValues = {
       name: "",
       brand: "",
       description: "",
-      price: 0,
+      price: undefined,
       currency: "ETB",
       category: "",
       condition: "",
@@ -575,12 +576,16 @@ export function Form({access, shopSlug}:{access: string, shopSlug: string}) {
       specs: {},
       status: "live"
     }
-  const { register, handleSubmit, control, reset, formState: { errors } } = useForm<NewProduct>({
+  const { register, handleSubmit, control, watch, reset, formState: { errors } } = useForm<NewProduct>({
     defaultValues: defaultValues,
   });
 
-  const [coverPhoto, setCoverPhoto] = useState<ShopProductImage | null>(null);
+  if (action === "edit"){
+    
+  }
+
   const [uploading, setUploading] = useState<boolean>(false);
+  const [coverPhoto, setCoverPhoto] = useState<ShopProductImage | null>(null);
   const [extraPhotos, setExtraPhotos] = useState<(ShopProductImage | null)[]>([
     null,
     null,
@@ -591,7 +596,6 @@ export function Form({access, shopSlug}:{access: string, shopSlug: string}) {
   const submit = async (data: NewProduct) => {
     setUploading(true);
     const res = await createListing(data, shopSlug, access);
-    const fd = new FormData();
 
     if (coverPhoto) await uploadListingImage(res.slug, shopSlug, coverPhoto, access);
     await Promise.all(
@@ -609,20 +613,30 @@ export function Form({access, shopSlug}:{access: string, shopSlug: string}) {
 
   return (
     <>
-      {
-        uploading ? (
-          <div className="h-full, w-full flex items-center justify-center">
-            Uploading...
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit(submit)} className="flex flex-col gap-3" id="product-form">
-            <ProductForm register={register} errors={errors} control={control} />
-            <ProductImageForm coverPhoto={coverPhoto} extraPhotos={extraPhotos} setCoverPhoto={setCoverPhoto} setExtraPhotos={setExtraPhotos}/>
-            <ProductSpecificationForm register={register} errors={errors} control={control} />
-            <PriceAndStockForm register={register} errors={errors} control={control} />
-          </form>    
-        )
-      }
+      <div className="grid md:grid-cols-3 p-0 bg-gray-50">
+        <div className="flex flex-col gap-4 col-span-2">
+          {
+            uploading ? (
+              <div className="h-full w-full flex items-center justify-center">
+                Uploading...
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit(submit)} className="flex flex-col gap-3" id="product-form">
+                <ProductForm register={register} errors={errors} control={control} />
+                <ProductImageForm coverPhoto={coverPhoto} extraPhotos={extraPhotos} setCoverPhoto={setCoverPhoto} setExtraPhotos={setExtraPhotos} />
+                <ProductSpecificationForm register={register} errors={errors} control={control} />
+                <PriceAndStockForm register={register} errors={errors} control={control} />
+              </form>
+            )
+          }
+        </div>
+        <div className="p-5 flex flex-col gap-4">
+          <ProductPreview />
+          <DailyStockCheckIn />
+          <BeforePublication watch={watch} coverPhoto={coverPhoto} extraPhotos={extraPhotos} />
+        </div>
+      </div>
+
     </>
   )
 }
