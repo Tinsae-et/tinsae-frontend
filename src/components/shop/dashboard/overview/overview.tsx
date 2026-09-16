@@ -250,7 +250,7 @@ export function ActionMenu({ onClose, product, access, setAvailable }: { onClose
       className="absolute right-0 top-full mt-1 z-30 min-w-[120px] rounded-[12px] border border-tn-hair bg-white p-1.5 shadow-[0_8px_24px_rgba(11,11,11,0.12)] flex flex-col gap-1"
     >
       <Link
-        href={`/shop/dashboard/listings/edit?id=${product.id}`}
+        href={`/shop/dashboard/listings/edit?slug=${product.slug}`}
         onClick={onClose}
         className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-semibold text-tn-ink hover:bg-tn-paper cursor-pointer"
       >
