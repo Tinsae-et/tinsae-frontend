@@ -1,6 +1,6 @@
 // Central place for talking to the backend API.
 // The base URL comes from the environment so it can change per environment.
-import type { Category, Paginated, Product, Shop, ShopMetrics, ShopProduct } from "./types";
+import type { Category, NewProduct, Paginated, Product, Shop, ShopMetrics, ShopProduct } from "./types";
 import { normalizeImageUrl } from "./format";
 
 // Dual-context base URL:
@@ -265,4 +265,19 @@ export async function getShopProducts(
     throw new Error(`Couldn't load products (${res.status})`);
   }
   return res.json();
+}
+
+export async function createListing(product: NewProduct, s_slug: string, access: string): Promise<ShopProduct> {
+  const res = await fetch(`${API_URL}/api/v1/shops/${s_slug}/products/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${access}`,
+    },
+    body: JSON.stringify(product)
+  })
+  if (!res.ok){
+    throw new Error(`Can not create new listing (${res.status})`)
+  }
+  return res.json()
 }

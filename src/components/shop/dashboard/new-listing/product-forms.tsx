@@ -6,20 +6,20 @@ import { useForm, UseFormRegister, Controller, FieldErrors, Control } from "reac
 import Image from "next/image"
 import { Icon } from "@/components/tinsae/icon";
 import { Category, NewProduct } from "@/lib/types";
-import { getCategories } from "@/lib/api";
+import { createListing, getCategories } from "@/lib/api";
 
 type Storage = "64GB" | "128GB" | "256GB" | "512GB" | "1TB";
 type Color = "Black" | "White" | "Blue" | "Natural Ti" | "Gold";
 type Sim = "Single" | "Dual";
-type Condition = "New · Sealed" | "New · Open box" | "Used";
+type Condition = "new" | "refurbished" | "used";
 
 const STORAGE_OPTIONS: Storage[] = ["64GB", "128GB", "256GB", "512GB", "1TB"];
 const COLOR_OPTIONS: Color[] = ["Black", "White", "Blue", "Natural Ti", "Gold"];
 const SIM_OPTIONS: Sim[] = ["Single", "Dual"];
 const CONDITION_OPTIONS: Condition[] = [
-  "New · Sealed",
-  "New · Open box",
-  "Used",
+  "new",
+  "refurbished",
+  "used",
 ];
 
 function Pill<T extends string>({
@@ -35,7 +35,7 @@ function Pill<T extends string>({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${active
+      className={`rounded-full capitalize border px-4 py-2 text-sm font-medium transition-colors ${active
           ? "border-neutral-900 bg-neutral-900 text-white"
           : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"
         }`}
@@ -550,14 +550,14 @@ function PriceAndStockForm({ register, errors, control }: { register: UseFormReg
   )
 }
 
-export function Form() {
+export function Form({access, shopSlug}:{access: string, shopSlug: string}) {
 
   const { register, handleSubmit, control, formState: { errors } } = useForm<NewProduct>({
     defaultValues: {
       name: "",
       brand: "",
       description: "",
-      price: "",
+      price: 0,
       currency: "ETB",
       category: "",
       condition: "",
@@ -568,8 +568,9 @@ export function Form() {
     }
   });
 
-  const submit = (data: NewProduct) => {
-    console.log(data)
+  const submit = async (data: NewProduct) => {
+    const res = await createListing(data, shopSlug, access);
+    console.log(res)
   }
 
   return (
