@@ -111,7 +111,7 @@ export type NewProduct = {
 
 export type ShopProductImage = {
   id?: number;
-  image: File;
+  image: File | string;
   is_primary: boolean;
   display_order: number;
   preview: string;

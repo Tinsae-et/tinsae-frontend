@@ -6,9 +6,9 @@ import { useForm, UseFormRegister, Controller, FieldErrors, Control } from "reac
 import Image from "next/image"
 import { Icon } from "@/components/tinsae/icon";
 import { Category, NewProduct, ShopProductImage } from "@/lib/types";
-import { createListing, getCategories, getProductImages, getShopProduct, updateListing, uploadListingImage } from "@/lib/api";
+import { createListing, getCategories, getProductImages, getShopProduct, updateListing, updateListingImage, uploadListingImage } from "@/lib/api";
 import { BeforePublication, DailyStockCheckIn, ProductPreview } from "./buyer-preview";
-import { useSearchParams } from "next/navigation";
+import { redirect, useSearchParams } from "next/navigation";
 
 type Storage = "64GB" | "128GB" | "256GB" | "512GB" | "1TB";
 type Color = "Black" | "White" | "Blue" | "Natural Ti" | "Gold";
@@ -38,8 +38,8 @@ function Pill<T extends string>({
       type="button"
       onClick={onClick}
       className={`rounded-full capitalize border px-4 py-2 text-sm font-medium transition-colors ${active
-          ? "border-neutral-900 bg-neutral-900 text-white"
-          : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"
+        ? "border-neutral-900 bg-neutral-900 text-white"
+        : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"
         }`}
     >
       {value}
@@ -166,20 +166,20 @@ function ProductForm({ register, errors, control }: { register: UseFormRegister<
 }
 
 function ProductImageForm({
-  coverPhoto, 
+  coverPhoto,
   extraPhotos,
   setCoverPhoto,
   setExtraPhotos,
-}:{
-  coverPhoto: ShopProductImage | null, 
+}: {
+  coverPhoto: ShopProductImage | null,
   extraPhotos: (ShopProductImage | null)[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  setCoverPhoto: (val: (ShopProductImage | null) | ((val: any)=>ShopProductImage))=>void,
+  setCoverPhoto: (val: (ShopProductImage | null) | ((val: any) => ShopProductImage)) => void,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  setExtraPhotos: (val: any[] | ((prev: any) => any[]))=>void,
+  setExtraPhotos: (val: any[] | ((prev: any) => any[])) => void,
 }) {
   const MAX_PHOTOS = 5;
-  
+
   const photoCount = (coverPhoto ? 1 : 0) + extraPhotos.filter(Boolean).length;
 
   const coverPhotoRef = useRef<ShopProductImage | null>(null);
@@ -194,6 +194,7 @@ function ProductImageForm({
     const file = e.target.files?.[0];
     if (!file) return;
     setCoverPhoto({
+      ...coverPhoto,
       preview: URL.createObjectURL(file),
       display_order: 0,
       is_primary: true,
@@ -208,6 +209,7 @@ function ProductImageForm({
     const file = e.target.files?.[0];
     if (!file) return;
     const p_image: ShopProductImage = {
+      ...extraPhotos[index],
       image: file,
       display_order: index + 1,
       is_primary: false,
@@ -448,11 +450,11 @@ function PriceAndStockForm({ register, errors, control }: { register: UseFormReg
             type="number"
             inputMode="numeric"
             {...register("price", {
-              required:{
+              required: {
                 value: true,
                 message: "price is required"
               },
-              min:{
+              min: {
                 value: 1,
                 message: "price must be a postive number"
               }
@@ -462,8 +464,8 @@ function PriceAndStockForm({ register, errors, control }: { register: UseFormReg
           />
           {
             errors.price && (
-            <span className="text-xs text-red-500">{errors.price.message}</span>
-          )
+              <span className="text-xs text-red-500">{errors.price.message}</span>
+            )
           }
         </div>
         <div>
@@ -474,7 +476,7 @@ function PriceAndStockForm({ register, errors, control }: { register: UseFormReg
             type="number"
             inputMode="numeric"
             {...register("stock", {
-              min:{
+              min: {
                 value: 0,
                 message: "stock count can not be a negative number"
               }
@@ -483,8 +485,8 @@ function PriceAndStockForm({ register, errors, control }: { register: UseFormReg
           />
           {
             errors.stock && (
-            <span className="text-xs text-red-500">{errors.stock.message}</span>
-          )
+              <span className="text-xs text-red-500">{errors.stock.message}</span>
+            )
           }
         </div>
       </div>
@@ -557,25 +559,25 @@ function PriceAndStockForm({ register, errors, control }: { register: UseFormReg
   )
 }
 
-export function Form({access, shopSlug, action}:{access: string, shopSlug: string, action: string}) {
+export function Form({ access, shopSlug, action }: { access: string, shopSlug: string, action: string }) {
   const searchParams = useSearchParams();
   const defaultValues = {
-      name: "",
-      brand: "",
-      description: "",
-      price: undefined,
-      currency: "ETB",
-      category: "",
-      condition: "",
-      is_available: true,
-      stock: 0,
-      specs: {},
-      status: "live"
-    }
+    name: "",
+    brand: "",
+    description: "",
+    price: undefined,
+    currency: "ETB",
+    category: "",
+    condition: "",
+    is_available: true,
+    stock: 0,
+    specs: {},
+    status: "live"
+  }
   const { register, handleSubmit, control, watch, reset, formState: { errors } } = useForm<NewProduct>({
     defaultValues: defaultValues,
   });
-  
+
   const [uploading, setUploading] = useState<boolean>(false);
   const [coverPhoto, setCoverPhoto] = useState<ShopProductImage | null>(null);
   const [extraPhotos, setExtraPhotos] = useState<(ShopProductImage | null)[]>([
@@ -584,15 +586,15 @@ export function Form({access, shopSlug, action}:{access: string, shopSlug: strin
     null,
     null,
   ]);
-  useEffect(()=>{
-    if (action === "edit"){
+  useEffect(() => {
+    if (action === "edit") {
       const slug = searchParams.get("slug");
-      if (!slug) return;
+      if (!slug) redirect("/shop/dashboard/listings");
       getShopProduct(slug, shopSlug, access)
-        .then(res=>reset({
+        .then(res => reset({
           name: res.name,
           brand: res.brand,
-          description:res.description,
+          description: res.description,
           price: res.price,
           currency: res.currency,
           category: res.category,
@@ -601,12 +603,16 @@ export function Form({access, shopSlug, action}:{access: string, shopSlug: strin
           specs: res.specs,
           slug: res.slug,
         }))
-        .catch(error=>console.log(error))
-      
+        .catch(error => console.log(error))
+
       getProductImages(slug, shopSlug, access)
-        .then(res=>{
+        .then(res => {
           setCoverPhoto(res.results[0]);
-          if (res.results.length > 1) setExtraPhotos(res.results.slice(1))
+          if (res.results.length > 1) {
+            const temp = extraPhotos;
+            res.results.slice(1).forEach((image, index) => temp[index] = image)
+            setExtraPhotos(temp)
+          }
         })
     }
   }, [])
@@ -614,7 +620,7 @@ export function Form({access, shopSlug, action}:{access: string, shopSlug: strin
 
   const submit = async (data: NewProduct) => {
     setUploading(true);
-    if (action === "new"){
+    if (action === "new") {
       const res = await createListing(data, shopSlug, access);
 
       if (coverPhoto) await uploadListingImage(res.slug, shopSlug, coverPhoto, access);
@@ -624,12 +630,23 @@ export function Form({access, shopSlug, action}:{access: string, shopSlug: strin
           .map(async (photo) => {
             await uploadListingImage(res.slug, shopSlug, photo, access);
           })
-      );  
+      );
       reset(defaultValues);
       setCoverPhoto(null);
       setExtraPhotos([null, null, null, null])
     }
-    else await updateListing(data, shopSlug, access);
+    else {
+      const res = await updateListing(data, shopSlug, access);
+
+      if (coverPhoto) await updateListingImage(res.slug, shopSlug, coverPhoto, access);
+      await Promise.all(
+        extraPhotos
+          .filter((photo) => photo !== null)
+          .map(async (photo) => {
+            await updateListingImage(res.slug, shopSlug, photo, access);
+          })
+      );
+    }
 
     setUploading(false);
   }
