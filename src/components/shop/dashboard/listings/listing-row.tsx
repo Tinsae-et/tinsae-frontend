@@ -10,6 +10,7 @@ import { MoreHorizontal } from "lucide-react";
 import { confirmFreshness } from "@/lib/api";
 import { useState } from "react";
 import { ActionMenu } from "../overview/overview";
+import Image from "next/image";
 
 export function ListingRow({
   product,
@@ -46,6 +47,13 @@ export function ListingRow({
     setFresh({...fresh, age: "Just now"})
   }
 
+  const getImage = () => {
+    if (!product.images) return "";
+    const image = product.images.find((i) => i);
+    if(!image) return "";
+    return image.url
+  }
+
   return (
     <tr
       className={cn(
@@ -74,7 +82,11 @@ export function ListingRow({
       <td className="px-3 py-[13px]">
         <div className="flex items-center gap-3">
           <div className="size-[42px] rounded-[10px] bg-tn-paper flex items-center justify-center shrink-0 overflow-hidden">
-            <ProdPlaceholder kind={kindForSlug(product.category)} />
+            {getImage() ? (
+              <Image src={getImage()} alt={product.name} width={40} height={40}/>
+            ) : (
+              <ProdPlaceholder kind={kindForSlug(product.category)} />
+            )}
           </div>
           <div className="min-w-0">
             <div className="text-[13.5px] font-bold text-tn-ink truncate">

@@ -91,6 +91,7 @@ export type ShopProduct = {
   freshness: string;
   slug: string;
   specs: Record<string, unknown>;
+  images?: ProductImage[];
 };
 
 export type ShopMetrics = {

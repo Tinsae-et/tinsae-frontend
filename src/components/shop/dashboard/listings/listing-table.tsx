@@ -13,6 +13,7 @@ import { Pill } from "@/components/tinsae/pill";
 import { cn } from "@/lib/utils";
 import { redirect } from "next/navigation";
 import { ActionMenu } from "../overview/overview";
+import Image from "next/image";
 
 type TabKey = "all" | "live" | "needs-attention" | "drafts" | "sold";
 
@@ -254,6 +255,13 @@ function ListingGridCard({
       setFresh({...fresh, age: "Just now"})
     }
 
+  const getImage = () => {
+    if (!product.images) return "";
+    const image = product.images.find((i) => i);
+    if(!image) return "";
+    return image.url
+  }
+
   return (
     <div
       className={cn(
@@ -264,8 +272,11 @@ function ListingGridCard({
       )}
     >
       <div className="aspect-[16/10] bg-tn-paper relative flex items-center justify-center overflow-hidden">
-        <ProdPlaceholder kind={kindForSlug(product.category)} />
-
+        {getImage() ? (
+          <Image src={getImage()} alt={product.name} width={200} height={200}/>
+        ) : (
+          <ProdPlaceholder kind={kindForSlug(product.category)} />
+        )}
         {/* Checkbox overlay top-left */}
         <button
           type="button"
