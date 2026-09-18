@@ -34,6 +34,8 @@ import { formatETB, Freshness, freshness } from "@/lib/format";
 import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
 import { Pill } from "@/components/tinsae/pill";
 import { cn } from "@/lib/utils";
+import { SortDropdown } from "@/components/tinsae/sort-dropdown";
+import { CategoryDropdown } from "@/components/tinsae/category-dropdown";
 
 type TabKey = "all" | "live" | "needs-attention" | "drafts" | "sold";
 
@@ -45,74 +47,65 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "sold", label: "Sold" },
 ];
 
+const LISTING_SORT_OPTIONS = [
+  { value: "-created_at", label: "Newest first" },
+  { value: "last_confirmed_at", label: "Oldest confirmed" },
+  { value: "-last_confirmed_at", label: "Recently confirmed" },
+  { value: "-price", label: "Price: high → low" },
+  { value: "price", label: "Price: low → high" },
+] as const;
+
 function StatusFilter({
   activeTab,
   setActiveTab,
-  products,
-  total,
+  counts,
 }: {
   activeTab: TabKey;
   setActiveTab: (tab: TabKey) => void;
-  products: ShopProduct[];
-  total: number;
+  counts: Record<TabKey, number>;
 }) {
-  const counts = useMemo(() => {
-    let live = 0;
-    let needsAttention = 0;
-    let sold = 0;
-    let drafts = 0;
-
-    for (const p of products) {
-      if (p.is_available) {
-        live++;
-        const f = freshness(p.last_confirmed_at, p.confirmation_status);
-        if (f.tone !== "fresh") {
-          needsAttention++;
-        }
-      } else if (p.status === "draft") {
-        drafts++;
-      } else {
-        sold++;
-      }
-    }
-
-    return {
-      all: total || products.length,
-      live,
-      "needs-attention": needsAttention,
-      drafts,
-      sold,
-    };
-  }, [products, total]);
-
   return (
-    <div className="bg-white border-b border-tn-hair px-7 flex items-center overflow-x-auto">
-      {TABS.map((tab) => {
-        const isActive = activeTab === tab.key;
-        return (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              "py-[15px] px-1.5 mx-2.5 text-[13.5px] font-bold whitespace-nowrap flex items-center gap-2 cursor-pointer transition-colors border-b-2",
-              isActive
-                ? "text-tn-ink border-tn-ink"
-                : "text-tn-mute border-transparent hover:text-tn-ink",
-            )}
-          >
-            <span>{tab.label}</span>
-            <span
+    <div className="bg-white border-b border-tn-hair px-7 flex flex-col md:flex-row md:items-center md:justify-between gap-2 overflow-x-auto">
+      <div className="flex items-center">
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
               className={cn(
-                "font-tn-mono text-[11px] font-bold px-[7px] py-px rounded-full",
-                isActive ? "bg-tn-ink text-white" : "bg-tn-paper text-tn-mute",
+                "py-[15px] px-1.5 mx-2.5 text-[13.5px] font-bold whitespace-nowrap flex items-center gap-2 cursor-pointer transition-colors border-b-2",
+                isActive
+                  ? "text-tn-ink border-tn-ink"
+                  : "text-tn-mute border-transparent hover:text-tn-ink",
               )}
             >
-              {counts[tab.key]}
-            </span>
-          </button>
-        );
-      })}
+              <span>{tab.label}</span>
+              <span
+                className={cn(
+                  "font-tn-mono text-[11px] font-bold px-[7px] py-px rounded-full",
+                  isActive ? "bg-tn-ink text-white" : "bg-tn-paper text-tn-mute",
+                )}
+              >
+                {counts[tab.key]}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      <div className="hidden md:flex items-center text-[12.5px] text-tn-mute font-medium pr-2 whitespace-nowrap">
+        <span>
+          <b className="font-bold text-tn-ink">{counts.live}</b> live
+          {" · "}
+          <b className={cn("font-bold", counts["needs-attention"] > 0 ? "text-tn-warn" : "text-tn-ink")}>
+            {counts["needs-attention"]}
+          </b>{" "}
+          need attention
+          {" · "}
+          <b className="font-bold text-tn-ink2">{counts.drafts}</b> drafts
+        </span>
+      </div>
     </div>
   );
 }
@@ -142,70 +135,57 @@ function ToolBar({
         <Icon
           name="search"
           className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-tn-mute"
-          size={16}
+          size={14}
         />
         <input
           type="text"
           placeholder="Search listings..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full h-[42px] rounded-[11px] border border-tn-hair bg-white pl-9 pr-3 text-sm text-tn-ink placeholder:text-tn-mute focus:outline-none focus:border-tn-ink"
+          className="w-full h-9 rounded-full border border-tn-hair bg-white pl-9 pr-3 text-[13px] text-tn-ink placeholder:text-tn-mute outline-none transition-[border-color,background] duration-150 hover:border-tn-ink/25 focus-visible:ring-2 focus-visible:ring-tn-red/30"
         />
       </div>
 
-      <div className="flex items-center gap-3 flex-wrap">
-        <select
+      <div className="flex items-center gap-2.5 flex-wrap">
+        <CategoryDropdown
           value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="h-[42px] rounded-[11px] border border-tn-hair bg-white px-3.5 text-sm font-bold text-tn-ink cursor-pointer focus:outline-none focus:border-tn-ink"
-        >
-          <option value="">All categories</option>
-          <option value="phones">Phones</option>
-          <option value="laptops">Laptops</option>
-          <option value="audio">Audio</option>
-          <option value="tablets">Tablets</option>
-          <option value="accessories">Accessories</option>
-          <option value="cameras">Cameras</option>
-        </select>
+          onChange={setCategory}
+          size="sm"
+        />
 
-        <select
+        <SortDropdown
           value={ordering}
-          onChange={(e) => setOrdering(e.target.value)}
-          className="h-[42px] rounded-[11px] border border-tn-hair bg-white px-3.5 text-sm font-semibold text-tn-ink cursor-pointer focus:outline-none focus:border-tn-ink"
-        >
-          <option value="-created_at">Newest first</option>
-          <option value="last_confirmed_at">Oldest confirmed</option>
-          <option value="-last_confirmed_at">Recently confirmed</option>
-          <option value="-price">Price: high → low</option>
-          <option value="price">Price: low → high</option>
-        </select>
+          onChange={setOrdering}
+          options={LISTING_SORT_OPTIONS}
+          size="sm"
+        />
 
-        <div className="p-[3px] rounded-[10px] border border-tn-hair bg-tn-paper flex items-center gap-1 ml-auto md:ml-0">
+        <div className="p-[3px] rounded-full border border-tn-hair bg-tn-paper flex items-center gap-1 ml-auto md:ml-0">
           <button
             type="button"
             aria-label="Table view"
             onClick={() => setView("rows")}
             className={cn(
-              "w-[38px] h-[34px] rounded-lg flex items-center justify-center transition-colors cursor-pointer",
+              "w-8 h-7 rounded-full flex items-center justify-center transition-colors cursor-pointer",
               view === "rows"
                 ? "bg-tn-ink text-white"
                 : "text-tn-mute hover:text-tn-ink",
             )}
           >
-            <List className="h-4 w-4" />
+            <List className="h-3.5 w-3.5" />
           </button>
           <button
             type="button"
             aria-label="Grid view"
             onClick={() => setView("grid")}
             className={cn(
-              "w-[38px] h-[34px] rounded-lg flex items-center justify-center transition-colors cursor-pointer",
+              "w-8 h-7 rounded-full flex items-center justify-center transition-colors cursor-pointer",
               view === "grid"
                 ? "bg-tn-ink text-white"
                 : "text-tn-mute hover:text-tn-ink",
             )}
           >
-            <LayoutGrid className="h-4 w-4" />
+            <LayoutGrid className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
@@ -387,13 +367,13 @@ function ListingGridCard({
   return (
     <div
       className={cn(
-        "bg-white rounded-2xl border-[1.5px] overflow-hidden flex flex-col justify-between transition-all",
+        "bg-white rounded-2xl border-[1.5px] flex flex-col justify-between transition-all relative",
         isSelected
           ? "border-tn-red ring-[3px] ring-tn-red/10"
           : "border-tn-hair hover:border-tn-hair/80",
       )}
     >
-      <div className="aspect-[16/10] bg-tn-paper relative flex items-center justify-center overflow-hidden">
+      <div className="aspect-[16/10] bg-tn-paper relative flex items-center justify-center overflow-hidden rounded-t-2xl">
         {getImage() ? (
           <Image
             src={getImage()}
@@ -536,47 +516,51 @@ function ListingGridCard({
                 </button>
 
                 {isMenuOpen && (
-                  <div className="absolute right-0 bottom-full mb-1 z-30 min-w-[140px] rounded-[12px] border border-tn-hair bg-white p-1.5 shadow-[0_8px_24px_rgba(11,11,11,0.12)] flex flex-col gap-1 text-left">
+                  <div className="absolute right-0 bottom-full mb-1.5 z-40 min-w-[160px] rounded-xl border border-tn-hair bg-white p-1.5 shadow-[0_12px_32px_rgba(11,11,11,0.12)] flex flex-col gap-0.5 text-left animate-in fade-in zoom-in-95 duration-100">
                     <Link
                       href={`/shop/dashboard/listings/edit?slug=${product.slug}`}
                       onClick={() => setOpenMenuId(null)}
-                      className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-semibold text-tn-ink hover:bg-tn-paper cursor-pointer"
+                      className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-tn-ink hover:bg-tn-paper transition-colors cursor-pointer"
                     >
                       <Pencil className="size-3.5 text-tn-mute" />
                       Edit
                     </Link>
 
+                    {/* Pause / Resume action */}
                     <button
                       type="button"
                       disabled={Boolean(inFlightAction)}
                       onClick={handlePauseToggle}
-                      className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50 cursor-pointer disabled:opacity-50"
+                      className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-tn-ink hover:bg-tn-paper transition-colors cursor-pointer disabled:opacity-50"
                     >
                       {inFlightAction === "pause" || inFlightAction === "resume" ? (
-                        <Loader2 className="size-3.5 animate-spin" />
+                        <Loader2 className="size-3.5 animate-spin text-tn-mute" />
                       ) : available ? (
-                        <Pause className="size-3.5 text-amber-600" />
+                        <Pause className="size-3.5 text-tn-mute" />
                       ) : (
-                        <Play className="size-3.5 text-green-600" />
+                        <Play className="size-3.5 text-tn-green" />
                       )}
                       {available ? "Pause listing" : "Resume listing"}
                     </button>
 
+                    {/* Mark sold action */}
                     {available && (
                       <button
                         type="button"
                         disabled={Boolean(inFlightAction)}
                         onClick={handleMarkSold}
-                        className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-semibold text-blue-800 hover:bg-blue-50 cursor-pointer disabled:opacity-50"
+                        className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-tn-ink hover:bg-tn-paper transition-colors cursor-pointer disabled:opacity-50"
                       >
                         {inFlightAction === "sold" ? (
-                          <Loader2 className="size-3.5 animate-spin" />
+                          <Loader2 className="size-3.5 animate-spin text-tn-mute" />
                         ) : (
-                          <Tag className="size-3.5 text-blue-700" />
+                          <Tag className="size-3.5 text-tn-mute" />
                         )}
                         Mark as sold
                       </button>
                     )}
+
+                    <div className="my-1 border-t border-tn-hair2" />
 
                     <button
                       type="button"
@@ -585,7 +569,7 @@ function ListingGridCard({
                         setOpenMenuId(null);
                         setShowDeleteModal(true);
                       }}
-                      className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-semibold text-tn-red hover:bg-tn-red-soft cursor-pointer disabled:opacity-50"
+                      className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-tn-red hover:bg-tn-red-soft transition-colors cursor-pointer disabled:opacity-50"
                     >
                       <Trash className="size-3.5 text-tn-red" />
                       Remove
@@ -648,6 +632,19 @@ export default function ListingsTable({ slug }: { slug: string }) {
   const [bulkInFlight, setBulkInFlight] = useState<boolean>(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [globalSuccess, setGlobalSuccess] = useState<string | null>(null);
+  const [tabCounts, setTabCounts] = useState<{
+    all: number;
+    live: number;
+    "needs-attention": number;
+    drafts: number;
+    sold: number;
+  }>({
+    all: 0,
+    live: 0,
+    "needs-attention": 0,
+    drafts: 0,
+    sold: 0,
+  });
 
   // Debounce search input
   useEffect(() => {
@@ -703,17 +700,76 @@ export default function ListingsTable({ slug }: { slug: string }) {
     slug,
   );
 
+  // Maintain stable tab counts across tab switches
+  useEffect(() => {
+    if (activeTab === "all" && products.length > 0) {
+      let live = 0;
+      let needsAttention = 0;
+      let sold = 0;
+      let drafts = 0;
+
+      for (const p of products) {
+        if (p.is_available) {
+          live++;
+          const f = freshness(p.last_confirmed_at, p.confirmation_status);
+          if (f.tone !== "fresh") {
+            needsAttention++;
+          }
+        } else if (p.status === "draft") {
+          drafts++;
+        } else {
+          sold++;
+        }
+      }
+
+      setTabCounts({
+        all: total || products.length,
+        live,
+        "needs-attention": needsAttention,
+        drafts,
+        sold,
+      });
+    } else if (products.length > 0 && tabCounts.all === 0) {
+      setTabCounts((prev) => ({
+        ...prev,
+        [activeTab]: total || products.length,
+        all: Math.max(prev.all, total || products.length),
+      }));
+    }
+  }, [products, total, activeTab, tabCounts.all]);
+
+  // Client-side fallback filter so tabs work smoothly regardless of backend filter variations
+  const displayedProducts = useMemo(() => {
+    return products.filter((p) => {
+      if (activeTab === "live") {
+        return p.is_available && p.status !== "draft";
+      }
+      if (activeTab === "needs-attention") {
+        if (!p.is_available || p.status === "draft") return false;
+        const f = freshness(p.last_confirmed_at, p.confirmation_status);
+        return f.tone !== "fresh";
+      }
+      if (activeTab === "drafts") {
+        return p.status === "draft";
+      }
+      if (activeTab === "sold") {
+        return !p.is_available || p.status === "sold";
+      }
+      return true;
+    });
+  }, [products, activeTab]);
+
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const allVisibleSelected =
-    products.length > 0 && products.every((p) => selected.includes(p.slug));
+    displayedProducts.length > 0 && displayedProducts.every((p) => selected.includes(p.slug));
 
   const toggleAll = () => {
     if (allVisibleSelected) {
-      const visibleSlugs = new Set(products.map((p) => p.slug));
+      const visibleSlugs = new Set(displayedProducts.map((p) => p.slug));
       setSelected(selected.filter((slug) => !visibleSlugs.has(slug)));
     } else {
-      const newSelected = new Set([...selected, ...products.map((p) => p.slug)]);
+      const newSelected = new Set([...selected, ...displayedProducts.map((p) => p.slug)]);
       setSelected(Array.from(newSelected));
     }
   };
@@ -752,6 +808,11 @@ export default function ListingsTable({ slug }: { slug: string }) {
         }),
       );
 
+      setTabCounts((prev) => ({
+        ...prev,
+        "needs-attention": Math.max(0, prev["needs-attention"] - res.confirmed.length),
+      }));
+
       setSelected([]);
       setGlobalSuccess(`Successfully confirmed ${res.confirmed.length} listings.`);
       refetch();
@@ -767,12 +828,37 @@ export default function ListingsTable({ slug }: { slug: string }) {
     setProducts((prev) =>
       prev.map((p) => (p.slug === updated.slug ? { ...p, ...updated } : p)),
     );
+    setTabCounts((prev) => {
+      const oldProd = products.find((p) => p.slug === updated.slug);
+      if (!oldProd) return prev;
+      let nextLive = prev.live;
+      let nextSold = prev.sold;
+      if (oldProd.is_available !== updated.is_available) {
+        if (updated.is_available) {
+          nextLive += 1;
+          nextSold = Math.max(0, nextSold - 1);
+        } else {
+          nextLive = Math.max(0, nextLive - 1);
+          nextSold += 1;
+        }
+      }
+      return { ...prev, live: nextLive, sold: nextSold };
+    });
   };
 
   const handleProductDeleted = (deletedSlug: string) => {
+    const deletedProd = products.find((p) => p.slug === deletedSlug);
     setProducts((prev) => prev.filter((p) => p.slug !== deletedSlug));
     setSelected((prev) => prev.filter((s) => s !== deletedSlug));
     setGlobalSuccess("Listing successfully removed.");
+    if (deletedProd) {
+      setTabCounts((prev) => ({
+        ...prev,
+        all: Math.max(0, prev.all - 1),
+        live: deletedProd.is_available ? Math.max(0, prev.live - 1) : prev.live,
+        sold: !deletedProd.is_available ? Math.max(0, prev.sold - 1) : prev.sold,
+      }));
+    }
     refetch();
   };
 
@@ -837,8 +923,7 @@ export default function ListingsTable({ slug }: { slug: string }) {
       <StatusFilter
         activeTab={activeTab}
         setActiveTab={handleTabChange}
-        products={products}
-        total={total}
+        counts={tabCounts}
       />
 
       {/* Toolbar */}
@@ -906,7 +991,7 @@ export default function ListingsTable({ slug }: { slug: string }) {
             Try again
           </button>
         </div>
-      ) : products.length === 0 ? (
+      ) : displayedProducts.length === 0 ? (
         <div className="py-20 px-5 flex flex-col items-center text-center bg-white rounded-[18px] border border-tn-hair">
           <div className="size-[84px] rounded-[22px] bg-tn-paper flex items-center justify-center text-tn-mute mb-4">
             <Icon name="box" size={36} />
@@ -941,7 +1026,7 @@ export default function ListingsTable({ slug }: { slug: string }) {
         </div>
       ) : view === "grid" ? (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(232px,1fr))] gap-4">
-          {products.map((item) => (
+          {displayedProducts.map((item) => (
             <ListingGridCard
               key={item.id}
               product={item}
@@ -957,15 +1042,15 @@ export default function ListingsTable({ slug }: { slug: string }) {
           ))}
         </div>
       ) : (
-        <div className="rounded-[18px] border border-tn-hair bg-white overflow-hidden">
-          <div className="overflow-x-auto">
+        <div className="rounded-[18px] border border-tn-hair bg-white">
+          <div className="overflow-x-auto min-h-[280px]">
             <table className="w-full border-collapse text-sm min-w-[760px]">
               <TableHeader
                 allSelected={allVisibleSelected}
                 toggleAll={toggleAll}
               />
               <tbody>
-                {products.map((item) => (
+                {displayedProducts.map((item, index) => (
                   <ListingRow
                     key={item.id}
                     product={item}
@@ -977,6 +1062,8 @@ export default function ListingsTable({ slug }: { slug: string }) {
                     onProductUpdated={handleProductUpdated}
                     onProductDeleted={handleProductDeleted}
                     onError={setGlobalError}
+                    rowIndex={index}
+                    totalRows={displayedProducts.length}
                   />
                 ))}
               </tbody>

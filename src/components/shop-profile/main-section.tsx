@@ -14,9 +14,10 @@ export function MainSection({
 }) {
   return (
     <div className="grid grid-cols-1 items-start gap-7 py-8 lg:grid-cols-[1fr_320px]">
-      {tab === "listings" ? (
+      <div className={tab === "listings" ? "block" : "hidden"}>
         <ListingSection slug={shop.slug} initialProducts={initialProducts} />
-      ) : (
+      </div>
+      {tab !== "listings" && (
         <div className="border-tn-hair rounded-2xl border bg-white p-8 text-center">
           <h3 className="text-tn-ink text-lg font-bold capitalize">{tab}</h3>
           <p className="text-tn-mute mt-1.5 text-sm">
