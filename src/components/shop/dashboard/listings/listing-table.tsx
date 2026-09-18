@@ -1008,14 +1008,14 @@ export default function ListingsTable({ slug }: { slug: string }) {
               ? "Nothing matches these filters. Try clearing search or switching tabs."
               : "Add your first product, or import your stock straight from Telegram in one go."}
           </p>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap justify-center items-center gap-3">
             <Pill
               kind="solid"
               size="md"
               icon="plus"
               href="/shop/dashboard/listings/new"
             >
-              Add a listing
+              Add your first product
             </Pill>
             <Pill
               kind="outline"
@@ -1027,6 +1027,11 @@ export default function ListingsTable({ slug }: { slug: string }) {
               Import from Telegram
             </Pill>
           </div>
+          {!isFiltered && (
+            <p className="text-xs text-tn-mute mt-6 max-w-[360px] leading-relaxed">
+              <strong className="text-tn-ink font-bold">What happens next:</strong> Once added, your product is immediately discoverable to local buyers. Confirm availability each morning to keep your stock active.
+            </p>
+          )}
         </div>
       ) : view === "grid" ? (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(232px,1fr))] gap-4">

@@ -8,6 +8,8 @@ import { hasShop } from "@/lib/auth/roles";
 import { readSession } from "@/lib/auth/session";
 import GetVerified from "@/components/shop/dashboard/get-verified/get-verified";
 
+import { getShop } from "@/lib/api";
+
 type Props = {
   params: Promise<{ navigation: string }>;
 };
@@ -61,9 +63,10 @@ export default async function DashboardSection({ params }: Props) {
   }
 
   if (navigation === "shop-profile") {
+    const fullShop = await getShop(shop.slug).catch(() => null);
     return (
       <section>
-        <ShopProfile />
+        <ShopProfile initialShop={fullShop} slug={shop.slug} access={access} />
       </section>
     );
   }

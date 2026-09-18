@@ -13,6 +13,7 @@ import Link from "next/link";
 import { confirmFreshness, markSold, pauseProduct, resumeProduct } from "@/lib/api";
 import DeleteListing from "../listings/delete-listing";
 import { Loader2, MoreHorizontal, Pause, Pencil, Play, Tag, Trash } from "lucide-react";
+import { GuidedFirstRun } from "./guided-first-run";
 
 type KpiItem = {
   label: string;
@@ -700,10 +701,13 @@ export default function Overview({
   slug: string;
   shopName: string;
 }) {
-  const { products } = useShopProducts({}, slug);
+  const { products, loading } = useShopProducts({}, slug);
 
   return (
     <div className="flex flex-col gap-6">
+      {products.length === 0 && !loading && (
+        <GuidedFirstRun shopName={shopName} />
+      )}
       <Numbers shopName={shopName} products={products} />
       <div className="grid md:grid-cols-2 gap-4">
         <DailyStockCheckIn products={products} />

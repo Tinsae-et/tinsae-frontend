@@ -62,7 +62,16 @@ freshest listings), with a header that lets you search and browse.
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | `/`         | Home / landing — hero, browse-by-category, top shops, freshest listings grid, trust & explainer sections                                   |
 | `/products` | Browse all listings — responsive product grid with skeletons, empty state, and infinite scroll. Supports `?category=<slug>`, `?q=<search>` |
+| `/shop/dashboard/shop-profile` | Shop settings — edit shop name, city, description, and contact phone; surfaces Telegram link and verification status       |
 | `/health`   | Backend system-status check (old status page)                                                                                              |
+
+### Stable URLs & Slug Policy (TIN-40)
+
+Shop URL slugs (`/shops/[slug]`) are immutable after shop registration and **do not regenerate upon rename**. This ensures:
+- Bookmarks, shared links, and printed QR codes remain active.
+- Telegram deep links and bot routing remain stable without broken link errors.
+- Search engine indexing for shop pages is preserved without complex redirects.
+
 
 ## How it runs
 

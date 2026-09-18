@@ -1,7 +1,8 @@
 // Central place for talking to the backend API.
 // The base URL comes from the environment so it can change per environment.
-import type { Category, Paginated, Product, Shop, ShopMetrics, ShopProduct } from "./types";
+import type { Category, Paginated, Product, Shop, ShopMetrics, ShopProduct, ShopProfile } from "./types";
 import { normalizeImageUrl } from "./format";
+
 
 // Dual-context base URL:
 //  - Server components (SSR, inside the dev container) reach the host backend
@@ -196,6 +197,45 @@ export async function getShop(slug: string): Promise<Shop> {
   });
   if (!res.ok) {
     throw new Error(`Could not load shop (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function updateShopProfile(
+  slug: string,
+  profile: Partial<ShopProfile> | FormData,
+  access: string,
+): Promise<Shop> {
+  const isFormData = typeof FormData !== "undefined" && profile instanceof FormData;
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${access}`,
+  };
+  if (!isFormData) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  const res = await fetch(`${API_URL}/api/v1/shops/${encodeURIComponent(slug)}/`, {
+    cache: "no-store",
+    method: "PATCH",
+    headers,
+    body: isFormData ? profile : JSON.stringify(profile),
+  });
+
+  if (!res.ok) {
+    let message = `Could not update shop (${res.status})`;
+    try {
+      const err = await res.json();
+      message =
+        err?.detail ||
+        err?.name?.[0] ||
+        err?.phone?.[0] ||
+        err?.city?.[0] ||
+        err?.description?.[0] ||
+        message;
+    } catch {
+      // Keep default message
+    }
+    throw new Error(message);
   }
   return res.json();
 }
