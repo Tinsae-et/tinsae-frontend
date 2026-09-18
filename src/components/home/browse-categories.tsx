@@ -9,14 +9,14 @@ export function BrowseCategories({ stats }: { stats?: ShopMetrics | null }) {
   const categoryCounts = stats?.category_product_count;
 
   return (
-    <section className="mx-auto mt-16 max-w-[1240px] px-6 lg:mt-[92px] lg:px-7">
+    <section className="mx-auto mt-16 max-w-[1480px] px-6 sm:px-8 lg:mt-[92px] lg:px-12 xl:px-16">
       <SectionHead
         eyebrow="Browse"
         title="Shop by category"
         href="/products"
         link="All categories"
       />
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 lg:gap-3.5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 lg:gap-3.5">
         {NAV_CATEGORIES.map((c) => {
           const count = categoryCounts?.[c.slug];
           const hasCount = count != null && count > 0;

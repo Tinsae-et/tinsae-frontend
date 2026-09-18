@@ -23,7 +23,7 @@ const ITEMS: { icon: IconName; color: string; title: string; body: string }[] = 
 
 export function Features() {
   return (
-    <section className="mx-auto mt-16 max-w-[1240px] px-6 lg:mt-20">
+    <section className="mx-auto mt-16 max-w-[1480px] px-6 sm:px-8 lg:mt-24 lg:px-12 xl:px-16">
       <div className="max-w-2xl">
         <p className="text-tn-red mb-3.5 text-[13px] font-bold tracking-[0.10em] uppercase">
           Why Tinsae

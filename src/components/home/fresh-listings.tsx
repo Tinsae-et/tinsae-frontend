@@ -4,7 +4,7 @@ import type { Product } from "@/lib/types";
 
 export function FreshListings({ products }: { products: Product[] }) {
   return (
-    <section className="mx-auto mt-16 max-w-[1240px] px-6 lg:mt-[88px]">
+    <section className="mx-auto mt-16 max-w-[1480px] px-6 sm:px-8 lg:mt-[88px] lg:px-12 xl:px-16">
       <SectionHead
         eyebrow="Confirmed today"
         title="Freshest listings in Bole"
@@ -20,7 +20,7 @@ export function FreshListings({ products }: { products: Product[] }) {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 lg:gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 lg:gap-4">
           {products.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}

@@ -144,7 +144,7 @@ export function ComparePageClient({
   const categoryLabel = firstCategory ? firstCategory.toLowerCase() : "products";
 
   return (
-    <div className="mx-auto max-w-[1280px] px-4 pt-6 pb-16 sm:px-6 lg:px-7">
+    <div className="mx-auto max-w-[1480px] px-6 pt-6 pb-16 sm:px-8 lg:px-12 xl:px-16">
       {/* ── Breadcrumbs ── */}
       <nav
         aria-label="Breadcrumb"

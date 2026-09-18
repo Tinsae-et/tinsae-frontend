@@ -29,7 +29,7 @@ export function Hero({ user, stats }: { user?: AuthUser | null; stats?: ShopMetr
 
   return (
     <section className="relative overflow-hidden bg-[radial-gradient(120%_90%_at_85%_-10%,#FFF1EB_0%,rgba(255,241,235,0)_55%)]">
-      <div className="mx-auto grid max-w-[1240px] grid-cols-1 items-center gap-10 px-6 pt-12 pb-10 lg:grid-cols-[1.08fr_0.92fr] lg:px-7 lg:pt-[72px]">
+      <div className="mx-auto grid max-w-[1480px] grid-cols-1 items-center gap-12 px-6 pt-12 pb-12 sm:px-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:px-12 xl:px-16 lg:pt-[80px]">
         <div className="min-w-0">
           <RotatingEyebrow />
 

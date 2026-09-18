@@ -90,7 +90,7 @@ export default function SavedPage() {
       <div className="min-h-screen bg-white">
         {/* Hero band */}
         <div className="border-tn-hair2 bg-[radial-gradient(120%_100%_at_90%_-20%,#FFF1EB_0%,rgba(255,241,235,0)_50%),#FFFFFF] border-b">
-          <div className="mx-auto max-w-[1240px] px-5 pt-6 sm:px-7">
+          <div className="mx-auto max-w-[1480px] px-6 pt-6 sm:px-8 lg:px-12 xl:px-16">
             {/* Breadcrumb */}
             <nav
               aria-label="Breadcrumb"
@@ -212,7 +212,7 @@ export default function SavedPage() {
         </div>
 
         {/* Content body */}
-        <div className="mx-auto flex max-w-[1240px] items-start gap-7 px-5 py-7 sm:px-7 sm:py-8">
+        <div className="mx-auto flex max-w-[1480px] items-start gap-7 px-6 py-7 sm:px-8 lg:px-12 xl:px-16 sm:py-8">
           <main className="min-w-0 flex-1">
             {loading ? (
               <SavedSkeleton />

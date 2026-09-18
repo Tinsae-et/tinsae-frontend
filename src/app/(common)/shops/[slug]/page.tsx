@@ -165,7 +165,7 @@ export default async function ShopProfilePage({ params }: Props) {
       </div>
 
       {/* ── Identity Header ── */}
-      <div className="mx-auto max-w-[1240px] px-6 lg:px-7">
+      <div className="mx-auto max-w-[1480px] px-6 sm:px-8 lg:px-12 xl:px-16">
         <div className="relative flex flex-wrap items-end justify-between gap-4 pb-2">
           <div className="flex items-end gap-5">
             <div

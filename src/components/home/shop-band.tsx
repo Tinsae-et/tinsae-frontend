@@ -3,7 +3,7 @@ import { Pill } from "@/components/tinsae/pill";
 
 export function ShopBand() {
   return (
-    <section className="mx-auto mt-16 max-w-[1240px] px-6 lg:mt-20">
+    <section className="mx-auto mt-16 max-w-[1480px] px-6 sm:px-8 lg:mt-24 lg:px-12 xl:px-16">
       <div className="bg-tn-paper border-tn-hair grid items-center gap-8 rounded-3xl border px-6 py-10 sm:px-11 lg:grid-cols-[1.1fr_0.9fr] lg:gap-11 lg:py-12">
         <div>
           <span className="border-tn-hair text-tn-ink2 mb-4 inline-flex items-center gap-1.5 rounded-full border bg-white px-3 py-1.5 text-[12.5px] font-bold">
