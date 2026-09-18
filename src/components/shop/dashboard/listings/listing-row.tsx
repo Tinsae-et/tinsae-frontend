@@ -24,6 +24,8 @@ export type ListingRowProps = {
   onProductUpdated?: (updated: ShopProduct) => void;
   onProductDeleted?: (slug: string) => void;
   onError?: (msg: string) => void;
+  rowIndex?: number;
+  totalRows?: number;
 };
 
 export function ListingRow({
@@ -36,6 +38,8 @@ export function ListingRow({
   onProductUpdated,
   onProductDeleted,
   onError,
+  rowIndex,
+  totalRows,
 }: ListingRowProps) {
   const [fresh, setFresh] = useState<Freshness>(() =>
     freshness(product.last_confirmed_at, product.confirmation_status),
@@ -47,6 +51,8 @@ export function ListingRow({
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
 
   const isMenuOpen = openMenuId === product.id;
+  const isNearBottom =
+    rowIndex !== undefined && totalRows !== undefined && totalRows > 1 && rowIndex >= totalRows - 2;
   const needConfirm = available && fresh.tone !== "fresh";
 
   const dotColor =
@@ -305,49 +311,58 @@ export function ListingRow({
             </button>
 
             {isMenuOpen && (
-              <div className="absolute right-0 top-full mt-1 z-30 min-w-[140px] rounded-[12px] border border-tn-hair bg-white p-1.5 shadow-[0_8px_24px_rgba(11,11,11,0.12)] flex flex-col gap-1 text-left animate-in fade-in zoom-in-95 duration-100">
+              <div
+                className={cn(
+                  "absolute right-0 z-40 min-w-[160px] rounded-xl border border-tn-hair bg-white p-1.5 shadow-[0_12px_32px_rgba(11,11,11,0.12)] flex flex-col gap-0.5 text-left animate-in fade-in zoom-in-95 duration-100",
+                  isNearBottom
+                    ? "bottom-full mb-1.5 origin-bottom-right"
+                    : "top-full mt-1.5 origin-top-right",
+                )}
+              >
                 <Link
                   href={`/shop/dashboard/listings/edit?slug=${product.slug}`}
                   onClick={() => setOpenMenuId(null)}
-                  className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-semibold text-tn-ink hover:bg-tn-paper cursor-pointer"
+                  className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-tn-ink hover:bg-tn-paper transition-colors cursor-pointer"
                 >
                   <Pencil className="size-3.5 text-tn-mute" />
                   Edit
                 </Link>
 
-                {/* Pause / Resume action (visually distinct) */}
+                {/* Pause / Resume action */}
                 <button
                   type="button"
                   disabled={Boolean(inFlightAction)}
                   onClick={handlePauseToggle}
-                  className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50 cursor-pointer disabled:opacity-50"
+                  className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-tn-ink hover:bg-tn-paper transition-colors cursor-pointer disabled:opacity-50"
                 >
                   {inFlightAction === "pause" || inFlightAction === "resume" ? (
-                    <Loader2 className="size-3.5 animate-spin" />
+                    <Loader2 className="size-3.5 animate-spin text-tn-mute" />
                   ) : available ? (
-                    <Pause className="size-3.5 text-amber-600" />
+                    <Pause className="size-3.5 text-tn-mute" />
                   ) : (
-                    <Play className="size-3.5 text-green-600" />
+                    <Play className="size-3.5 text-tn-green" />
                   )}
                   {available ? "Pause listing" : "Resume listing"}
                 </button>
 
-                {/* Mark sold action (visually distinct) */}
+                {/* Mark sold action */}
                 {available && (
                   <button
                     type="button"
                     disabled={Boolean(inFlightAction)}
                     onClick={handleMarkSold}
-                    className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-semibold text-blue-800 hover:bg-blue-50 cursor-pointer disabled:opacity-50"
+                    className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-tn-ink hover:bg-tn-paper transition-colors cursor-pointer disabled:opacity-50"
                   >
                     {inFlightAction === "sold" ? (
-                      <Loader2 className="size-3.5 animate-spin" />
+                      <Loader2 className="size-3.5 animate-spin text-tn-mute" />
                     ) : (
-                      <Tag className="size-3.5 text-blue-700" />
+                      <Tag className="size-3.5 text-tn-mute" />
                     )}
                     Mark as sold
                   </button>
                 )}
+
+                <div className="my-1 border-t border-tn-hair2" />
 
                 <button
                   type="button"
@@ -356,7 +371,7 @@ export function ListingRow({
                     setOpenMenuId(null);
                     setShowDeleteModal(true);
                   }}
-                  className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-semibold text-tn-red hover:bg-tn-red-soft cursor-pointer disabled:opacity-50"
+                  className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-tn-red hover:bg-tn-red-soft transition-colors cursor-pointer disabled:opacity-50"
                 >
                   <Trash className="size-3.5 text-tn-red" />
                   Remove

@@ -243,6 +243,7 @@ export function ActionMenu({
   setAvailable,
   onDeleted,
   onPauseToggle,
+  isNearBottom,
 }: {
   onClose: () => void;
   product: ShopProduct;
@@ -250,6 +251,7 @@ export function ActionMenu({
   setAvailable?: (val: boolean) => void;
   onDeleted?: (slug: string) => void;
   onPauseToggle?: (isAvailable: boolean) => void;
+  isNearBottom?: boolean;
 }) {
   const [deleteItem, setDeleteItem] = useState<boolean>(false);
   const [inFlight, setInFlight] = useState<string | null>(null);
@@ -297,12 +299,17 @@ export function ActionMenu({
   return (
     <div
       data-row-action
-      className="absolute right-0 top-full mt-1 z-30 min-w-[130px] rounded-[12px] border border-tn-hair bg-white p-1.5 shadow-[0_8px_24px_rgba(11,11,11,0.12)] flex flex-col gap-1"
+      className={cn(
+        "absolute right-0 z-40 min-w-[160px] rounded-xl border border-tn-hair bg-white p-1.5 shadow-[0_12px_32px_rgba(11,11,11,0.12)] flex flex-col gap-0.5 text-left animate-in fade-in zoom-in-95 duration-100",
+        isNearBottom
+          ? "bottom-full mb-1.5 origin-bottom-right"
+          : "top-full mt-1.5 origin-top-right",
+      )}
     >
       <Link
         href={`/shop/dashboard/listings/edit?slug=${product.slug}`}
         onClick={onClose}
-        className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-semibold text-tn-ink hover:bg-tn-paper cursor-pointer"
+        className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-tn-ink hover:bg-tn-paper transition-colors cursor-pointer"
       >
         <Pencil className="size-3.5 text-tn-mute" />
         Edit
@@ -314,16 +321,16 @@ export function ActionMenu({
           type="button"
           disabled={Boolean(inFlight)}
           onClick={handlePauseToggle}
-          className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50 cursor-pointer disabled:opacity-50"
+          className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-tn-ink hover:bg-tn-paper transition-colors cursor-pointer disabled:opacity-50"
         >
           {inFlight === "pause" ? (
-            <Loader2 className="size-3.5 animate-spin" />
+            <Loader2 className="size-3.5 animate-spin text-tn-mute" />
           ) : product.is_available ? (
-            <Pause className="size-3.5 text-amber-600" />
+            <Pause className="size-3.5 text-tn-mute" />
           ) : (
-            <Play className="size-3.5 text-green-600" />
+            <Play className="size-3.5 text-tn-green" />
           )}
-          {product.is_available ? "Pause" : "Resume"}
+          {product.is_available ? "Pause listing" : "Resume listing"}
         </button>
       )}
 
@@ -333,22 +340,24 @@ export function ActionMenu({
           type="button"
           disabled={Boolean(inFlight)}
           onClick={handleMarkSold}
-          className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-semibold text-blue-800 hover:bg-blue-50 cursor-pointer disabled:opacity-50"
+          className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-tn-ink hover:bg-tn-paper transition-colors cursor-pointer disabled:opacity-50"
         >
           {inFlight === "sold" ? (
-            <Loader2 className="size-3.5 animate-spin" />
+            <Loader2 className="size-3.5 animate-spin text-tn-mute" />
           ) : (
-            <Tag className="size-3.5 text-blue-700" />
+            <Tag className="size-3.5 text-tn-mute" />
           )}
-          Mark sold
+          Mark as sold
         </button>
       )}
+
+      <div className="my-1 border-t border-tn-hair2" />
 
       <button
         type="button"
         disabled={Boolean(inFlight)}
         onClick={() => setDeleteItem(true)}
-        className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-semibold text-tn-red hover:bg-tn-red-soft cursor-pointer disabled:opacity-50"
+        className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-tn-red hover:bg-tn-red-soft transition-colors cursor-pointer disabled:opacity-50"
       >
         <Trash className="size-3.5 text-tn-red" />
         Remove
@@ -379,6 +388,8 @@ function TableRow({
   openMenuId,
   setOpenMenuId,
   shopSlug,
+  rowIndex,
+  totalRows,
 }: {
   product: ShopProduct;
   isSelected: boolean;
@@ -386,11 +397,15 @@ function TableRow({
   openMenuId: number | null;
   setOpenMenuId: (id: number | null) => void;
   shopSlug?: string;
+  rowIndex?: number;
+  totalRows?: number;
 }) {
   const [fresh, setFresh] = useState<Freshness>(() =>
     freshness(product.last_confirmed_at, product.confirmation_status),
   );
   const isMenuOpen = openMenuId === product.id;
+  const isNearBottom =
+    rowIndex !== undefined && totalRows !== undefined && totalRows > 1 && rowIndex >= totalRows - 2;
   const [needConfirm, setNeedConfirm] = useState<boolean>(
     () => product.is_available && fresh.tone !== "fresh",
   );
@@ -517,6 +532,7 @@ function TableRow({
                   product={product}
                   shopSlug={shopSlug}
                   onClose={() => setOpenMenuId(null)}
+                  isNearBottom={isNearBottom}
                 />
               )}
             </div>
@@ -565,12 +581,12 @@ function ListingsTable({
   }, [openMenuId]);
 
   return (
-    <div className="rounded-[18px] border border-tn-hair bg-white overflow-hidden">
+    <div className="rounded-[18px] border border-tn-hair bg-white">
       {/* Header */}
       <ListingTableHeader selected={selected} products={products} />
 
       {/* Table */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto min-h-[280px]">
         <table className="w-full border-collapse text-sm min-w-[760px]">
           <thead>
             <tr className="border-y border-tn-hair2 bg-tn-paper text-[10.5px] font-bold uppercase tracking-[0.05em] text-tn-mute">
@@ -585,7 +601,7 @@ function ListingsTable({
             </tr>
           </thead>
           <tbody>
-            {products.map((product) => {
+            {products.map((product, idx) => {
               const isSelected = selected.includes(product.id);
               return (
                 <TableRow
@@ -596,6 +612,8 @@ function ListingsTable({
                   openMenuId={openMenuId}
                   setOpenMenuId={setOpenMenuId}
                   shopSlug={shopSlug}
+                  rowIndex={idx}
+                  totalRows={products.length}
                 />
               );
             })}

@@ -8,6 +8,7 @@ import {
   pauseProduct,
   resumeProduct,
 } from "./api";
+import { clearShopProductsCache, getShopProductsCacheKey } from "@/hooks/use-products";
 
 describe("Shop Product Listings API client", () => {
   const originalFetch = globalThis.fetch;
@@ -153,5 +154,31 @@ describe("Shop Product Listings API client", () => {
     await expect(confirmFreshness("test-shop", "failing-item")).rejects.toThrow(
       "Couldn't confirm freshness (500)",
     );
+  });
+
+  it("normalizes default query params so Overview and ListingsTable share the same cache key", () => {
+    const keyFromOverview = getShopProductsCacheKey("shewa-electronics", {});
+    const keyFromListings = getShopProductsCacheKey("shewa-electronics", {
+      page: 1,
+      pageSize: 20,
+      ordering: "-created_at",
+    });
+
+    expect(keyFromOverview).toBe(keyFromListings);
+    expect(keyFromOverview).toContain("shewa-electronics");
+  });
+
+  it("distinguishes different queries and shops in cache keys", () => {
+    const key1 = getShopProductsCacheKey("shewa-electronics", { page: 1 });
+    const key2 = getShopProductsCacheKey("shewa-electronics", { page: 2 });
+    const keyOtherShop = getShopProductsCacheKey("other-shop", { page: 1 });
+
+    expect(key1).not.toBe(key2);
+    expect(key1).not.toBe(keyOtherShop);
+  });
+
+  it("clears shop cache without throwing", () => {
+    expect(() => clearShopProductsCache("shewa-electronics")).not.toThrow();
+    expect(() => clearShopProductsCache()).not.toThrow();
   });
 });
