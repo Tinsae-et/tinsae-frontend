@@ -722,19 +722,23 @@ export default function ListingsTable({ slug }: { slug: string }) {
         }
       }
 
-      setTabCounts({
-        all: total || products.length,
-        live,
-        "needs-attention": needsAttention,
-        drafts,
-        sold,
+      queueMicrotask(() => {
+        setTabCounts({
+          all: total || products.length,
+          live,
+          "needs-attention": needsAttention,
+          drafts,
+          sold,
+        });
       });
     } else if (products.length > 0 && tabCounts.all === 0) {
-      setTabCounts((prev) => ({
-        ...prev,
-        [activeTab]: total || products.length,
-        all: Math.max(prev.all, total || products.length),
-      }));
+      queueMicrotask(() => {
+        setTabCounts((prev) => ({
+          ...prev,
+          [activeTab]: total || products.length,
+          all: Math.max(prev.all, total || products.length),
+        }));
+      });
     }
   }, [products, total, activeTab, tabCounts.all]);
 

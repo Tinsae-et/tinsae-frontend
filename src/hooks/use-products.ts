@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getProducts, getPublicShopProducts, getShopProducts, ShopProductQuery, type ProductQuery } from "@/lib/api";
 import type { Paginated, Product, ShopProduct } from "@/lib/types";
 import { PRODUCTS_PAGE_SIZE } from "@/components/products/product-grid";
@@ -238,9 +238,9 @@ export function useShopProducts(query: ShopProductQuery, slug: string) {
   const controllerRef = useRef<AbortController | null>(null);
 
   // Sync state if cacheKey changes and we already have cached data for it
-  const prevCacheKey = useRef(cacheKey);
-  if (prevCacheKey.current !== cacheKey) {
-    prevCacheKey.current = cacheKey;
+  const [prevCacheKey, setPrevCacheKey] = useState(cacheKey);
+  if (prevCacheKey !== cacheKey) {
+    setPrevCacheKey(cacheKey);
     const currentCached = shopProductsCache.get(cacheKey);
     if (currentCached) {
       setProducts(currentCached.products);
@@ -256,11 +256,6 @@ export function useShopProducts(query: ShopProductQuery, slug: string) {
   const fetchPage = useCallback(
     async (signal?: AbortSignal) => {
       const currentCached = shopProductsCache.get(cacheKey);
-      if (!currentCached) {
-        setLoading(true);
-      }
-      setError(null);
-
       try {
         const data = await getShopProducts(slug, query, { signal });
         if (signal?.aborted) return;
@@ -283,7 +278,7 @@ export function useShopProducts(query: ShopProductQuery, slug: string) {
         }
       }
     },
-    [cacheKey, query, slug],
+    [cacheKey, query, setError, setLoading, setProducts, setTotal, slug],
   );
 
   useEffect(() => {
@@ -291,7 +286,9 @@ export function useShopProducts(query: ShopProductQuery, slug: string) {
     const controller = new AbortController();
     controllerRef.current = controller;
 
-    fetchPage(controller.signal);
+    queueMicrotask(() => {
+      void fetchPage(controller.signal);
+    });
 
     return () => {
       controller.abort();
@@ -313,7 +310,7 @@ export function useShopProducts(query: ShopProductQuery, slug: string) {
         return next;
       });
     },
-    [cacheKey],
+    [cacheKey, setProducts],
   );
 
   return {
@@ -331,7 +328,7 @@ export function usePublicShopProducts(
   slug: string,
   initial?: Paginated<Product> | null,
 ) {
-  const filterQuery: ShopProductQuery = { ...query, page: undefined };
+  const filterQuery: ShopProductQuery = useMemo(() => ({ ...query, page: undefined }), [query]);
   const filterKey = JSON.stringify(filterQuery);
 
   const [products, setProducts] = useState<Product[]>(initial?.results ?? []);
