@@ -101,6 +101,31 @@ export type ShopProduct = {
   images?: ProductImage[];
 };
 
+export type NewProduct = {
+  name: string;
+  brand: string;
+  description: string;
+  price: string;
+  currency: string;
+  category: string;
+  condition: string;
+  is_available: boolean;
+  stock: number;
+  specs: Record<string, unknown>;
+  status: string;
+  slug?: string;
+}
+
+export type ShopProductImage = {
+  id?: number;
+  image: File | string;
+  is_primary: boolean;
+  display_order: number;
+  preview: string;
+  product?: ShopProduct;
+  url?: string;
+};
+
 export type ShopMetrics = {
   verified_shops?: number;
   total_products?: number;

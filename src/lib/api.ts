@@ -1,6 +1,6 @@
 // Central place for talking to the backend API.
 // The base URL comes from the environment so it can change per environment.
-import type { Category, Paginated, Product, Shop, ShopMetrics, ShopProduct, ShopProfile } from "./types";
+import type { Category, NewProduct, Paginated, Product, ProductImage, Shop, ShopMetrics, ShopProduct, ShopProductImage, ShopProfile } from "./types";
 import { normalizeImageUrl } from "./format";
 
 
@@ -18,6 +18,18 @@ const API_URL =
 
 /** Catalog routes live under /api/v1/catalog/ (config/urls.py). */
 const CATALOG = `${API_URL}/api/v1/catalog`;
+
+export class ApiError extends Error {
+  status: number;
+  data?: Record<string, unknown>;
+
+  constructor(message: string, status: number, data?: Record<string, unknown>) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.data = data;
+  }
+}
 
 export async function getHealth(): Promise<{ status: string; database: string }> {
   const res = await fetch(`${API_URL}/api/health/`, { cache: "no-store" });
@@ -240,6 +252,35 @@ export async function updateShopProfile(
   return res.json();
 }
 
+export async function getShopProduct(slug: string, s_slug: string, access: string): Promise<ShopProduct> {
+  const res = await fetch(`${API_URL}/api/v1/shops/${s_slug}/products/${slug}/`, {
+    headers: {
+      "Authorization": `Bearer ${access}`,
+    },
+  });
+  if (!res.ok) {
+    let errorData: Record<string, unknown> | null = null;
+    try {
+      errorData = (await res.json()) as Record<string, unknown>;
+    } catch {}
+    const detail = typeof errorData?.detail === "string" ? errorData.detail : undefined;
+    throw new ApiError(detail || `Couldn't load product (${res.status})`, res.status, errorData ?? undefined);
+  }
+  return res.json();
+}
+
+export async function getProductImages(slug: string, s_slug: string, access: string): Promise<Paginated<ShopProductImage>> {
+  const res = await fetch(`${API_URL}/api/v1/shops/${s_slug}/products/${slug}/images/`, {
+    headers:{
+      "Authorization": `Bearer ${access}`
+    }
+  })
+  if(!res.ok){
+    throw new Error(`Couldn't load product images (${res.status})`)
+  }
+  return res.json()
+}
+
 export async function getPublicShopProducts(
   slug: string,
   query: ShopProductQuery = {},
@@ -394,4 +435,151 @@ export async function resumeProduct(
     throw new Error(`An error occurred when resuming product (${res.status})`);
   }
   return res.json();
+}
+
+export async function createListing(product: NewProduct, s_slug: string, access?: string): Promise<ShopProduct> {
+  const url = typeof window === "undefined" || access
+    ? `${API_URL}/api/v1/shops/${encodeURIComponent(s_slug)}/products/`
+    : `/api/shop/${encodeURIComponent(s_slug)}/products`;
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (access) {
+    headers["Authorization"] = `Bearer ${access}`;
+  }
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(product),
+  });
+  if (!res.ok) {
+    let errorData: Record<string, unknown> | null = null;
+    try {
+      errorData = (await res.json()) as Record<string, unknown>;
+    } catch {}
+    const detail = typeof errorData?.detail === "string" ? errorData.detail : undefined;
+    throw new ApiError(detail || `Cannot create listing (${res.status})`, res.status, errorData ?? undefined);
+  }
+  return res.json();
+}
+
+export async function updateListing(product: NewProduct, s_slug: string, access?: string): Promise<ShopProduct> {
+  const url = typeof window === "undefined" || access
+    ? `${API_URL}/api/v1/shops/${encodeURIComponent(s_slug)}/products/${encodeURIComponent(product.slug!)}/`
+    : `/api/shop/${encodeURIComponent(s_slug)}/products/${encodeURIComponent(product.slug!)}`;
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (access) {
+    headers["Authorization"] = `Bearer ${access}`;
+  }
+
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers,
+    body: JSON.stringify(product),
+  });
+  if (!res.ok) {
+    let errorData: Record<string, unknown> | null = null;
+    try {
+      errorData = (await res.json()) as Record<string, unknown>;
+    } catch {}
+    const detail = typeof errorData?.detail === "string" ? errorData.detail : undefined;
+    throw new ApiError(detail || `Cannot update listing (${res.status})`, res.status, errorData ?? undefined);
+  }
+  return res.json();
+}
+
+export async function uploadListingImage(p_slug: string, s_slug: string, image: ShopProductImage, access?: string): Promise<ProductImage> {
+  const url = typeof window === "undefined" || access
+    ? `${API_URL}/api/v1/shops/${encodeURIComponent(s_slug)}/products/${encodeURIComponent(p_slug)}/images/`
+    : `/api/shop/${encodeURIComponent(s_slug)}/products/${encodeURIComponent(p_slug)}/images`;
+
+  const formData = new FormData();
+  formData.append("image", image.image);
+  formData.append("display_order", String(image.display_order));
+  formData.append("is_primary", String(image.is_primary));
+
+  const headers: Record<string, string> = {};
+  if (access) {
+    headers["Authorization"] = `Bearer ${access}`;
+  }
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  if (!res.ok) {
+    let errorData: Record<string, unknown> | null = null;
+    try {
+      errorData = (await res.json()) as Record<string, unknown>;
+    } catch {}
+    const detail = typeof errorData?.detail === "string" ? errorData.detail : undefined;
+    throw new ApiError(detail || `Failed uploading product image (${res.status})`, res.status, errorData ?? undefined);
+  }
+  return res.json();
+}
+
+export async function updateListingImage(p_slug: string, s_slug: string, image: ShopProductImage, access?: string): Promise<ProductImage> {
+  const url = typeof window === "undefined" || access
+    ? `${API_URL}/api/v1/shops/${encodeURIComponent(s_slug)}/products/${encodeURIComponent(p_slug)}/images/${encodeURIComponent(String(image.id))}/`
+    : `/api/shop/${encodeURIComponent(s_slug)}/products/${encodeURIComponent(p_slug)}/images/${encodeURIComponent(String(image.id))}`;
+
+  const formData = new FormData();
+  if (image.image instanceof File) {
+    formData.append("image", image.image);
+  }
+  formData.append("display_order", String(image.display_order));
+  formData.append("is_primary", String(image.is_primary));
+
+  const headers: Record<string, string> = {};
+  if (access) {
+    headers["Authorization"] = `Bearer ${access}`;
+  }
+
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers,
+    body: formData,
+  });
+
+  if (!res.ok) {
+    let errorData: Record<string, unknown> | null = null;
+    try {
+      errorData = (await res.json()) as Record<string, unknown>;
+    } catch {}
+    const detail = typeof errorData?.detail === "string" ? errorData.detail : undefined;
+    throw new ApiError(detail || `Failed updating product image (${res.status})`, res.status, errorData ?? undefined);
+  }
+  return res.json();
+}
+
+export async function deleteListingImage(p_slug: string, s_slug: string, imageId: number, access?: string): Promise<void> {
+  const url = typeof window === "undefined" || access
+    ? `${API_URL}/api/v1/shops/${encodeURIComponent(s_slug)}/products/${encodeURIComponent(p_slug)}/images/${encodeURIComponent(String(imageId))}/`
+    : `/api/shop/${encodeURIComponent(s_slug)}/products/${encodeURIComponent(p_slug)}/images/${encodeURIComponent(String(imageId))}`;
+
+  const headers: Record<string, string> = {};
+  if (access) {
+    headers["Authorization"] = `Bearer ${access}`;
+  }
+
+  const res = await fetch(url, {
+    method: "DELETE",
+    headers,
+  });
+
+  if (!res.ok && res.status !== 204) {
+    let errorData: Record<string, unknown> | null = null;
+    try {
+      errorData = (await res.json()) as Record<string, unknown>;
+    } catch {}
+    const detail = typeof errorData?.detail === "string" ? errorData.detail : undefined;
+    throw new ApiError(detail || `Failed deleting product image (${res.status})`, res.status, errorData ?? undefined);
+  }
 }

@@ -2,6 +2,7 @@ import React from "react";
 import { Icon } from "@/components/tinsae/icon";
 import { Pill } from "@/components/tinsae/pill";
 import Link from "next/link";
+import { Check } from "lucide-react";
 
 export const OverviewHeader = ({
   setShowSidebar,
@@ -90,8 +91,11 @@ export const NewListingHeader = ({
 }: {
   setShowSidebar: (val: boolean) => void;
 }) => {
+  const pathname = typeof window !== "undefined" ? window.location.pathname : "";
+  const isEdit = pathname.includes("/edit");
+
   return (
-    <div className="w-full flex items-center justify-between">
+    <div className="flex items-center justify-between w-full">
       <div className="flex items-center gap-3">
         <button
           type="button"
@@ -107,10 +111,10 @@ export const NewListingHeader = ({
               Listings
             </Link>
             <Icon name="chevron" size={11} className="text-tn-mute" />
-            <span className="font-bold text-tn-ink">New listing</span>
+            <span className="font-bold text-tn-ink">{isEdit ? "Edit listing" : "New listing"}</span>
           </div>
           <span className="text-[19px] font-extrabold tracking-[-0.025em] text-tn-ink leading-tight mt-0.5">
-            Add a listing
+            {isEdit ? "Edit listing" : "Add a listing"}
           </span>
         </div>
       </div>
@@ -119,9 +123,14 @@ export const NewListingHeader = ({
         <Pill kind="outline" size="sm">
           Save draft
         </Pill>
-        <Pill kind="solid" size="sm" icon="check">
-          Publish listing
-        </Pill>
+        <button 
+          className="inline-flex items-center justify-center gap-2 rounded-full font-bold tracking-[-0.01em] whitespace-nowrap transition-[transform,box-shadow,background] duration-150 hover:-translate-y-px hover:bg-tn-red/90 bg-tn-red py-2 px-4 text-white cursor-pointer shadow-[0_2px_8px_rgba(204,48,0,0.2)]"
+          type="submit"
+          form="product-form"
+        >
+          <Check className="w-4 h-4"/>
+          {isEdit ? "Save changes" : "Publish listing"}
+        </button>
       </div>
     </div>
   );

@@ -1,157 +1,257 @@
-"use client"
+"use client";
 
+import React, { useState } from "react";
+import Image from "next/image";
 import { Icon } from "@/components/tinsae/icon";
 import { kindForSlug, ProdPlaceholder } from "@/components/tinsae/prod-placeholder";
+import { ShopProductImage } from "@/lib/types";
+import { normalizeImageUrl } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
 
 interface ChecklistItem {
-    id: string;
-    label: string;
-    done: boolean;
+  id: string;
+  label: string;
+  done: boolean;
 }
 
-const CHECKLIST: ChecklistItem[] = [
-    { id: "name", label: "Product name", done: false },
-    { id: "photo", label: "At least one photo", done: false },
-    { id: "price", label: "Price set", done: false },
-    { id: "condition", label: "Condition", done: true },
-];
+export interface ProductPreviewProps {
+  name?: string;
+  category?: string;
+  brand?: string;
+  variant?: string;
+  price?: string;
+  isAvailable?: boolean;
+  coverPhoto?: ShopProductImage | null;
+}
 
+export function ProductPreview({
+  name = "",
+  category = "phone",
+  brand = "",
+  variant = "",
+  price = "",
+  isAvailable = true,
+  coverPhoto = null,
+}: ProductPreviewProps) {
+  const displayPrice = (() => {
+    if (!price) return "0";
+    const num = parseFloat(price);
+    return isNaN(num) ? "0" : num.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  })();
 
-export function ProductPreview() {
+  const coverSrc = (() => {
+    if (!coverPhoto) return null;
+    if (coverPhoto.image instanceof File) {
+      if (typeof coverPhoto.preview === "string" && coverPhoto.preview.startsWith("blob:")) {
+        return coverPhoto.preview;
+      }
+      return URL.createObjectURL(coverPhoto.image);
+    }
+    const src = coverPhoto.preview || coverPhoto.image || coverPhoto.url;
+    if (typeof src === "string") {
+      return normalizeImageUrl(src) || src;
+    }
+    return null;
+  })();
 
-    return (
-        <div className="pt-15">
-            <span className="text-xs font-bold text-black">BUYER WILL SEE</span>
-            <article className="border-tn-hair flex flex-col overflow-hidden rounded-[18px] border bg-white">
-                <div className="bg-tn-paper relative aspect-square flex items-center justify-center">
+  return (
+    <div>
+      <span className="text-[11px] font-extrabold tracking-[0.08em] uppercase text-tn-mute mb-2.5 block">
+        Buyers will see
+      </span>
+      <article className="border border-tn-hair flex flex-col overflow-hidden rounded-[18px] bg-white pointer-events-none shadow-[0_2px_8px_rgba(11,11,11,0.03)]">
+        <div className="bg-tn-paper relative aspect-square flex items-center justify-center overflow-hidden">
+          {coverSrc ? (
+            <Image
+              src={coverSrc}
+              alt={name || "Product preview"}
+              fill
+              unoptimized
+              className="object-cover"
+            />
+          ) : (
+            <ProdPlaceholder kind={kindForSlug(category || "phone")} />
+          )}
 
-                    <ProdPlaceholder kind={kindForSlug("phone")} />
+          <span
+            className={cn(
+              "absolute top-3 left-3 inline-flex h-[26px] items-center gap-1 rounded-full px-2.5 text-[11.5px] font-bold z-10 backdrop-blur-xs",
+              isAvailable
+                ? "bg-white/95 text-tn-ink border border-tn-hair/60 shadow-xs"
+                : "bg-tn-paper/95 text-tn-mute border border-tn-hair"
+            )}
+          >
+            <Icon name="check" size={12} className={isAvailable ? "text-tn-green" : "text-tn-mute"} />
+            {isAvailable ? "In stock" : "Unavailable"}
+          </span>
 
-                    <span
-                        className="absolute top-3 left-3 inline-flex h-[26px] items-center gap-1 rounded-full bg-white/95 px-2.5 text-[11.5px] font-semibold"
-                    >
-                        <Icon name="check" size={12} />
-                        In stock
-                    </span>
-
-                    <button
-                        className="bg-white/95 text-tn-ink2 absolute top-3 right-3 z-1 inline-flex size-8 items-center justify-center rounded-[10px] shadow-[0_2px_8px_rgba(11,11,11,0.06)] transition-colors"
-                    >
-                        <Icon name="heart" size={15} />
-                    </button>
-                </div>
-
-                <div className="px-[18px] pt-4 pb-[18px]">
-                    <p className="text-tn-mute truncate text-[10.5px] font-bold tracking-[0.06em] uppercase">
-                        phone
-                    </p>
-                    <h3 className="text-tn-ink mt-1 truncate text-[15.5px] leading-tight font-extrabold tracking-[-0.02em]">
-                        Your product name
-                    </h3>
-                    <span className="text-sm text-gray-400">Add a model /variant</span>
-                    <p className="mt-3 flex items-baseline gap-1.5">
-                        <span className="text-tn-mute text-[10.5px] font-semibold tracking-[0.04em] uppercase">
-                            From
-                        </span>
-                        <span className="font-tn-mono text-tn-red text-base font-semibold tracking-[-0.02em]">
-                            ETB 0
-                        </span>
-                    </p>
-
-                    <div className="border-tn-hair2 text-tn-ink2 mt-3 flex justify-between items-center gap-1.5 border-t pt-3 text-[11.5px]">
-                        <span className="font-tn-mono text-tn-mute flex min-w-0 items-center gap-1.5 text-[10.5px] sm:text-xs">
-                            <span className={cn("size-1.5 shrink-0 rounded-full", "bg-tn-green")} />
-                            <span className="truncate">1 shops</span>
-                        </span>
-                        <span className="font-tn-mono text-tn-mute flex min-w-0 items-center gap-1.5 text-[10.5px] sm:text-xs">
-                            <span className={cn("size-1.5 shrink-0 rounded-full", "bg-tn-green")} />
-                            <span className="truncate">1h ago</span>
-                        </span>
-                    </div>
-                </div>
-            </article>
+          <span className="bg-white/95 text-tn-ink2 absolute top-3 right-3 z-10 inline-flex size-8 items-center justify-center rounded-[10px] shadow-[0_2px_8px_rgba(11,11,11,0.06)]">
+            <Icon name="heart" size={15} />
+          </span>
         </div>
-    )
+
+        <div className="px-[18px] pt-4 pb-[18px]">
+          <p className="text-tn-mute truncate text-[10.5px] font-bold tracking-[0.06em] uppercase">
+            {brand || category || "Product"}
+          </p>
+          <h3 className="text-tn-ink mt-1 truncate text-[15.5px] leading-tight font-extrabold tracking-[-0.02em]">
+            {name.trim() || "Your product name"}
+          </h3>
+          <p className="text-xs text-tn-mute mt-0.5 truncate">
+            {variant.trim() || "Add a model / variant"}
+          </p>
+
+          <p className="mt-3 flex items-baseline gap-1.5">
+            <span className="text-tn-mute text-[10.5px] font-semibold tracking-[0.04em] uppercase">
+              ETB
+            </span>
+            <span className="font-tn-mono text-tn-ink text-lg font-bold tracking-[-0.02em]">
+              {displayPrice}
+            </span>
+          </p>
+
+          <div className="border-t border-tn-hair2 text-tn-ink2 mt-3 flex justify-between items-center gap-1.5 pt-3 text-[11.5px]">
+            <span className="font-tn-mono text-tn-mute flex min-w-0 items-center gap-1.5 text-[10.5px]">
+              <span className="size-1.5 shrink-0 rounded-full bg-tn-green" />
+              <span className="truncate">1 shop</span>
+            </span>
+            <span className="font-tn-mono text-tn-mute flex min-w-0 items-center gap-1.5 text-[10.5px]">
+              <span className="size-1.5 shrink-0 rounded-full bg-tn-green" />
+              <span className="truncate">1h ago</span>
+            </span>
+          </div>
+        </div>
+      </article>
+    </div>
+  );
 }
 
 export function DailyStockCheckIn() {
-    const [dailyCheckIn, setDailyCheckIn] = useState(true);
-    return (
-        <div className="rounded-2xl border border-neutral-200 bg-white p-4">
-            <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-blue-400">
-                    <Icon name="tg" />
-                </div>
-                <div className="flex-1">
-                    <div className="text-sm font-semibold text-neutral-900">
-                        Daily stock check-in
-                    </div>
-                    <div className="text-xs text-neutral-400">
-                        Include in the 9:00 am bot ping
-                    </div>
-                </div>
-                <button
-                    type="button"
-                    role="switch"
-                    aria-checked={dailyCheckIn}
-                    onClick={() => setDailyCheckIn((v) => !v)}
-                    className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${dailyCheckIn ? "bg-emerald-600" : "bg-neutral-200"
-                        }`}
-                >
-                    <span
-                        className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${dailyCheckIn ? "translate-x-5" : "translate-x-0.5"
-                            }`}
-                    />
-                </button>
-            </div>
+  const [dailyCheckIn, setDailyCheckIn] = useState(true);
 
-            <div className="mt-3 rounded-xl bg-neutral-50 px-3.5 py-3 text-xs text-neutral-500">
-                Buyers see a &quot;confirmed today&quot; badge while you keep it fresh.
-            </div>
+  return (
+    <div className="rounded-[16px] border border-tn-hair bg-white p-4">
+      <div className="flex items-center gap-3">
+        <div className="flex size-[38px] shrink-0 items-center justify-center rounded-[10px] bg-[#E9F5FB] text-[#229ED9]">
+          <Icon name="tg" size={19} />
         </div>
-    )
+        <div className="flex-1 min-w-0">
+          <div className="text-[13.5px] font-extrabold text-tn-ink">
+            Daily stock check-in
+          </div>
+          <div className="text-[11.5px] text-tn-mute truncate">
+            Include in the 9:00 am bot ping
+          </div>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={dailyCheckIn}
+          onClick={() => setDailyCheckIn((v) => !v)}
+          className={cn(
+            "relative h-[27px] w-[46px] shrink-0 rounded-full transition-colors cursor-pointer border-none",
+            dailyCheckIn ? "bg-tn-green" : "bg-tn-hair"
+          )}
+        >
+          <span
+            className={cn(
+              "absolute top-[3px] h-[21px] w-[21px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.2)] transition-transform duration-150",
+              dailyCheckIn ? "left-[22px]" : "left-[3px]"
+            )}
+          />
+        </button>
+      </div>
+
+      <div className="mt-3 rounded-[10px] bg-tn-paper px-3 py-2.5 text-xs text-tn-ink2 leading-relaxed">
+        {dailyCheckIn
+          ? 'Buyers see a "confirmed today" badge while you keep it fresh.'
+          : "This listing won’t be auto-confirmed — it may show as aging."}
+      </div>
+    </div>
+  );
 }
 
-export function BeforePublication() {
-    const allDone = CHECKLIST.every((item) => item.done);
+export function BeforePublication({
+  name,
+  price,
+  condition,
+  coverPhoto,
+  extraPhotos,
+  action,
+  submitting = false,
+}: {
+  name: string;
+  price: string;
+  condition: string;
+  coverPhoto: ShopProductImage | null;
+  extraPhotos: (ShopProductImage | null)[];
+  action: string;
+  submitting?: boolean;
+}) {
+  const hasPhoto = Boolean(coverPhoto || extraPhotos.some((p) => p !== null));
+  const priceNum = parseFloat(price || "0");
+  const isPriceSet = Boolean(price && !isNaN(priceNum) && priceNum > 0);
+  const isNameSet = Boolean(name && name.trim().length >= 3);
+  const isConditionSet = Boolean(condition);
 
-    return (
-        <div className="rounded-2xl border border-neutral-200 bg-white p-5">
-            <h3 className="text-sm font-semibold text-neutral-900">
-                Before you publish
-            </h3>
+  const CHECKLIST: ChecklistItem[] = [
+    { id: "name", label: "Product name", done: isNameSet },
+    { id: "photo", label: "At least one photo", done: hasPhoto },
+    { id: "price", label: "Price set", done: isPriceSet },
+    { id: "condition", label: "Condition", done: isConditionSet },
+  ];
 
-            <ul className="mt-3 space-y-3">
-                {CHECKLIST.map((item) => (
-                    <li key={item.id} className="flex items-center gap-3">
-                        <span
-                            className={`flex h-5 w-5 items-center justify-center rounded-full ${item.done ? "bg-emerald-600" : "bg-neutral-100"
-                                }`}
-                        >
-                            {item.done && (
-                                <Icon name="check" className="h-3 w-3 text-white" strokeWidth={3} />
-                            )}
-                        </span>
-                        <span
-                            className={`text-sm ${item.done ? "font-medium text-neutral-900" : "text-neutral-400"
-                                }`}
-                        >
-                            {item.label}
-                        </span>
-                    </li>
-                ))}
-            </ul>
+  const allDone = CHECKLIST.every((item) => item.done);
 
-            <button
-                type="button"
-                disabled={!allDone}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-full border border-neutral-200 py-2.5 text-sm font-medium text-neutral-400 disabled:cursor-not-allowed enabled:text-neutral-800 enabled:hover:bg-neutral-50"
+  return (
+    <div className="rounded-[16px] border border-tn-hair bg-white p-4">
+      <h3 className="text-[13.5px] font-extrabold text-tn-ink mb-3">
+        Before you publish
+      </h3>
+
+      <ul className="space-y-2">
+        {CHECKLIST.map((item) => (
+          <li key={item.id} className="flex items-center gap-2.5 py-1">
+            <span
+              className={cn(
+                "flex size-5 shrink-0 items-center justify-center rounded-full transition-colors",
+                item.done
+                  ? "bg-tn-green text-white"
+                  : "bg-tn-hair2 border border-tn-hair text-transparent"
+              )}
             >
-                <Icon name="check" className="h-4 w-4" />
-                Publish listing
-            </button>
-        </div>
-    )
+              {item.done && <Icon name="check" size={12} strokeWidth={3} className="text-white" />}
+            </span>
+            <span
+              className={cn(
+                "text-xs font-semibold transition-colors",
+                item.done ? "text-tn-ink" : "text-tn-mute"
+              )}
+            >
+              {item.label}
+            </span>
+          </li>
+        ))}
+      </ul>
+
+      <button
+        type="submit"
+        disabled={!allDone || submitting}
+        form="product-form"
+        className={cn(
+          "mt-4 flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-xs font-bold tracking-[-0.01em] transition-all cursor-pointer",
+          allDone && !submitting
+            ? "bg-tn-ink text-white hover:bg-tn-ink/90 shadow-[0_2px_8px_rgba(11,11,11,0.12)]"
+            : "border border-tn-hair bg-transparent text-tn-mute/50 cursor-not-allowed opacity-50"
+        )}
+      >
+        <Icon name="check" size={14} />
+        {submitting
+          ? "Saving..."
+          : action === "edit"
+          ? "Save changes"
+          : "Publish listing"}
+      </button>
+    </div>
+  );
 }
