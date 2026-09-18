@@ -42,7 +42,7 @@ export function SiteFooter() {
                   <Link
                     href={
                       item === "Browse all"
-                        ? "/products"
+                        ? "/categories"
                         : item === "How it works"
                           ? "/how-it-works"
                           : item === "List your shop"

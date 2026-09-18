@@ -13,7 +13,7 @@ export function BrowseCategories({ stats }: { stats?: ShopMetrics | null }) {
       <SectionHead
         eyebrow="Browse"
         title="Shop by category"
-        href="/products"
+        href="/categories"
         link="All categories"
       />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 lg:gap-3.5">
