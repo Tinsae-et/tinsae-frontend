@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { DailyStockCheckIn, RecentActivities } from "./activities";
-import { MoreHorizontal, Pencil, Tag, Trash } from "lucide-react";
 import { ShopProduct } from "@/lib/types";
 import { useShopProducts } from "@/hooks/use-products";
 import { formatETB, Freshness, freshness } from "@/lib/format";
@@ -11,8 +10,9 @@ import { Icon } from "@/components/tinsae/icon";
 import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { confirmFreshness, markSold } from "@/lib/api";
+import { confirmFreshness, markSold, pauseProduct, resumeProduct } from "@/lib/api";
 import DeleteListing from "../listings/delete-listing";
+import { Loader2, MoreHorizontal, Pause, Pencil, Play, Tag, Trash } from "lucide-react";
 
 type KpiItem = {
   label: string;
@@ -236,18 +236,68 @@ function ListingTableHeader({
   );
 }
 
-export function ActionMenu({ onClose, product, access, setAvailable }: { onClose: () => void, product: ShopProduct, access: string, setAvailable?: (val: boolean)=>void }) {
+export function ActionMenu({
+  onClose,
+  product,
+  shopSlug,
+  setAvailable,
+  onDeleted,
+  onPauseToggle,
+}: {
+  onClose: () => void;
+  product: ShopProduct;
+  shopSlug?: string;
+  setAvailable?: (val: boolean) => void;
+  onDeleted?: (slug: string) => void;
+  onPauseToggle?: (isAvailable: boolean) => void;
+}) {
   const [deleteItem, setDeleteItem] = useState<boolean>(false);
+  const [inFlight, setInFlight] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  const markSoldProduct = async () => {
-    if (!setAvailable || !product.shop_slug) return;
-    await markSold(product.shop_slug, product.slug, access)
-    setAvailable(!product.is_available)
-  }
+  const slug = shopSlug || product.shop_slug;
+
+  const handleMarkSold = async () => {
+    if (!slug) return;
+    try {
+      setInFlight("sold");
+      setActionError(null);
+      await markSold(slug, product.slug);
+      setAvailable?.(false);
+      onClose();
+    } catch {
+      setActionError("Failed to mark sold");
+    } finally {
+      setInFlight(null);
+    }
+  };
+
+  const handlePauseToggle = async () => {
+    if (!slug) return;
+    try {
+      setInFlight("pause");
+      setActionError(null);
+      if (product.is_available) {
+        await pauseProduct(slug, product.slug);
+        setAvailable?.(false);
+        onPauseToggle?.(false);
+      } else {
+        await resumeProduct(slug, product.slug);
+        setAvailable?.(true);
+        onPauseToggle?.(true);
+      }
+      onClose();
+    } catch {
+      setActionError(product.is_available ? "Failed to pause" : "Failed to resume");
+    } finally {
+      setInFlight(null);
+    }
+  };
+
   return (
     <div
       data-row-action
-      className="absolute right-0 top-full mt-1 z-30 min-w-[120px] rounded-[12px] border border-tn-hair bg-white p-1.5 shadow-[0_8px_24px_rgba(11,11,11,0.12)] flex flex-col gap-1"
+      className="absolute right-0 top-full mt-1 z-30 min-w-[130px] rounded-[12px] border border-tn-hair bg-white p-1.5 shadow-[0_8px_24px_rgba(11,11,11,0.12)] flex flex-col gap-1"
     >
       <Link
         href={`/shop/dashboard/listings/edit?slug=${product.slug}`}
@@ -257,28 +307,67 @@ export function ActionMenu({ onClose, product, access, setAvailable }: { onClose
         <Pencil className="size-3.5 text-tn-mute" />
         Edit
       </Link>
+
+      {/* Pause / Resume action */}
+      {slug && (
+        <button
+          type="button"
+          disabled={Boolean(inFlight)}
+          onClick={handlePauseToggle}
+          className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50 cursor-pointer disabled:opacity-50"
+        >
+          {inFlight === "pause" ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : product.is_available ? (
+            <Pause className="size-3.5 text-amber-600" />
+          ) : (
+            <Play className="size-3.5 text-green-600" />
+          )}
+          {product.is_available ? "Pause" : "Resume"}
+        </button>
+      )}
+
+      {/* Mark sold action */}
+      {setAvailable && product.is_available && (
+        <button
+          type="button"
+          disabled={Boolean(inFlight)}
+          onClick={handleMarkSold}
+          className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-semibold text-blue-800 hover:bg-blue-50 cursor-pointer disabled:opacity-50"
+        >
+          {inFlight === "sold" ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : (
+            <Tag className="size-3.5 text-blue-700" />
+          )}
+          Mark sold
+        </button>
+      )}
+
       <button
         type="button"
-        onClick={()=>setDeleteItem(true)}
-        className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-semibold text-tn-red hover:bg-tn-red-soft cursor-pointer"
+        disabled={Boolean(inFlight)}
+        onClick={() => setDeleteItem(true)}
+        className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-semibold text-tn-red hover:bg-tn-red-soft cursor-pointer disabled:opacity-50"
       >
         <Trash className="size-3.5 text-tn-red" />
         Remove
       </button>
-      {
-        (setAvailable && product.is_available) &&(
-          <button
-            onClick={markSoldProduct}
-            className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-semibold text-blue-800 hover:bg-blue-50 cursor-pointer"
-          >
-            <Tag className="size-3.5 "/>
-            Mark sold
-          </button>
-        )
-      }
-      {
-        deleteItem && <DeleteListing product={product} setDeleteItem={setDeleteItem} access={access}/>
-      }
+
+      {actionError && (
+        <p className="text-[10.5px] text-red-600 font-medium px-2 py-0.5 bg-red-50 rounded">
+          {actionError}
+        </p>
+      )}
+
+      {deleteItem && (
+        <DeleteListing
+          product={product}
+          shopSlug={slug || ""}
+          setDeleteItem={setDeleteItem}
+          onDeleted={onDeleted}
+        />
+      )}
     </div>
   );
 }
@@ -289,38 +378,53 @@ function TableRow({
   toggleOne,
   openMenuId,
   setOpenMenuId,
-  access,
+  shopSlug,
 }: {
   product: ShopProduct;
   isSelected: boolean;
   toggleOne: (id: number) => void;
   openMenuId: number | null;
   setOpenMenuId: (id: number | null) => void;
-  access: string;
+  shopSlug?: string;
 }) {
-  const [fresh, setFresh] = useState<Freshness>(()=>freshness(product.last_confirmed_at, product.confirmation_status))
+  const [fresh, setFresh] = useState<Freshness>(() =>
+    freshness(product.last_confirmed_at, product.confirmation_status),
+  );
   const isMenuOpen = openMenuId === product.id;
-  const [needConfirm, setNeedConfirm] = useState<boolean>(()=>(product.is_available && fresh.tone !== "fresh"));
-
+  const [needConfirm, setNeedConfirm] = useState<boolean>(
+    () => product.is_available && fresh.tone !== "fresh",
+  );
+  const [confirming, setConfirming] = useState<boolean>(false);
+  const [rowError, setRowError] = useState<string | null>(null);
 
   const dotColor =
     fresh.tone === "fresh"
       ? "bg-tn-green shadow-[0_0_0_3px_#1F8A5B22]"
       : fresh.tone === "stale"
-      ? "bg-tn-mute"
-      : "bg-tn-warn";
+        ? "bg-tn-mute"
+        : "bg-tn-warn";
 
-    const confirm = async () => {
-      if (!product.shop_slug) return;
-      await confirmFreshness(product.shop_slug, product.slug, access);
+  const confirm = async () => {
+    const sSlug = shopSlug || product.shop_slug;
+    if (!sSlug) return;
+    try {
+      setConfirming(true);
+      setRowError(null);
+      await confirmFreshness(sSlug, product.slug);
       setNeedConfirm(false);
-      setFresh({...fresh, tone: "fresh"})
+      setFresh({ ...fresh, tone: "fresh" });
+    } catch {
+      setRowError("Failed to confirm listing");
+    } finally {
+      setConfirming(false);
     }
+  };
+
   return (
     <tr
       className={cn(
         "border-b border-tn-hair2 last:border-b-0 transition-colors",
-        isSelected ? "bg-tn-red-soft" : "hover:bg-tn-paper/50"
+        isSelected ? "bg-tn-red-soft" : "hover:bg-tn-paper/50",
       )}
     >
       {/* Checkbox */}
@@ -333,7 +437,7 @@ function TableRow({
           onClick={() => toggleOne(product.id)}
           className={cn(
             "flex h-4 w-4 items-center justify-center rounded-[4px] border transition-colors cursor-pointer",
-            isSelected ? "border-tn-red bg-tn-red text-white" : "border-tn-hair bg-white"
+            isSelected ? "border-tn-red bg-tn-red text-white" : "border-tn-hair bg-white",
           )}
         >
           {isSelected && <Icon name="check" size={12} strokeWidth={3} />}
@@ -353,6 +457,11 @@ function TableRow({
             <div className="text-[11.5px] text-tn-mute truncate">
               {product.description}
             </div>
+            {rowError && (
+              <div className="text-[10.5px] text-red-600 font-semibold mt-0.5">
+                {rowError}
+              </div>
+            )}
           </div>
         </div>
       </td>
@@ -377,7 +486,7 @@ function TableRow({
 
       {/* Status */}
       <td className="px-3 py-[13px]">
-        <StatusPill tone={fresh.tone} product={product}/>
+        <StatusPill tone={fresh.tone} product={product} />
       </td>
 
       {/* Views · Inq */}
@@ -389,8 +498,8 @@ function TableRow({
       <td className="py-[13px] pl-2 pr-5 text-right">
         <div className="flex justify-end items-center">
           {needConfirm ? (
-            <Pill kind="solid" size="sm" icon="check" onClick={confirm}>
-              Confirm
+            <Pill kind="solid" size="sm" icon="check" disabled={confirming} onClick={confirm}>
+              {confirming ? "Confirming..." : "Confirm"}
             </Pill>
           ) : (
             <div className="relative inline-block" data-row-action>
@@ -403,7 +512,13 @@ function TableRow({
               >
                 <MoreHorizontal className="size-4" />
               </button>
-              {isMenuOpen && <ActionMenu product={product} onClose={() => setOpenMenuId(null)} access={access}/>}
+              {isMenuOpen && (
+                <ActionMenu
+                  product={product}
+                  shopSlug={shopSlug}
+                  onClose={() => setOpenMenuId(null)}
+                />
+              )}
             </div>
           )}
         </div>
@@ -412,7 +527,13 @@ function TableRow({
   );
 }
 
-function ListingsTable({ products, access }: { products: ShopProduct[], access:string }) {
+function ListingsTable({
+  products,
+  shopSlug,
+}: {
+  products: ShopProduct[];
+  shopSlug?: string;
+}) {
   const [selected, setSelected] = useState<number[]>([]);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
 
@@ -474,7 +595,7 @@ function ListingsTable({ products, access }: { products: ShopProduct[], access:s
                   toggleOne={toggleOne}
                   openMenuId={openMenuId}
                   setOpenMenuId={setOpenMenuId}
-                  access={access}
+                  shopSlug={shopSlug}
                 />
               );
             })}
@@ -557,11 +678,9 @@ function Numbers({
 export default function Overview({
   slug,
   shopName,
-  access,
 }: {
   slug: string;
   shopName: string;
-  access: string;
 }) {
   const { products } = useShopProducts({}, slug);
 
@@ -572,7 +691,7 @@ export default function Overview({
         <DailyStockCheckIn products={products} />
         <RecentActivities />
       </div>
-      <ListingsTable products={products} access={access}/>
+      <ListingsTable products={products} shopSlug={slug} />
     </div>
   );
 }

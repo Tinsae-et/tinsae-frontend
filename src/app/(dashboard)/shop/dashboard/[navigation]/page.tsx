@@ -47,7 +47,7 @@ export default async function DashboardSection({ params }: Props) {
   if (navigation === "listings") {
     return (
       <section>
-        <ListingsTable slug={shop.slug} access={access} />
+        <ListingsTable slug={shop.slug} />
       </section>
     );
   }
@@ -55,7 +55,7 @@ export default async function DashboardSection({ params }: Props) {
   if (navigation === "overview") {
     return (
       <section>
-        <Overview slug={shop.slug} shopName={shop.name} access={access} />
+        <Overview slug={shop.slug} shopName={shop.name} />
       </section>
     );
   }

@@ -236,7 +236,7 @@ export function useShopProducts(query: ShopProductQuery, slug: string) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryKey]);
 
-  return { products, total, loading, error };
+  return { products, setProducts, total, loading, error, refetch: fetchPage };
 }
 
 export function usePublicShopProducts(

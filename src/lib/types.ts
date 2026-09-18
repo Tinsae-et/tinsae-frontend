@@ -86,6 +86,10 @@ export type ShopProduct = {
   shop_slug?: string;
   category: string;
   condition: string;
+  status?: string;
+  stock?: number;
+  views?: number;
+  inquiries?: number;
   is_available: boolean;
   confirmation_status?: "fresh" | "stale" | null;
   last_confirmed_at: string | null;
