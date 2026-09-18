@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import  { useState, useCallback, useEffect, useRef } from "react";
 import CategoryChips from "./category-chips";
 import { Icon } from "@/components/tinsae/icon";
 import { SortDropdown } from "@/components/tinsae/sort-dropdown";
@@ -121,6 +121,7 @@ export function ListingSection({
     return () => {
       controller.abort();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query.category, query.ordering, query.q, fetchFirstPage, initialProducts]);
 
   const loadMore = useCallback(async () => {

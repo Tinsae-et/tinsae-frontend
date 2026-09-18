@@ -6,20 +6,30 @@ const SIGNIN = "/signin";
 const AUTH_PAGES = new Set(["/signin", "/signup"]);
 const DASHBOARD = "/dashboard";
 
+function isProtectedRoute(pathname: string): boolean {
+  return (
+    pathname === "/dashboard" ||
+    pathname.startsWith("/dashboard/") ||
+    pathname.startsWith("/shop/dashboard") ||
+    pathname === "/shop/onboarding" ||
+    pathname.startsWith("/account")
+  );
+}
+
 /**
- * Guards the dashboard, and keeps the access token fresh on the way in.
+ * Guards protected pages, and keeps access tokens transparently fresh
+ * across both protected and public surfaces.
  *
- * The access cookie expires with its token (fifteen minutes — see
- * lib/auth/tokens, which mirrors the backend's SIMPLE_JWT block), so
- * "cookie missing but refresh cookie present" means exactly one thing: the
- * token aged out and we should mint another before rendering. This file is the
- * only place that can happen: it is the last point in the request that can
- * still write a cookie the page will see. (Next 16 renamed the `middleware`
- * convention to `proxy`.)
+ * When an access token expires (15 minutes), any request bearing a valid
+ * refresh cookie is refreshed on the fly. Downstream Server Components
+ * (like SiteHeader in the common layout) see a valid user immediately,
+ * preventing logged-in merchants from appearing logged-out on public pages.
  */
 export default async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const hasRefresh = Boolean(request.cookies.get(REFRESH_COOKIE)?.value);
+  const hasAccess = Boolean(request.cookies.get(ACCESS_COOKIE)?.value);
+  const protectedRoute = isProtectedRoute(pathname);
 
   // Already signed in? The auth pages have nothing to offer.
   if (AUTH_PAGES.has(pathname)) {
@@ -29,47 +39,55 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (!hasRefresh) return redirectToLogin(request, pathname + search);
+  // Unauthenticated user trying to hit a protected dashboard route
+  if (protectedRoute && !hasRefresh) {
+    return redirectToLogin(request, pathname + search);
+  }
 
-  if (request.cookies.get(ACCESS_COOKIE)?.value) return NextResponse.next();
+  // Token is still fresh, or anonymous visitor on a public route
+  if (!hasRefresh || hasAccess) {
+    return NextResponse.next();
+  }
 
-  const refreshed = await fetch(new URL("/api/auth/refresh", request.url), {
-    method: "POST",
-    headers: { cookie: request.headers.get("cookie") ?? "" },
-  });
+  // Access token expired, but refresh cookie is present: refresh it silently
+  try {
+    const refreshed = await fetch(new URL("/api/auth/refresh", request.url), {
+      method: "POST",
+      headers: { cookie: request.headers.get("cookie") ?? "" },
+    });
 
-  if (!refreshed.ok) return redirectToLogin(request, pathname + search);
+    if (!refreshed.ok) {
+      if (protectedRoute) return redirectToLogin(request, pathname + search);
+      const res = NextResponse.next();
+      res.cookies.delete(ACCESS_COOKIE);
+      res.cookies.delete(REFRESH_COOKIE);
+      return res;
+    }
 
-  const setCookies = refreshed.headers.getSetCookie();
-  const access = readCookieValue(setCookies, ACCESS_COOKIE);
-  if (!access) return redirectToLogin(request, pathname + search);
+    const setCookies = refreshed.headers.getSetCookie();
+    const access = readCookieValue(setCookies, ACCESS_COOKIE);
+    if (!access) {
+      if (protectedRoute) return redirectToLogin(request, pathname + search);
+      const res = NextResponse.next();
+      res.cookies.delete(ACCESS_COOKIE);
+      res.cookies.delete(REFRESH_COOKIE);
+      return res;
+    }
 
-  // Two separate jobs, and missing either one breaks the request:
-  //  - the *request* headers going downstream need the new token, because the
-  //    page reads cookies off the incoming request and a Set-Cookie it never
-  //    sees would send it straight back to /login;
-  //  - the *response* needs it too, so the browser holds the new token for the
-  //    rest of its lifetime instead of repeating this on every navigation.
-  let cookieHeader = withCookie(request.headers.get("cookie"), ACCESS_COOKIE, access);
+    let cookieHeader = withCookie(request.headers.get("cookie"), ACCESS_COOKIE, access);
+    const rotated = readCookieValue(setCookies, REFRESH_COOKIE);
+    if (rotated) cookieHeader = withCookie(cookieHeader, REFRESH_COOKIE, rotated);
 
-  // The backend rotates refresh tokens, so this hop usually replaces that
-  // cookie too, and the one the request arrived with is now blacklisted. Carry
-  // the replacement downstream for the same reason as the access token: a
-  // Server Component under this matcher reads cookies off the incoming request,
-  // and handing it a token the backend has already revoked hands it a session
-  // that dies on its next refresh.
-  //
-  // This does not reach the /api/auth routes — the matcher below covers pages
-  // only, so nothing under /api/* ever passes through here.
-  const rotated = readCookieValue(setCookies, REFRESH_COOKIE);
-  if (rotated) cookieHeader = withCookie(cookieHeader, REFRESH_COOKIE, rotated);
+    const headers = new Headers(request.headers);
+    headers.set("cookie", cookieHeader);
 
-  const headers = new Headers(request.headers);
-  headers.set("cookie", cookieHeader);
-
-  const res = NextResponse.next({ request: { headers } });
-  for (const cookie of setCookies) res.headers.append("set-cookie", cookie);
-  return res;
+    const res = NextResponse.next({ request: { headers } });
+    for (const cookie of setCookies) res.headers.append("set-cookie", cookie);
+    return res;
+  } catch {
+    if (protectedRoute) return redirectToLogin(request, pathname + search);
+    return NextResponse.next();
+  }
 }
 
 /** Pulls one cookie's value out of a Set-Cookie header list. */
@@ -90,7 +108,6 @@ function withCookie(header: string | null, name: string, value: string): string 
 
 function redirectToLogin(request: NextRequest, from: string) {
   const url = new URL(SIGNIN, request.url);
-  // Send them back where they were aiming, not blindly to the dashboard root.
   if (from && from !== "/") url.searchParams.set("next", from);
   const res = NextResponse.redirect(url);
   res.cookies.delete(ACCESS_COOKIE);
@@ -100,10 +117,11 @@ function redirectToLogin(request: NextRequest, from: string) {
 
 export const config = {
   matcher: [
-    "/dashboard/:path*",
-    "/shop/:path*",
-    "/account/:path*",
-    "/signin",
-    "/signup",
+    /*
+     * Match all request paths except for:
+     * - api routes (/api/*)
+     * - static files (_next/static/*, _next/image/*, favicon.ico, etc.)
+     */
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2?)$).*)",
   ],
 };

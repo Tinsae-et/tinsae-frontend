@@ -69,11 +69,13 @@ export type Shop = {
   phone?: string;
   latitude?: string | number | null;
   longitude?: string | number | null;
+  telegram_chat_id?: string | null;
   is_verified: boolean;
   active_listings_count?: number;
   created_at?: string;
   updated_at?: string;
 };
+
 
 export type ShopProduct = {
   id: number;
@@ -83,8 +85,13 @@ export type ShopProduct = {
   price: string;
   currency: string;
   shop: number;
+  shop_slug?: string;
   category: string;
   condition: string;
+  status?: string;
+  stock?: number;
+  views?: number;
+  inquiries?: number;
   is_available: boolean;
   confirmation_status?: "fresh" | "stale" | null;
   last_confirmed_at: string | null;
@@ -92,6 +99,7 @@ export type ShopProduct = {
   slug: string;
   stock?: number;
   specs: Record<string, unknown>;
+  images?: ProductImage[];
 };
 
 export type NewProduct = {
@@ -124,4 +132,17 @@ export type ShopMetrics = {
   verified_shop_products?: number;
   category_product_count?: Record<string, number>;
   shop_product_count?: Record<string, number>;
+};
+/**
+ * Writable fields for shop profile and contact updates.
+ *
+ * `slug` and `telegram_chat_id` are intentionally excluded from mutations:
+ * - `slug` is immutable after creation to maintain stable public URLs.
+ * - `telegram_chat_id` is linked solely through one-time codes via the Telegram bot.
+ */
+export type ShopProfile = {
+  name?: string;
+  description?: string;
+  phone?: string;
+  city?: string;
 };

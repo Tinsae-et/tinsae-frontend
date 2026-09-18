@@ -7,7 +7,7 @@ Next.js 16 (App Router) + TypeScript + Tailwind CSS + shadcn/ui, containerized w
 
 You only need these installed on your machine:
 
-- **Docker** (with the Compose v2 plugin — `docker compose version` should work)
+- **Docker** (with Compose v2.22.0 or newer — `docker compose version` should work)
 - **Git**
 
 Node.js runs **inside the container** — you do not need it installed on your host.
@@ -48,7 +48,7 @@ cd tinsae-frontend
 cp .env.example .env.local
 
 # 3. Make sure the backend is running (see above), then start the frontend
-docker compose up --build
+docker compose watch
 ```
 
 The app is then live at **http://localhost:3000**.
@@ -58,36 +58,45 @@ freshest listings), with a header that lets you search and browse.
 
 ## Routes
 
-| Route         | What it is                                                                 |
-|---------------|----------------------------------------------------------------------------|
-| `/`           | Home / landing — hero, browse-by-category, top shops, freshest listings grid, trust & explainer sections |
-| `/products`   | Browse all listings — responsive product grid with skeletons, empty state, and infinite scroll. Supports `?category=<slug>`, `?q=<search>` |
-| `/health`     | Backend system-status check (old status page)                              |
+| Route       | What it is                                                                                                                                 |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/`         | Home / landing — hero, browse-by-category, top shops, freshest listings grid, trust & explainer sections                                   |
+| `/products` | Browse all listings — responsive product grid with skeletons, empty state, and infinite scroll. Supports `?category=<slug>`, `?q=<search>` |
+| `/shop/dashboard/shop-profile` | Shop settings — edit shop name, city, description, and contact phone; surfaces Telegram link and verification status       |
+| `/health`   | Backend system-status check (old status page)                                                                                              |
+
+### Stable URLs & Slug Policy (TIN-40)
+
+Shop URL slugs (`/shops/[slug]`) are immutable after shop registration and **do not regenerate upon rename**. This ensures:
+- Bookmarks, shared links, and printed QR codes remain active.
+- Telegram deep links and bot routing remain stable without broken link errors.
+- Search engine indexing for shop pages is preserved without complex redirects.
+
 
 ## How it runs
 
-`docker compose up` starts one container:
+`docker compose watch` starts one container and watches the frontend files:
 
 - **`frontend`** — the Next.js dev server (Node 20).
 
-Your code is mounted into the container, so **editing a file hot-reloads** the
-page in the browser — no rebuild needed. You only rebuild
-(`docker compose up --build`) when dependencies change (`package.json`) or the
-Docker setup changes.
+Source edits sync into the container and **hot-reload** the page in the browser.
+Changes to `package.json` or `package-lock.json` rebuild the image automatically;
+`node_modules` and `.next` are excluded from source sync. You can use
+`docker compose up --build` for a one-off rebuild when the Docker setup changes.
 
 ## Configuration
 
 Settings come from environment variables (see `.env.example`). The real
 `.env.local` is git-ignored and must never be committed.
 
-| Variable              | Purpose                                       | Local value             |
-|-----------------------|-----------------------------------------------|-------------------------|
-| `NEXT_PUBLIC_API_URL` | Backend API base URL for **browser** code     | `http://localhost:8000` |
+| Variable              | Purpose                                                     | Local value                        |
+| --------------------- | ----------------------------------------------------------- | ---------------------------------- |
+| `NEXT_PUBLIC_API_URL` | Backend API base URL for **browser** code                   | `http://localhost:8000`            |
 | `API_INTERNAL_URL`    | Backend API base URL for **server-side** code (Docker only) | `http://host.docker.internal:8000` |
 
 The `NEXT_PUBLIC_` prefix makes a value available to browser-side code.
 
-**Why `API_INTERNAL_URL`?** The dev server runs *inside* the frontend container,
+**Why `API_INTERNAL_URL`?** The dev server runs _inside_ the frontend container,
 so `localhost` there is the container itself — it can't reach the backend on
 the host. The compose file maps `host.docker.internal` to the host gateway and
 sets `API_INTERNAL_URL`, which `src/lib/api.ts` uses for server-side (SSR)
@@ -123,7 +132,8 @@ src/
 ## Common commands
 
 ```bash
-docker compose up                 # start the frontend
+docker compose watch              # start the frontend with fast refresh
+docker compose up                 # start the frontend without file watching
 docker compose up --build         # rebuild (after dependency changes)
 docker compose down               # stop and remove the container
 docker compose logs -f frontend   # tail the logs

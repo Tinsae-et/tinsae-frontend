@@ -11,6 +11,19 @@ services:
       - .:/app
       - /app/node_modules
       - /app/.next
+
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /app
+          ignore:
+            - node_modules/
+            - .next/
+        - action: rebuild
+          path: package.json
+        - action: rebuild
+          path: package-lock.json
     ports:
       - "3000:3000"
     # The dev server runs inside this container, so "localhost" is the container

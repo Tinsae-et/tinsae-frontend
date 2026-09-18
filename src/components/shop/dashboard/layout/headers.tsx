@@ -138,6 +138,19 @@ export function ProfileHeader({
 }: {
   setShowSidebar?: (val: boolean) => void;
 }) {
+  const [shopSlug, setShopSlug] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.user?.shops?.[0]?.slug) {
+          setShopSlug(data.user.shops[0].slug);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="w-full flex items-center justify-between">
       <div className="flex items-center gap-3">
@@ -162,13 +175,19 @@ export function ProfileHeader({
       </div>
 
       <div className="flex items-center gap-2.5">
-        <Pill kind="outline" size="sm" iconAfter="arrow" href="/">
+        <Pill
+          kind="outline"
+          size="sm"
+          iconAfter="arrow"
+          href={shopSlug ? `/shops/${shopSlug}` : "/shops"}
+        >
           View public page
         </Pill>
       </div>
     </div>
   );
 }
+
 
 export function VerificationHeader({
   setShowSidebar,

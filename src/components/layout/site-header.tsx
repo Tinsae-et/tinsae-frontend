@@ -415,13 +415,15 @@ function SearchField({
 function BrowseMenu({ categoryCounts }: { categoryCounts?: Record<string, number> }) {
   const [open, setOpen] = useState(false);
   const [fetchedCounts, setFetchedCounts] = useState<Record<string, number> | undefined>(undefined);
+  const hasAttemptedRef = useRef(false);
   const counts = categoryCounts && Object.keys(categoryCounts).length > 0 ? categoryCounts : fetchedCounts;
   const menuRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Client-side fallback to fetch live counts if not provided via SSR
   useEffect(() => {
-    if (counts && Object.keys(counts).length > 0) return;
+    if ((categoryCounts && Object.keys(categoryCounts).length > 0) || hasAttemptedRef.current) return;
+    hasAttemptedRef.current = true;
     let active = true;
     fetch("/api/public-stats")
       .then((r) => (r.ok ? r.json() : null))
@@ -434,7 +436,7 @@ function BrowseMenu({ categoryCounts }: { categoryCounts?: Record<string, number
     return () => {
       active = false;
     };
-  }, [counts]);
+  }, [categoryCounts]);
 
   const handleMouseEnter = () => {
     if (timeoutRef.current) {
@@ -531,9 +533,14 @@ function BrowseMenu({ categoryCounts }: { categoryCounts?: Record<string, number
               {/* Left 8 columns: All Live Categories */}
               <div className="col-span-8 p-5">
                 <div className="mb-3 flex items-center justify-between px-1">
-                  <p className="text-tn-mute text-[10.5px] font-extrabold tracking-[0.09em] uppercase">
-                    All Categories
-                  </p>
+                  <Link
+                    href="/categories"
+                    onClick={() => setOpen(false)}
+                    className="text-tn-mute hover:text-tn-ink flex items-center gap-1 text-[10.5px] font-extrabold tracking-[0.09em] uppercase transition-colors"
+                  >
+                    <span>All Categories</span>
+                    <Icon name="arrow" size={11} />
+                  </Link>
                   <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-tn-green">
                     <span className="size-1.5 rounded-full bg-tn-green animate-pulse" />
                     Verified Addis Inventory
@@ -960,7 +967,7 @@ export function SiteHeader({
         <div className="border-t border-tn-hair/70 hidden lg:block bg-white/60 backdrop-blur-sm">
           <div className="mx-auto flex h-10 max-w-[1480px] items-center gap-6 px-6 sm:px-8 lg:px-12 xl:px-16 text-[13px] font-semibold text-tn-ink2">
             <Link
-              href="/products"
+              href="/categories"
               className="hover:text-tn-red flex items-center gap-1.5 transition-colors shrink-0"
             >
               <Icon name="spec" size={14} className="text-tn-mute" />
@@ -1100,6 +1107,7 @@ export function SiteHeader({
                   More
                 </p>
                 {[
+                  { label: "All categories", href: "/categories" },
                   { label: "Compare products", href: "/compare" },
                   { label: "How it works", href: "/how-it-works" },
                   {
