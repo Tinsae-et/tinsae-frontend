@@ -1,11 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ProfileForm from "./profile-form";
 import ContactForm from "./contact-form";
 import { Icon, IconName } from "@/components/tinsae/icon";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import type { Shop } from "@/lib/types";
+import { getShop } from "@/lib/api";
+
 type NavItem = {
   text: string;
   href: string;
@@ -20,8 +23,27 @@ const NAV_ITEMS: NavItem[] = [
   { text: "Team", href: "#", icon: "msg" },
 ];
 
-export default function ShopProfile({slug,access}:{slug :string,access:string}) {
+export default function ShopProfile({
+  initialShop,
+  slug,
+  access,
+}: {
+  initialShop?: Shop | null;
+  slug: string;
+  access: string;
+}) {
+  const [shop, setShop] = useState<Shop | null>(initialShop ?? null);
   const [activeSection, setActiveSection] = useState("Profile");
+
+  useEffect(() => {
+    if (!shop) {
+      getShop(slug)
+        .then((res) => setShop(res))
+        .catch(() => {
+          // Handled gracefully in child forms
+        });
+    }
+  }, [slug, shop]);
 
   return (
     <div className="max-w-[1040px] mx-auto flex flex-col lg:flex-row gap-[30px]">
@@ -64,8 +86,20 @@ export default function ShopProfile({slug,access}:{slug :string,access:string}) 
 
       {/* Panels Column */}
       <div className="flex-1 max-w-[660px] flex flex-col gap-6">
-        <ProfileForm slug={slug} access={access} />
-        <ContactForm slug={slug} access={access}/>
+        <ProfileForm
+          key={shop ? `profile-${shop.id}-${shop.name}-${shop.city}` : `profile-${slug}`}
+          shop={shop}
+          slug={slug}
+          access={access}
+          onShopUpdated={setShop}
+        />
+        <ContactForm
+          key={shop ? `contact-${shop.id}-${shop.phone}` : `contact-${slug}`}
+          shop={shop}
+          slug={slug}
+          access={access}
+          onShopUpdated={setShop}
+        />
       </div>
     </div>
   );
