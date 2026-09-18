@@ -177,7 +177,7 @@ function MapContent() {
     <div className="flex flex-col bg-white min-h-[calc(100vh-68px)]">
       {/* ── TOP HEADER BAR ── */}
       <header className="border-b border-tn-hair2 bg-white">
-        <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-4 px-6 py-4 lg:px-7">
+        <div className="mx-auto flex max-w-[1480px] flex-wrap items-center justify-between gap-4 px-6 sm:px-8 lg:px-12 xl:px-16 py-4">
           <div>
             <h1 className="text-tn-ink text-2xl font-extrabold tracking-[-0.03em]">
               Verified shops in Bole
@@ -206,65 +206,67 @@ function MapContent() {
         </div>
 
         {/* Filter Bar (Area + Category + Verified) matching Shops Directory */}
-        <div className="border-t border-tn-hair2 bg-white/95 px-6 py-2.5 lg:px-7 overflow-x-auto flex items-center gap-2.5">
-          {/* Area Filter */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            {HOODS.map((hood) => {
-              const active = currentArea === hood;
-              return (
-                <button
-                  key={hood}
-                  type="button"
-                  onClick={() => updateFilters({ area: hood })}
-                  className={`h-7.5 cursor-pointer whitespace-nowrap rounded-full px-3 text-xs font-semibold transition-colors ${
-                    active
-                      ? "bg-tn-ink text-white shadow-xs"
-                      : "border-tn-hair text-tn-ink2 hover:border-tn-ink border bg-white"
-                  }`}
-                >
-                  {hood}
-                </button>
-              );
-            })}
-          </div>
+        <div className="border-t border-tn-hair2 bg-white/95">
+          <div className="mx-auto flex max-w-[1480px] items-center gap-2.5 overflow-x-auto px-6 sm:px-8 lg:px-12 xl:px-16 py-2.5">
+            {/* Area Filter */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              {HOODS.map((hood) => {
+                const active = currentArea === hood;
+                return (
+                  <button
+                    key={hood}
+                    type="button"
+                    onClick={() => updateFilters({ area: hood })}
+                    className={`h-7.5 cursor-pointer whitespace-nowrap rounded-full px-3 text-xs font-semibold transition-colors ${
+                      active
+                        ? "bg-tn-ink text-white shadow-xs"
+                        : "border-tn-hair text-tn-ink2 hover:border-tn-ink border bg-white"
+                    }`}
+                  >
+                    {hood}
+                  </button>
+                );
+              })}
+            </div>
 
-          <span className="text-tn-hair shrink-0">|</span>
+            <span className="text-tn-hair shrink-0">|</span>
 
-          {/* Verified-Only Toggle */}
-          <button
-            type="button"
-            onClick={() => updateFilters({ verified_only: verifiedOnly ? null : "1" })}
-            className={`h-7.5 cursor-pointer whitespace-nowrap rounded-full px-3 text-xs font-bold transition-colors inline-flex items-center gap-1 shrink-0 ${
-              verifiedOnly
-                ? "bg-tn-green text-white shadow-xs"
-                : "border-tn-hair text-tn-ink2 hover:border-tn-green border bg-white"
-            }`}
-          >
-            <Icon name="shield" size={12} className={verifiedOnly ? "text-white" : "text-tn-green"} />
-            Verified only
-          </button>
+            {/* Verified-Only Toggle */}
+            <button
+              type="button"
+              onClick={() => updateFilters({ verified_only: verifiedOnly ? null : "1" })}
+              className={`h-7.5 cursor-pointer whitespace-nowrap rounded-full px-3 text-xs font-bold transition-colors inline-flex items-center gap-1 shrink-0 ${
+                verifiedOnly
+                  ? "bg-tn-green text-white shadow-xs"
+                  : "border-tn-hair text-tn-ink2 hover:border-tn-green border bg-white"
+              }`}
+            >
+              <Icon name="shield" size={12} className={verifiedOnly ? "text-white" : "text-tn-green"} />
+              Verified only
+            </button>
 
-          <span className="text-tn-hair shrink-0">|</span>
+            <span className="text-tn-hair shrink-0">|</span>
 
-          {/* Category Filter */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            {CATEGORIES.map((cat) => {
-              const active = currentCategory === cat;
-              return (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => updateFilters({ category: cat })}
-                  className={`h-7.5 cursor-pointer whitespace-nowrap rounded-full px-3 text-xs font-semibold transition-colors ${
-                    active
-                      ? "bg-tn-ink text-white"
-                      : "border-tn-hair text-tn-ink2 hover:border-tn-ink border bg-white"
-                  }`}
-                >
-                  {cat}
-                </button>
-              );
-            })}
+            {/* Category Filter */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              {CATEGORIES.map((cat) => {
+                const active = currentCategory === cat;
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => updateFilters({ category: cat })}
+                    className={`h-7.5 cursor-pointer whitespace-nowrap rounded-full px-3 text-xs font-semibold transition-colors ${
+                      active
+                        ? "bg-tn-ink text-white"
+                        : "border-tn-hair text-tn-ink2 hover:border-tn-ink border bg-white"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </header>
@@ -296,7 +298,8 @@ function MapContent() {
         </div>
       ) : (
         /* ── MAIN SPLIT VIEW ── */
-        <div className="relative grid flex-1 grid-cols-1 md:grid-cols-[380px_1fr] h-[calc(100vh-165px)] overflow-hidden">
+        <div className="mx-auto flex-1 w-full max-w-[1480px] px-6 sm:px-8 lg:px-12 xl:px-16 py-4 sm:py-6">
+          <div className="relative grid grid-cols-1 md:grid-cols-[380px_1fr] h-[calc(100vh-230px)] min-h-[580px] overflow-hidden rounded-[22px] border border-tn-hair bg-white shadow-[0_12px_40px_rgba(11,11,11,0.06)]">
           {/* Left Rail (Sidebar Shop Feed) */}
           <aside
             className={`border-tn-hair flex flex-col border-r bg-white overflow-hidden transition-all duration-200 ${
@@ -449,6 +452,7 @@ function MapContent() {
             </div>
           </main>
         </div>
+      </div>
       )}
 
       {/* ── ACCEPTANCE CRITERION 9: MOBILE VIEW SWITCHER ── */}

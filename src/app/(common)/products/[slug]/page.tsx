@@ -236,6 +236,7 @@ function ShopComparison({ product, now }: { product: Product; now: number }) {
         <ProductGallery
           images={product.images.map((i) => i.url)}
           kind={kindForSlug(product.category?.slug)}
+          categorySlug={product.category?.slug}
           tone={tone}
           label={f.badge}
         />
@@ -446,7 +447,7 @@ export default async function ProductDetailPage({ params }: Props) {
   const now = Date.now();
 
   return (
-    <main className="text-tn-ink mx-auto max-w-[1240px] px-6 pt-6 lg:px-7">
+    <main className="text-tn-ink mx-auto max-w-[1480px] px-6 pt-6 sm:px-8 lg:px-12 xl:px-16">
       {/* breadcrumb */}
       <nav
         aria-label="Breadcrumb"

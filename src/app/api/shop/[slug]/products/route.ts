@@ -7,7 +7,7 @@ const API_URL =
   process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 /** Query params the merchant catalogue accepts (shops/views.py). */
-const ALLOWED = ["q", "category", "ordering", "status", "page", "page_size"];
+const ALLOWED = ["q", "category", "ordering", "status", "fresh", "page", "page_size"];
 
 /**
  * The dashboard's window onto its own catalogue.

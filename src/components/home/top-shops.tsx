@@ -55,7 +55,7 @@ export function TopShops({ shops }: { shops?: TopShopItem[] }) {
   const items = shops && shops.length > 0 ? shops.slice(0, 4) : SHOPS;
 
   return (
-    <section className="mx-auto mt-16 max-w-[1240px] px-6 lg:mt-[88px] lg:px-7">
+    <section className="mx-auto mt-16 max-w-[1480px] px-6 sm:px-8 lg:mt-[88px] lg:px-12 xl:px-16">
       <SectionHead
         eyebrow="Verified sellers"
         title="Top-rated shops in Bole"

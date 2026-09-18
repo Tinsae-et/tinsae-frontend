@@ -230,6 +230,7 @@ export type ShopProductQuery = {
   category?: string;
   ordering?: string;
   status?: string;
+  fresh?: string;
 };
 
 function ShopProductSearchParams(query: ShopProductQuery): URLSearchParams {
@@ -240,6 +241,7 @@ function ShopProductSearchParams(query: ShopProductQuery): URLSearchParams {
   if (query.category) params.set("category", query.category);
   if (query.ordering) params.set("ordering", query.ordering);
   if (query.status) params.set("status", query.status);
+  if (query.fresh) params.set("fresh", query.fresh);
   return params;
 }
 
@@ -263,6 +265,93 @@ export async function getShopProducts(
   );
   if (!res.ok) {
     throw new Error(`Couldn't load products (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function confirmFreshness(
+  shopSlug: string,
+  productSlug: string,
+): Promise<ShopProduct> {
+  const res = await fetch(
+    `/api/shop/${encodeURIComponent(shopSlug)}/products/${encodeURIComponent(productSlug)}/confirm`,
+    { method: "POST" },
+  );
+  if (!res.ok) {
+    throw new Error(`Couldn't confirm freshness (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function confirmSelectedFreshness(
+  shopSlug: string,
+  slugs: string[],
+): Promise<{ confirmed: string[]; not_found: string[] }> {
+  const res = await fetch(
+    `/api/shop/${encodeURIComponent(shopSlug)}/products/confirm-all`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slugs }),
+    },
+  );
+  if (!res.ok) {
+    throw new Error(`Couldn't confirm all products (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function deleteProduct(
+  shopSlug: string,
+  productSlug: string,
+): Promise<void> {
+  const res = await fetch(
+    `/api/shop/${encodeURIComponent(shopSlug)}/products/${encodeURIComponent(productSlug)}`,
+    { method: "DELETE" },
+  );
+  if (!res.ok) {
+    throw new Error(`An error occurred when deleting product (${res.status})`);
+  }
+}
+
+export async function markSold(
+  shopSlug: string,
+  productSlug: string,
+): Promise<ShopProduct> {
+  const res = await fetch(
+    `/api/shop/${encodeURIComponent(shopSlug)}/products/${encodeURIComponent(productSlug)}/mark-sold`,
+    { method: "POST" },
+  );
+  if (!res.ok) {
+    throw new Error(`An error occurred when marking product as sold (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function pauseProduct(
+  shopSlug: string,
+  productSlug: string,
+): Promise<ShopProduct> {
+  const res = await fetch(
+    `/api/shop/${encodeURIComponent(shopSlug)}/products/${encodeURIComponent(productSlug)}/pause`,
+    { method: "POST" },
+  );
+  if (!res.ok) {
+    throw new Error(`An error occurred when pausing product (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function resumeProduct(
+  shopSlug: string,
+  productSlug: string,
+): Promise<ShopProduct> {
+  const res = await fetch(
+    `/api/shop/${encodeURIComponent(shopSlug)}/products/${encodeURIComponent(productSlug)}/resume`,
+    { method: "POST" },
+  );
+  if (!res.ok) {
+    throw new Error(`An error occurred when resuming product (${res.status})`);
   }
   return res.json();
 }

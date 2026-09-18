@@ -19,7 +19,7 @@ export function FinalCTA({
     stats.verified_shops > 0;
 
   return (
-    <section className="mx-auto mt-16 max-w-[1240px] px-6 lg:mt-20 lg:px-7">
+    <section className="mx-auto mt-16 max-w-[1480px] px-6 sm:px-8 lg:mt-24 lg:px-12 xl:px-16">
       <div className="relative overflow-hidden rounded-3xl bg-[linear-gradient(135deg,#CC3000_0%,#E5562A_55%,#FF7A45_100%)] px-7 py-14 text-center sm:px-12 lg:py-16">
         <span
           aria-hidden

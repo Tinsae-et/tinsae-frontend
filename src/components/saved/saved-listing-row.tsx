@@ -8,7 +8,8 @@ import { Icon } from "@/components/tinsae/icon";
 import { Pill } from "@/components/tinsae/pill";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
-import { formatETB, freshness, normalizeImageUrl } from "@/lib/format";
+import { formatETB, freshness } from "@/lib/format";
+import { resolvePrimaryProductImage } from "@/lib/product-images";
 import { formatSavedAgo } from "@/hooks/use-saved";
 import type { Product } from "@/lib/types";
 
@@ -141,7 +142,7 @@ export function SavedListingRow({
   }
 
   const { product, savedAt } = item;
-  const image = normalizeImageUrl(product.images?.[0]?.url) || null;
+  const image = resolvePrimaryProductImage(product.images?.[0]?.url);
   const fresh = freshness(product.last_confirmed_at, product.confirmation_status);
 
   return (

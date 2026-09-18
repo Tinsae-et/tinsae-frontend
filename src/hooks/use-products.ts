@@ -109,6 +109,9 @@ export function useProducts(query: ProductQuery, initial: InitialProducts) {
     fetchFirstPage(controller.signal);
     return () => {
       controller.abort();
+      if (loadedKey.current === filterKey) {
+        loadedKey.current = "";
+      }
     };
   }, [filterKey, fetchFirstPage]);
 
@@ -181,62 +184,146 @@ export function useProducts(query: ProductQuery, initial: InitialProducts) {
 }
 
 
+type CachedShopProducts = {
+  products: ShopProduct[];
+  total: number;
+  timestamp: number;
+};
+
+const shopProductsCache = new Map<string, CachedShopProducts>();
+
+export function getShopProductsCacheKey(slug: string, query: ShopProductQuery): string {
+  const normalized = {
+    page: query.page && query.page > 1 ? query.page : 1,
+    pageSize: query.pageSize || 20,
+    ordering: query.ordering || "-created_at",
+    q: query.q || undefined,
+    category: query.category || undefined,
+    status: query.status || undefined,
+    fresh: query.fresh || undefined,
+  };
+  return `${slug}:${JSON.stringify(normalized)}`;
+}
+
+export function clearShopProductsCache(slug?: string) {
+  if (slug) {
+    for (const key of Array.from(shopProductsCache.keys())) {
+      if (key.startsWith(`${slug}:`)) {
+        shopProductsCache.delete(key);
+      }
+    }
+  } else {
+    shopProductsCache.clear();
+  }
+}
+
 /**
  * Owns the merchant's own catalogue for the dashboard.
  *
  * Takes no access token: `getShopProducts` calls a same-origin route handler
  * that attaches the Authorization header server-side (see lib/auth/authed-fetch).
  *
- * Unlike `useProducts` there is no server-rendered `initial` list to fall back
- * on, so this must fetch on mount as well as on every query change — seeding
- * `loadedKey` with the first query key, as the sibling hook does, meant the
- * mount effect returned early and the table stayed empty until the user touched
- * a filter.
+ * Utilizes a client-side memory cache so navigating between Overview and Listings
+ * renders instantly without getting stuck in a loading state or refetching unnecessarily.
  */
 export function useShopProducts(query: ShopProductQuery, slug: string) {
-  const [products, setProducts] = useState<ShopProduct[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const cacheKey = getShopProductsCacheKey(slug, query);
+  const cached = shopProductsCache.get(cacheKey);
+
+  const [products, setProducts] = useState<ShopProduct[]>(() => cached?.products ?? []);
+  const [total, setTotal] = useState<number>(() => cached?.total ?? 0);
+  const [loading, setLoading] = useState<boolean>(() => !cached);
   const [error, setError] = useState<string | null>(null);
 
-  const queryKey = JSON.stringify(query);
-  const loadedKey = useRef<string | null>(null);
+  const controllerRef = useRef<AbortController | null>(null);
+
+  // Sync state if cacheKey changes and we already have cached data for it
+  const prevCacheKey = useRef(cacheKey);
+  if (prevCacheKey.current !== cacheKey) {
+    prevCacheKey.current = cacheKey;
+    const currentCached = shopProductsCache.get(cacheKey);
+    if (currentCached) {
+      setProducts(currentCached.products);
+      setTotal(currentCached.total);
+      setLoading(false);
+      setError(null);
+    } else {
+      setLoading(true);
+      setError(null);
+    }
+  }
 
   const fetchPage = useCallback(
     async (signal?: AbortSignal) => {
-      setLoading(true);
+      const currentCached = shopProductsCache.get(cacheKey);
+      if (!currentCached) {
+        setLoading(true);
+      }
       setError(null);
+
       try {
         const data = await getShopProducts(slug, query, { signal });
         if (signal?.aborted) return;
+        shopProductsCache.set(cacheKey, {
+          products: data.results,
+          total: data.count,
+          timestamp: Date.now(),
+        });
         setTotal(data.count);
         setProducts(data.results);
-      } catch {
-        if (signal?.aborted) return;
-        setError("Couldn't load listings. Check your connection and try again.");
+        setError(null);
+      } catch (err: unknown) {
+        if (signal?.aborted || (err as Error)?.name === "AbortError") return;
+        if (!currentCached) {
+          setError("Couldn't load listings. Check your connection and try again.");
+        }
       } finally {
         if (!signal?.aborted) {
           setLoading(false);
         }
       }
     },
-    [query, slug],
+    [cacheKey, query, slug],
   );
 
-  // Fetches on mount, then whenever the query changes. The ref survives
-  // StrictMode's simulated remount, so this is one request either way.
   useEffect(() => {
-    if (loadedKey.current === queryKey) return;
-    loadedKey.current = queryKey;
+    controllerRef.current?.abort();
     const controller = new AbortController();
+    controllerRef.current = controller;
+
     fetchPage(controller.signal);
+
     return () => {
       controller.abort();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryKey]);
+  }, [fetchPage]);
 
-  return { products, total, loading, error };
+  // Wrapped updater to keep cache in sync when optimistic updates occur
+  const setProductsAndCache = useCallback(
+    (action: React.SetStateAction<ShopProduct[]>) => {
+      setProducts((prev) => {
+        const next = typeof action === "function" ? action(prev) : action;
+        const current = shopProductsCache.get(cacheKey);
+        if (current) {
+          shopProductsCache.set(cacheKey, {
+            ...current,
+            products: next,
+          });
+        }
+        return next;
+      });
+    },
+    [cacheKey],
+  );
+
+  return {
+    products,
+    setProducts: setProductsAndCache,
+    total,
+    loading,
+    error,
+    refetch: () => fetchPage(),
+  };
 }
 
 export function usePublicShopProducts(
@@ -293,6 +380,9 @@ export function usePublicShopProducts(
     fetchFirstPage(controller.signal);
     return () => {
       controller.abort();
+      if (loadedKey.current === filterKey) {
+        loadedKey.current = "";
+      }
     };
   }, [fetchFirstPage, filterKey]);
 
