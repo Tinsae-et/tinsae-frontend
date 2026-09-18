@@ -6,8 +6,9 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# ---- dev: code is mounted by compose for hot-reload ----
+# ---- dev: Compose Watch syncs later source edits for hot-reload ----
 FROM base AS dev
+COPY . .
 CMD ["npm", "run", "dev"]
 
 # ---- prod: build an optimized bundle and serve it (used in Go Live) ----

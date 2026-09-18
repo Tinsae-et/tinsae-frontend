@@ -415,13 +415,15 @@ function SearchField({
 function BrowseMenu({ categoryCounts }: { categoryCounts?: Record<string, number> }) {
   const [open, setOpen] = useState(false);
   const [fetchedCounts, setFetchedCounts] = useState<Record<string, number> | undefined>(undefined);
+  const hasAttemptedRef = useRef(false);
   const counts = categoryCounts && Object.keys(categoryCounts).length > 0 ? categoryCounts : fetchedCounts;
   const menuRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Client-side fallback to fetch live counts if not provided via SSR
   useEffect(() => {
-    if (counts && Object.keys(counts).length > 0) return;
+    if ((categoryCounts && Object.keys(categoryCounts).length > 0) || hasAttemptedRef.current) return;
+    hasAttemptedRef.current = true;
     let active = true;
     fetch("/api/public-stats")
       .then((r) => (r.ok ? r.json() : null))
@@ -434,7 +436,7 @@ function BrowseMenu({ categoryCounts }: { categoryCounts?: Record<string, number
     return () => {
       active = false;
     };
-  }, [counts]);
+  }, [categoryCounts]);
 
   const handleMouseEnter = () => {
     if (timeoutRef.current) {
