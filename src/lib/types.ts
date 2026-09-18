@@ -83,14 +83,20 @@ export type ShopProduct = {
   price: string;
   currency: string;
   shop: number;
+  shop_slug?: string;
   category: string;
   condition: string;
+  status?: string;
+  stock?: number;
+  views?: number;
+  inquiries?: number;
   is_available: boolean;
   confirmation_status?: "fresh" | "stale" | null;
   last_confirmed_at: string | null;
   freshness: string;
   slug: string;
   specs: Record<string, unknown>;
+  images?: ProductImage[];
 };
 
 export type ShopMetrics = {
