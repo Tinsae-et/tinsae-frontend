@@ -1,9 +1,8 @@
-import { Pill } from "@/components/tinsae/pill"
+import React from "react"
 import { deleteProduct } from "@/lib/api";
 import { ShopProduct } from "@/lib/types";
 import { AlertTriangle, X } from "lucide-react";
 import { redirect } from "next/navigation";
-import React from "react"
 
 type Props = {
     setDeleteItem: (b: boolean) => void;
