@@ -121,6 +121,7 @@ export function ListingSection({
     return () => {
       controller.abort();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query.category, query.ordering, query.q, fetchFirstPage, initialProducts]);
 
   const loadMore = useCallback(async () => {
