@@ -97,7 +97,6 @@ export type ShopProduct = {
   last_confirmed_at: string | null;
   freshness: string;
   slug: string;
-  stock?: number;
   specs: Record<string, unknown>;
   images?: ProductImage[];
 };
@@ -124,7 +123,8 @@ export type ShopProductImage = {
   display_order: number;
   preview: string;
   product?: ShopProduct;
-}
+  url?: string;
+};
 
 export type ShopMetrics = {
   verified_shops?: number;
