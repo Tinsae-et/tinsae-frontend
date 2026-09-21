@@ -10,12 +10,15 @@ type PillKind = "solid" | "dark" | "outline" | "ghost" | "light";
 type PillSize = "sm" | "md" | "lg";
 
 const kinds: Record<PillKind, string> = {
-  solid: "bg-tn-red text-white shadow-[0_8px_22px_rgba(204,48,0,0.26)] hover:bg-tn-red-dark",
+  solid:
+    "bg-tn-red text-white shadow-[0_8px_22px_rgba(204,48,0,0.26)] hover:bg-tn-red-dark",
   dark: "bg-tn-ink text-white shadow-[0_8px_22px_rgba(11,11,11,0.18)] hover:bg-black",
   outline:
     "bg-white text-tn-ink border-[1.5px] border-tn-hair hover:border-tn-ink hover:text-tn-ink",
-  ghost: "bg-transparent text-tn-ink border-[1.5px] border-tn-ink hover:bg-tn-paper",
-  light: "bg-white text-tn-red shadow-[0_8px_22px_rgba(11,11,11,0.12)] hover:bg-tn-red-soft",
+  ghost:
+    "bg-transparent text-tn-ink border-[1.5px] border-tn-ink hover:bg-tn-paper",
+  light:
+    "bg-white text-tn-red shadow-[0_8px_22px_rgba(11,11,11,0.12)] hover:bg-tn-red-soft",
 };
 
 const sizes: Record<PillSize, string> = {
@@ -54,7 +57,8 @@ export function Pill({
     // A Pill that can't be pressed must say so, not just look faded: the
     // onboarding funnel relied on opacity alone and stayed clickable, which is
     // how a double-tap on "Create my shop" got two shops created.
-    disabled && "pointer-events-none cursor-not-allowed opacity-50 shadow-none hover:translate-y-0",
+    disabled &&
+      "pointer-events-none cursor-not-allowed opacity-50 shadow-none hover:translate-y-0",
     className,
   );
 
@@ -75,10 +79,7 @@ export function Pill({
   }
 
   return (
-    <Link
-      href={href ?? "#"}
-      className={classes}
-    >
+    <Link href={href ?? "#"} className={classes}>
       {icon && <Icon name={icon} size={size === "lg" ? 18 : 17} />}
       {children}
       {iconAfter && <Icon name={iconAfter} size={size === "lg" ? 16 : 15} />}
