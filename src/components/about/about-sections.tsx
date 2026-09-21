@@ -386,28 +386,16 @@ function StatBand() {
   );
 }
 
-function IdentitySection() {
-  const whatWeAre = [
-    "A directory of shops verified in person",
-    "A live, daily-confirmed price comparison",
-    "A direct line to the shop on Telegram",
-    "Free to browse, with no markup on any price",
-  ];
-  const whatWeAreNot = [
-    "A payment processor or escrow service",
-    "A delivery company",
-    "A reseller — we own no stock",
-    "A reviews site with stale, unchecked listings",
-  ];
-  const ListCard = ({
-    title,
-    items,
-    positive,
-  }: {
-    title: string;
-    items: string[];
-    positive: boolean;
-  }) => (
+function IdentityListCard({
+  title,
+  items,
+  positive,
+}: {
+  title: string;
+  items: string[];
+  positive: boolean;
+}) {
+  return (
     <div
       className={`rounded-[18px] border p-6 sm:p-7 ${positive ? "border-[#CDE9DA] bg-tn-green-soft" : "border-tn-hair bg-white"}`}
     >
@@ -440,11 +428,26 @@ function IdentitySection() {
       ))}
     </div>
   );
+}
+
+function IdentitySection() {
+  const whatWeAre = [
+    "A directory of shops verified in person",
+    "A live, daily-confirmed price comparison",
+    "A direct line to the shop on Telegram",
+    "Free to browse, with no markup on any price",
+  ];
+  const whatWeAreNot = [
+    "A payment processor or escrow service",
+    "A delivery company",
+    "A reseller — we own no stock",
+    "A reviews site with stale, unchecked listings",
+  ];
   return (
     <section className="mx-auto max-w-[920px] px-6 pt-20 sm:px-8 lg:pt-24">
       <div className="grid grid-cols-1 gap-[18px] sm:grid-cols-2">
-        <ListCard title="What we are" items={whatWeAre} positive />
-        <ListCard
+        <IdentityListCard title="What we are" items={whatWeAre} positive />
+        <IdentityListCard
           title="What we're not"
           items={whatWeAreNot}
           positive={false}
