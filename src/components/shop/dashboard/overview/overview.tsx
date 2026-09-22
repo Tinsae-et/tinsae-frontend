@@ -7,12 +7,28 @@ import { useShopProducts } from "@/hooks/use-products";
 import { formatETB, Freshness, freshness } from "@/lib/format";
 import { Pill } from "@/components/tinsae/pill";
 import { Icon } from "@/components/tinsae/icon";
-import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
+import {
+  ProdPlaceholder,
+  kindForSlug,
+} from "@/components/tinsae/prod-placeholder";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { confirmFreshness, markSold, pauseProduct, resumeProduct } from "@/lib/api";
+import {
+  confirmFreshness,
+  markSold,
+  pauseProduct,
+  resumeProduct,
+} from "@/lib/api";
 import DeleteListing from "../listings/delete-listing";
-import { Loader2, MoreHorizontal, Pause, Pencil, Play, Tag, Trash } from "lucide-react";
+import {
+  Loader2,
+  MoreHorizontal,
+  Pause,
+  Pencil,
+  Play,
+  Tag,
+  Trash,
+} from "lucide-react";
 import { GuidedFirstRun } from "./guided-first-run";
 
 type KpiItem = {
@@ -41,7 +57,8 @@ type KpiItem = {
 function buildKpis(products: ShopProduct[]): KpiItem[] {
   const active = products.filter((p) => p.is_available);
   const confirmed = active.filter(
-    (p) => freshness(p.last_confirmed_at, p.confirmation_status).tone === "fresh",
+    (p) =>
+      freshness(p.last_confirmed_at, p.confirmation_status).tone === "fresh",
   ).length;
 
   return [
@@ -98,7 +115,13 @@ function Sparkline({ data }: { data: number[] }) {
   );
 }
 
-function StatusPill({ tone, product }: { tone: "fresh" | "stale" | "unconfirmed", product: ShopProduct }) {
+function StatusPill({
+  tone,
+  product,
+}: {
+  tone: "fresh" | "stale" | "unconfirmed";
+  product: ShopProduct;
+}) {
   if (tone === "fresh" && product.is_available) {
     return (
       <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-tn-green-soft text-tn-green">
@@ -140,7 +163,9 @@ function NumberCard({ numb }: { numb: KpiItem }) {
           <span
             className={cn(
               "font-tn-mono text-[11.5px] font-extrabold px-2 py-0.5 rounded-full",
-              numb.up ? "bg-tn-green-soft text-tn-green" : "bg-tn-red-soft text-tn-red",
+              numb.up
+                ? "bg-tn-green-soft text-tn-green"
+                : "bg-tn-red-soft text-tn-red",
             )}
           >
             {numb.delta}
@@ -214,7 +239,9 @@ function ListingTableHeader({
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between px-5 py-[18px] gap-3">
       <div>
-        <h2 className="text-[15px] font-extrabold text-tn-ink">Your listings</h2>
+        <h2 className="text-[15px] font-extrabold text-tn-ink">
+          Your listings
+        </h2>
         {subText && (
           <p className="font-tn-mono text-xs text-tn-mute mt-0.5">{subText}</p>
         )}
@@ -229,7 +256,12 @@ function ListingTableHeader({
         <Pill kind="outline" size="sm" icon="check">
           Quick confirm
         </Pill>
-        <Pill kind="outline" size="sm" iconAfter="arrow" href="/shop/dashboard/listings">
+        <Pill
+          kind="outline"
+          size="sm"
+          iconAfter="arrow"
+          href="/shop/dashboard/listings"
+        >
           Manage all
         </Pill>
       </div>
@@ -291,7 +323,9 @@ export function ActionMenu({
       }
       onClose();
     } catch {
-      setActionError(product.is_available ? "Failed to pause" : "Failed to resume");
+      setActionError(
+        product.is_available ? "Failed to pause" : "Failed to resume",
+      );
     } finally {
       setInFlight(null);
     }
@@ -406,7 +440,10 @@ function TableRow({
   );
   const isMenuOpen = openMenuId === product.id;
   const isNearBottom =
-    rowIndex !== undefined && totalRows !== undefined && totalRows > 1 && rowIndex >= totalRows - 2;
+    rowIndex !== undefined &&
+    totalRows !== undefined &&
+    totalRows > 1 &&
+    rowIndex >= totalRows - 2;
   const [needConfirm, setNeedConfirm] = useState<boolean>(
     () => product.is_available && fresh.tone !== "fresh",
   );
@@ -453,7 +490,9 @@ function TableRow({
           onClick={() => toggleOne(product.id)}
           className={cn(
             "flex h-4 w-4 items-center justify-center rounded-[4px] border transition-colors cursor-pointer",
-            isSelected ? "border-tn-red bg-tn-red text-white" : "border-tn-hair bg-white",
+            isSelected
+              ? "border-tn-red bg-tn-red text-white"
+              : "border-tn-hair bg-white",
           )}
         >
           {isSelected && <Icon name="check" size={12} strokeWidth={3} />}
@@ -514,7 +553,13 @@ function TableRow({
       <td className="py-[13px] pl-2 pr-5 text-right">
         <div className="flex justify-end items-center">
           {needConfirm ? (
-            <Pill kind="solid" size="sm" icon="check" disabled={confirming} onClick={confirm}>
+            <Pill
+              kind="solid"
+              size="sm"
+              icon="check"
+              disabled={confirming}
+              onClick={confirm}
+            >
               {confirming ? "Confirming..." : "Confirm"}
             </Pill>
           ) : (
@@ -656,7 +701,8 @@ function Numbers({
             {needsReconfirming > 0 ? (
               <>
                 <span className="text-tn-ink font-bold">
-                  {needsReconfirming} {needsReconfirming === 1 ? "listing" : "listings"}
+                  {needsReconfirming}{" "}
+                  {needsReconfirming === 1 ? "listing" : "listings"}
                 </span>{" "}
                 need re-confirmation today.
               </>
@@ -707,11 +753,18 @@ export default function Overview({
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-6" aria-busy="true" aria-label="Loading dashboard">
+      <div
+        className="flex flex-col gap-6"
+        aria-busy="true"
+        aria-label="Loading dashboard"
+      >
         <div className="h-12 w-72 animate-pulse rounded-xl bg-tn-hair2" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((item) => (
-            <div key={item} className="h-32 animate-pulse rounded-[18px] border border-tn-hair bg-white" />
+            <div
+              key={item}
+              className="h-32 animate-pulse rounded-[18px] border border-tn-hair bg-white"
+            />
           ))}
         </div>
         <div className="h-72 animate-pulse rounded-[18px] border border-tn-hair bg-white" />
@@ -722,7 +775,8 @@ export default function Overview({
   const needsReconfirming = products.filter(
     (product) =>
       product.is_available &&
-      freshness(product.last_confirmed_at, product.confirmation_status).tone !== "fresh",
+      freshness(product.last_confirmed_at, product.confirmation_status).tone !==
+        "fresh",
   );
 
   if (products.length === 0) {
@@ -740,13 +794,22 @@ export default function Overview({
                 Needs your attention
               </p>
               <h2 className="mt-1 text-xl font-extrabold tracking-[-0.02em] text-tn-ink">
-                {needsReconfirming.length} {needsReconfirming.length === 1 ? "listing needs" : "listings need"} confirmation
+                {needsReconfirming.length}{" "}
+                {needsReconfirming.length === 1
+                  ? "listing needs"
+                  : "listings need"}{" "}
+                confirmation
               </h2>
               <p className="mt-1 text-sm font-medium text-tn-ink2">
                 Confirm your stock so buyers see accurate availability.
               </p>
             </div>
-            <Pill kind="solid" size="md" icon="check" href={`${basePath}/listings?tab=needs-attention`}>
+            <Pill
+              kind="solid"
+              size="md"
+              icon="check"
+              href={`${basePath}/listings?tab=needs-attention`}
+            >
               Review listings
             </Pill>
           </div>

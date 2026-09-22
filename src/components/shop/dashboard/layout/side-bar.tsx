@@ -46,7 +46,7 @@ function Links({ links }: { links: NavLinkItem[] }) {
               "flex items-center justify-between px-3 py-[11px] my-[2px] rounded-[11px] text-[13.5px] transition-colors",
               isActive
                 ? "bg-tn-ink text-white font-bold"
-                : "text-tn-ink2 font-semibold hover:bg-tn-paper"
+                : "text-tn-ink2 font-semibold hover:bg-tn-paper",
             )}
           >
             <div className="flex items-center gap-[11px]">
@@ -62,7 +62,7 @@ function Links({ links }: { links: NavLinkItem[] }) {
               <span
                 className={cn(
                   "font-tn-mono text-[10.5px] font-bold rounded-full px-[7px] py-0.5",
-                  isActive ? "bg-white text-tn-ink" : "bg-tn-red text-white"
+                  isActive ? "bg-white text-tn-ink" : "bg-tn-red text-white",
                 )}
               >
                 {l.count}
@@ -89,7 +89,7 @@ function SideBar({
       className={cn(
         "w-[248px] shrink-0 h-screen border-r border-tn-hair bg-white flex flex-col justify-between z-30 transition-transform",
         "fixed inset-y-0 left-0 lg:sticky lg:top-0",
-        showSidebar ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        showSidebar ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
       )}
     >
       <div>

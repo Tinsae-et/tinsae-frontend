@@ -27,7 +27,9 @@ export default async function DashboardSection({
   if (!shop) return <DashboardNoShop />;
 
   if (navigation === "overview") {
-    return <Overview slug={shop.slug} shopName={shop.name} basePath="/dashboard" />;
+    return (
+      <Overview slug={shop.slug} shopName={shop.name} basePath="/dashboard" />
+    );
   }
   if (navigation === "listings") {
     const { tab } = await searchParams;
@@ -42,7 +44,9 @@ export default async function DashboardSection({
     const { access } = await readSession();
     const fullShop = await getShop(shop.slug).catch(() => null);
     if (!access) return <DashboardNoShop />;
-    return <ShopProfile initialShop={fullShop} slug={shop.slug} access={access} />;
+    return (
+      <ShopProfile initialShop={fullShop} slug={shop.slug} access={access} />
+    );
   }
   if (navigation === "telegram") {
     return <TelegramSetup shop={shop} />;

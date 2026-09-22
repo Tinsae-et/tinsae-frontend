@@ -13,5 +13,7 @@ export default async function DashboardOverviewPage() {
   const user = await getCurrentUser();
   const shop = user?.shops[0];
   if (!shop) return <DashboardNoShop />;
-  return <Overview slug={shop.slug} shopName={shop.name} basePath="/dashboard" />;
+  return (
+    <Overview slug={shop.slug} shopName={shop.name} basePath="/dashboard" />
+  );
 }
