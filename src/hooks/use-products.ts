@@ -1,7 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getProducts, getPublicShopProducts, getShopProducts, ShopProductQuery, type ProductQuery } from "@/lib/api";
+import {
+  getProducts,
+  getPublicShopProducts,
+  getShopProducts,
+  ShopProductQuery,
+  type ProductQuery,
+} from "@/lib/api";
 import type { Paginated, Product, ShopProduct } from "@/lib/types";
 import { PRODUCTS_PAGE_SIZE } from "@/components/products/product-grid";
 
@@ -129,7 +135,11 @@ export function useProducts(query: ProductQuery, initial: InitialProducts) {
     const nextPage = page + 1;
     try {
       const data = await getProducts(
-        { ...filterQueryRef.current, page: nextPage, pageSize: PRODUCTS_PAGE_SIZE },
+        {
+          ...filterQueryRef.current,
+          page: nextPage,
+          pageSize: PRODUCTS_PAGE_SIZE,
+        },
         { signal },
       );
       if (signal.aborted) return;
@@ -145,7 +155,9 @@ export function useProducts(query: ProductQuery, initial: InitialProducts) {
       setTotal(data.count);
       setPage(nextPage);
       setHasMore(
-        Boolean(data.next) && data.results.length > 0 && emptyStreak.current < 4,
+        Boolean(data.next) &&
+          data.results.length > 0 &&
+          emptyStreak.current < 4,
       );
     } catch {
       if (signal.aborted) return;
@@ -183,7 +195,6 @@ export function useProducts(query: ProductQuery, initial: InitialProducts) {
   };
 }
 
-
 type CachedShopProducts = {
   products: ShopProduct[];
   total: number;
@@ -192,7 +203,10 @@ type CachedShopProducts = {
 
 const shopProductsCache = new Map<string, CachedShopProducts>();
 
-export function getShopProductsCacheKey(slug: string, query: ShopProductQuery): string {
+export function getShopProductsCacheKey(
+  slug: string,
+  query: ShopProductQuery,
+): string {
   const normalized = {
     page: query.page && query.page > 1 ? query.page : 1,
     pageSize: query.pageSize || 20,
@@ -228,9 +242,16 @@ export function clearShopProductsCache(slug?: string) {
  */
 export function useShopProducts(query: ShopProductQuery, slug: string) {
   const cacheKey = getShopProductsCacheKey(slug, query);
+  // Callers commonly build this object inline. Depend on its values rather
+  // than its identity so a response update cannot restart the same request.
+  const queryKey = JSON.stringify(query);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- queryKey represents every query value.
+  const stableQuery = useMemo(() => query, [queryKey]);
   const cached = shopProductsCache.get(cacheKey);
 
-  const [products, setProducts] = useState<ShopProduct[]>(() => cached?.products ?? []);
+  const [products, setProducts] = useState<ShopProduct[]>(
+    () => cached?.products ?? [],
+  );
   const [total, setTotal] = useState<number>(() => cached?.total ?? 0);
   const [loading, setLoading] = useState<boolean>(() => !cached);
   const [error, setError] = useState<string | null>(null);
@@ -257,7 +278,7 @@ export function useShopProducts(query: ShopProductQuery, slug: string) {
     async (signal?: AbortSignal) => {
       const currentCached = shopProductsCache.get(cacheKey);
       try {
-        const data = await getShopProducts(slug, query, { signal });
+        const data = await getShopProducts(slug, stableQuery, { signal });
         if (signal?.aborted) return;
         shopProductsCache.set(cacheKey, {
           products: data.results,
@@ -270,7 +291,9 @@ export function useShopProducts(query: ShopProductQuery, slug: string) {
       } catch (err: unknown) {
         if (signal?.aborted || (err as Error)?.name === "AbortError") return;
         if (!currentCached) {
-          setError("Couldn't load listings. Check your connection and try again.");
+          setError(
+            "Couldn't load listings. Check your connection and try again.",
+          );
         }
       } finally {
         if (!signal?.aborted) {
@@ -278,7 +301,7 @@ export function useShopProducts(query: ShopProductQuery, slug: string) {
         }
       }
     },
-    [cacheKey, query, setError, setLoading, setProducts, setTotal, slug],
+    [cacheKey, setError, setLoading, setProducts, setTotal, slug, stableQuery],
   );
 
   useEffect(() => {
@@ -328,7 +351,10 @@ export function usePublicShopProducts(
   slug: string,
   initial?: Paginated<Product> | null,
 ) {
-  const filterQuery: ShopProductQuery = useMemo(() => ({ ...query, page: undefined }), [query]);
+  const filterQuery: ShopProductQuery = useMemo(
+    () => ({ ...query, page: undefined }),
+    [query],
+  );
   const filterKey = JSON.stringify(filterQuery);
 
   const [products, setProducts] = useState<Product[]>(initial?.results ?? []);
@@ -349,15 +375,25 @@ export function usePublicShopProducts(
       setLoading(true);
       setError(null);
       try {
-        const data = await getPublicShopProducts(slug, { ...filterQuery, page: 1 }, { signal });
+        const data = await getPublicShopProducts(
+          slug,
+          { ...filterQuery, page: 1 },
+          { signal },
+        );
         if (signal?.aborted) return;
         setTotal(data.count);
         setProducts(data.results);
         setPage(1);
-        setHasMore(Boolean(data.next) && data.results.length > 0 && data.results.length < data.count);
+        setHasMore(
+          Boolean(data.next) &&
+            data.results.length > 0 &&
+            data.results.length < data.count,
+        );
       } catch {
         if (signal?.aborted) return;
-        setError("Couldn't load listings. Check your connection and try again.");
+        setError(
+          "Couldn't load listings. Check your connection and try again.",
+        );
       } finally {
         if (!signal?.aborted) {
           setLoading(false);
@@ -388,7 +424,10 @@ export function usePublicShopProducts(
     setLoadingMore(true);
     const nextPage = page + 1;
     try {
-      const data = await getPublicShopProducts(slug, { ...filterQuery, page: nextPage });
+      const data = await getPublicShopProducts(slug, {
+        ...filterQuery,
+        page: nextPage,
+      });
       setProducts((prev) => {
         const existing = new Set(prev.map((p) => p.id));
         const added = data.results.filter((p) => !existing.has(p.id));

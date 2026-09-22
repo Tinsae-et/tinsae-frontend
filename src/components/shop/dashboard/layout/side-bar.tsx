@@ -33,10 +33,13 @@ function Links({ links }: { links: NavLinkItem[] }) {
     <div className="px-3 py-1 flex flex-col gap-0.5">
       {links.map((l) => {
         const isActive =
-          pathname === l.to ||
-          pathname.startsWith(l.to + "/") ||
-          (l.to === "/shop/dashboard/overview" &&
-            (pathname === "/dashboard" || pathname === "/dashboard/"));
+          l.to === "/dashboard"
+            ? pathname === "/dashboard" || pathname === "/dashboard/"
+            : l.to === "/dashboard/listings"
+              ? pathname === l.to ||
+                (pathname.startsWith(`${l.to}/`) &&
+                  pathname !== "/dashboard/listings/new")
+              : pathname === l.to;
 
         return (
           <Link
