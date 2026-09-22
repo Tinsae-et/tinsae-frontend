@@ -9,6 +9,7 @@ import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { cn } from "@/lib/utils";
 
 import { LogoutButton } from "@/components/auth/logout-button";
+import type { AuthShop } from "@/lib/auth/types";
 
 type NavLinkItem = {
   to: string;
@@ -18,13 +19,11 @@ type NavLinkItem = {
 };
 
 const NAVLINKS: NavLinkItem[] = [
-  { to: "/shop/dashboard/overview", text: "Overview", icon: "home" },
-  { to: "/shop/dashboard/listings", text: "Listings", icon: "box" },
-  { to: "/shop/dashboard/inquiries", text: "Inquiries", icon: "msg", count: 7 },
-  { to: "/shop/dashboard/analytics", text: "Analytics", icon: "pulse" },
-  { to: "/shop/dashboard/shop-profile", text: "Shop profile", icon: "building" },
-  { to: "/shop/dashboard/get-verified", text: "Get verified", icon: "shield" },
-  { to: "/shop/dashboard/telegram-bot", text: "Telegram bot", icon: "tg" },
+  { to: "/dashboard", text: "Overview", icon: "home" },
+  { to: "/dashboard/listings", text: "Listings", icon: "box" },
+  { to: "/dashboard/listings/new", text: "Add listing", icon: "plus" },
+  { to: "/dashboard/shop-settings", text: "Shop settings", icon: "building" },
+  { to: "/dashboard/telegram", text: "Telegram setup", icon: "tg" },
 ];
 
 function Links({ links }: { links: NavLinkItem[] }) {
@@ -37,7 +36,7 @@ function Links({ links }: { links: NavLinkItem[] }) {
           pathname === l.to ||
           pathname.startsWith(l.to + "/") ||
           (l.to === "/shop/dashboard/overview" &&
-            (pathname === "/shop/dashboard" || pathname === "/shop/dashboard/"));
+            (pathname === "/dashboard" || pathname === "/dashboard/"));
 
         return (
           <Link
@@ -76,7 +75,15 @@ function Links({ links }: { links: NavLinkItem[] }) {
   );
 }
 
-function SideBar({ showSidebar }: { showSidebar: boolean }) {
+function SideBar({
+  showSidebar,
+  shop,
+  userName,
+}: {
+  showSidebar: boolean;
+  shop?: AuthShop | null;
+  userName?: string;
+}) {
   return (
     <aside
       className={cn(
@@ -117,12 +124,12 @@ function SideBar({ showSidebar }: { showSidebar: boolean }) {
             <div className="flex-1 min-w-0 flex flex-col justify-center">
               <div className="flex items-center gap-1.5">
                 <span className="font-extrabold text-[13px] text-tn-ink truncate">
-                  Almeda Electronics
+                  {shop?.name ?? userName ?? "Your shop"}
                 </span>
                 <VerifiedBadge size={11} />
               </div>
               <span className="font-tn-mono text-[10.5px] text-tn-mute mt-0.5">
-                Bole · Atlas
+                {shop?.city ?? "Set up your shop"}
               </span>
             </div>
             <Icon name="chevd" size={14} className="text-tn-mute shrink-0" />

@@ -697,18 +697,61 @@ function Numbers({
 export default function Overview({
   slug,
   shopName,
+  basePath = "/shop/dashboard",
 }: {
   slug: string;
   shopName: string;
+  basePath?: string;
 }) {
   const { products, loading } = useShopProducts({}, slug);
 
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-6" aria-busy="true" aria-label="Loading dashboard">
+        <div className="h-12 w-72 animate-pulse rounded-xl bg-tn-hair2" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((item) => (
+            <div key={item} className="h-32 animate-pulse rounded-[18px] border border-tn-hair bg-white" />
+          ))}
+        </div>
+        <div className="h-72 animate-pulse rounded-[18px] border border-tn-hair bg-white" />
+      </div>
+    );
+  }
+
+  const needsReconfirming = products.filter(
+    (product) =>
+      product.is_available &&
+      freshness(product.last_confirmed_at, product.confirmation_status).tone !== "fresh",
+  );
+
+  if (products.length === 0) {
+    return <GuidedFirstRun shopName={shopName} basePath={basePath} />;
+  }
+
   return (
     <div className="flex flex-col gap-6">
-      {products.length === 0 && !loading && (
-        <GuidedFirstRun shopName={shopName} />
-      )}
       <Numbers shopName={shopName} products={products} />
+      {needsReconfirming.length > 0 && (
+        <section className="rounded-[20px] border border-[#FBD9C7] bg-tn-red-soft px-5 py-5 sm:px-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-tn-red">
+                Needs your attention
+              </p>
+              <h2 className="mt-1 text-xl font-extrabold tracking-[-0.02em] text-tn-ink">
+                {needsReconfirming.length} {needsReconfirming.length === 1 ? "listing needs" : "listings need"} confirmation
+              </h2>
+              <p className="mt-1 text-sm font-medium text-tn-ink2">
+                Confirm your stock so buyers see accurate availability.
+              </p>
+            </div>
+            <Pill kind="solid" size="md" icon="check" href={`${basePath}/listings?tab=needs-attention`}>
+              Review listings
+            </Pill>
+          </div>
+        </section>
+      )}
       <div className="grid md:grid-cols-2 gap-4">
         <DailyStockCheckIn products={products} />
         <RecentActivities />

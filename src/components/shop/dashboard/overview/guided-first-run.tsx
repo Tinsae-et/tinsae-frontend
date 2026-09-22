@@ -4,7 +4,13 @@ import Link from "next/link";
 import { Icon } from "@/components/tinsae/icon";
 import { Pill } from "@/components/tinsae/pill";
 
-export function GuidedFirstRun({ shopName }: { shopName: string }) {
+export function GuidedFirstRun({
+  shopName,
+  basePath = "/shop/dashboard",
+}: {
+  shopName: string;
+  basePath?: string;
+}) {
   return (
     <div className="rounded-3xl border border-tn-hair bg-white p-6 sm:p-8 shadow-sm">
       {/* Header banner */}
@@ -27,7 +33,7 @@ export function GuidedFirstRun({ shopName }: { shopName: string }) {
             kind="solid"
             size="md"
             icon="plus"
-            href="/shop/dashboard/listings/new"
+            href={`${basePath}/listings/new`}
           >
             Add your first product
           </Pill>
@@ -63,7 +69,7 @@ export function GuidedFirstRun({ shopName }: { shopName: string }) {
               </p>
             </div>
             <Link
-              href="/shop/dashboard/listings/new"
+              href={`${basePath}/listings/new`}
               className="text-xs font-bold text-tn-red hover:underline mt-4 inline-flex items-center gap-1"
             >
               Add product →
