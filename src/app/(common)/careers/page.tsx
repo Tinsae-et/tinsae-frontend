@@ -1,9 +1,4 @@
-
-import {
-    ChevronDown,
-    Send,
-    MapPin,
-} from "lucide-react";
+import { Icon } from "@/components/tinsae/icon";
 import HowWeWork from "@/components/careers/how-we-work";
 import { BENEFITS, CARDS, FAQS, PROCESS_STEPS, ROLES } from "../../../components/careers/data";
 import OpenRoles from "@/components/careers/open-roles";
@@ -56,7 +51,7 @@ export default function CareersPage() {
                         </span>
                         <span className="text-neutral-300">·</span>
                         <span className="flex items-center gap-1">
-                            <MapPin className="h-3.5 w-3.5 text-neutral-400" />
+                            <Icon name="pin" className="h-3.5 w-3.5 text-neutral-400" />
                             <span className="font-semibold text-neutral-800">Addis</span>{" "}
                             only, for now
                         </span>
