@@ -1,102 +1,155 @@
+import type { Metadata } from "next";
 import { Icon } from "@/components/tinsae/icon";
+import { Pill } from "@/components/tinsae/pill";
+import {
+  BENEFITS,
+  CARDS,
+  CAREERS_EMAIL,
+  FAQS,
+  PROCESS_STEPS,
+  ROLES,
+} from "@/components/careers/data";
 import HowWeWork from "@/components/careers/how-we-work";
-import { BENEFITS, CARDS, FAQS, PROCESS_STEPS, ROLES } from "../../../components/careers/data";
 import OpenRoles from "@/components/careers/open-roles";
 import WhatYouGet from "@/components/careers/what-you-get";
-import HiringProces from "@/components/careers/hiring-process";
+import HiringProcess from "@/components/careers/hiring-process";
 import Faqs from "@/components/careers/faqs";
-import { Pill } from "@/components/tinsae/pill";
 
+export const metadata: Metadata = {
+  title: "Careers — Tinsae",
+  description:
+    "Help make local commerce trustworthy. Open roles in Addis Ababa at Tinsae.",
+  openGraph: {
+    title: "Careers at Tinsae",
+    description:
+      "Help make local commerce trustworthy. Open roles in Addis Ababa at Tinsae.",
+    url: "https://tinsae.et/careers",
+    siteName: "Tinsae",
+    type: "website",
+  },
+};
 
 export default function CareersPage() {
+  const roleCount = ROLES.length;
 
-    return (
-        <div className="min-h-screen bg-white">
-            {/* Hero */}
-            <div className="mx-auto border-b px-10">
-                <div className="max-w-6xl relative overflow-hidden bg-gradient-to-b from-orange-50/50 to-white pt-14 pb-10 mx-auto">
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs font-medium text-neutral-700">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                        We&apos;re hiring
-                    </span>
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Hero */}
+      <section className="border-b border-tn-hair px-4 pt-10 pb-12 sm:px-8 sm:pt-14 sm:pb-16 lg:px-12 xl:px-16">
+        <div className="mx-auto max-w-[1480px]">
+          <div className="max-w-[800px]">
+            <span className="inline-flex items-center gap-2 rounded-full border border-tn-hair bg-white px-3.5 py-1 text-xs font-semibold text-tn-ink2 shadow-xs">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              We&apos;re hiring
+            </span>
 
-                    <h1 className="mt-5 max-w-2xl text-5xl font-extrabold leading-tight tracking-tight text-neutral-900">
-                        Help make local commerce
-                        <br />
-                        <span className="text-orange-700">trustworthy.</span>
-                    </h1>
+            <h1 className="text-tn-ink mt-5 text-[38px] leading-[1.04] font-extrabold tracking-[-0.035em] sm:text-[54px] lg:text-[62px]">
+              Help make local commerce
+              <br />
+              <span className="text-tn-red">trustworthy.</span>
+            </h1>
 
-                    <p className="mt-5 max-w-lg text-[15px] leading-relaxed text-neutral-500">
-                        Eleven people in Addis building the proof layer under a city&apos;s
-                        electronics trade. Six roles open — three of them out in the shops.
-                    </p>
+            <p className="text-tn-mute mt-5 max-w-[580px] text-base leading-relaxed font-medium sm:text-[18px]">
+              Eleven people in Addis building the proof layer under a city&apos;s
+              electronics trade. {roleCount} roles open — three of them out in the
+              shops.
+            </p>
 
-                    <div className="mt-7 flex items-center gap-3">
-
-                        <Pill iconAfter="chevd" className="text-lg">See open roles</Pill>
-                        <Pill icon="tg" className="flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-5 py-3 text-lg font-semibold text-neutral-800 hover:bg-neutral-50">
-                            Apply on Telegram
-                        </Pill>
-                    </div>
-
-                    <div className="mt-8 flex items-center gap-3 border-t border-neutral-100 pt-5 font-mono text-sm text-neutral-500">
-                        <span>
-                            <span className="font-semibold text-neutral-800">6</span> open
-                            roles
-                        </span>
-                        <span className="text-neutral-300">·</span>
-                        <span>
-                            <span className="font-semibold text-neutral-800">11</span> people
-                            today
-                        </span>
-                        <span className="text-neutral-300">·</span>
-                        <span className="flex items-center gap-1">
-                            <Icon name="pin" className="h-3.5 w-3.5 text-neutral-400" />
-                            <span className="font-semibold text-neutral-800">Addis</span>{" "}
-                            only, for now
-                        </span>
-                    </div>
-                </div>
+            <div className="mt-8 flex flex-wrap items-center gap-3.5">
+              <Pill
+                kind="solid"
+                size="lg"
+                iconAfter="chevd"
+                href="#roles"
+              >
+                See open roles
+              </Pill>
+              <Pill
+                kind="outline"
+                size="lg"
+                icon="tg"
+                href="https://t.me/TinsaeJobs"
+              >
+                Apply on Telegram
+              </Pill>
             </div>
 
-            {/* How we work */}
-            <HowWeWork cards={CARDS} />
-
-            {/* Open roles */}
-            <OpenRoles roles={ROLES} />
-
-            {/* What you get */}
-            <WhatYouGet benefits={BENEFITS} />
-
-            {/* Hiring process */}
-            <HiringProces steps={PROCESS_STEPS} />
-
-            {/* FAQ */}
-            <Faqs faqs={FAQS} />
-
-            {/* Baner */}
-            <section className="mx-auto mt-16 max-w-6xl px-0 sm:px-8 lg:mt-24 lg:px-12 xl:px-16">
-                <div className="relative overflow-hidden rounded-3xl bg-[linear-gradient(135deg,#CC3000_0%,#E5562A_55%,#FF7A45_100%)] px-7 py-14 text-center sm:px-12 lg:py-16">
-                    <span
-                        aria-hidden
-                        className="font-tn-amh pointer-events-none absolute -top-[30%] left-1/2 -translate-x-1/2 text-[340px] leading-none font-bold text-white/[0.08]"
-                    >
-                        ትንሳኤ
-                    </span>
-                    <div className="relative">
-                        <h2 className="text-[32px] leading-[1.04] font-extrabold tracking-[-0.035em] text-white sm:text-[50px]">
-                            Message us on Telegram.
-                        </h2>
-                        <p className="mx-auto mt-4  text-base leading-relaxed text-white/90 sm:text-lg">
-                            One note, the role name, the why. That is the whole application.
-                        </p>
-                        <div className="mt-8 flex flex-wrap justify-center gap-3">
-                            <Pill icon="tg" className="bg-white text-red-700 hover:bg-gray-200">Apply now</Pill>
-                            <Pill className="border border-gray-100 bg-transparent hover:bg-red-500" href="about">About Tinsae</Pill>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            <div className="font-tn-mono text-tn-mute mt-10 flex flex-wrap items-center gap-3 border-t border-tn-hair pt-6 text-xs sm:text-sm">
+              <span>
+                <strong className="text-tn-ink font-bold">{roleCount}</strong> open
+                roles
+              </span>
+              <span className="text-neutral-300">·</span>
+              <span>
+                <strong className="text-tn-ink font-bold">11</strong> people today
+              </span>
+              <span className="text-neutral-300">·</span>
+              <span className="inline-flex items-center gap-1.5">
+                <Icon name="pin" size={14} className="text-tn-mute" />
+                <strong className="text-tn-ink font-bold">Addis</strong> only, for
+                now
+              </span>
+            </div>
+          </div>
         </div>
-    );
+      </section>
+
+      {/* How we work */}
+      <HowWeWork cards={CARDS} />
+
+      {/* Open roles */}
+      <OpenRoles roles={ROLES} />
+
+      {/* What you get */}
+      <WhatYouGet benefits={BENEFITS} />
+
+      {/* Hiring process */}
+      <HiringProcess steps={PROCESS_STEPS} />
+
+      {/* FAQ */}
+      <Faqs faqs={FAQS} />
+
+      {/* Banner */}
+      <section className="px-4 py-12 sm:px-8 sm:py-16 lg:px-12 xl:px-16">
+        <div className="mx-auto max-w-[1480px]">
+          <div className="relative overflow-hidden rounded-3xl bg-[linear-gradient(135deg,#CC3000_0%,#E5562A_55%,#FF7A45_100%)] px-6 py-14 text-center sm:px-12 sm:py-16">
+            <span
+              aria-hidden
+              className="font-tn-amh pointer-events-none absolute -top-[30%] left-1/2 -translate-x-1/2 text-[260px] leading-none font-bold text-white/[0.08] sm:text-[340px]"
+            >
+              ትንሳኤ
+            </span>
+            <div className="relative z-10 mx-auto max-w-[640px]">
+              <h2 className="text-[32px] leading-[1.04] font-extrabold tracking-[-0.035em] text-white sm:text-[46px]">
+                Message us on Telegram.
+              </h2>
+              <p className="mx-auto mt-4 text-base leading-relaxed text-white/90 sm:text-lg">
+                One note, the role name, and why. That is the whole application.
+              </p>
+              <div className="mt-8 flex flex-wrap justify-center gap-3">
+                <Pill
+                  kind="light"
+                  size="lg"
+                  icon="tg"
+                  href={`mailto:${CAREERS_EMAIL}?subject=${encodeURIComponent(
+                    "Careers Application — Tinsae"
+                  )}`}
+                >
+                  Apply now
+                </Pill>
+                <Pill
+                  kind="ghost"
+                  size="lg"
+                  href="/about"
+                  className="border-white/40 text-white hover:bg-white/10 hover:text-white"
+                >
+                  About Tinsae
+                </Pill>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
 }
