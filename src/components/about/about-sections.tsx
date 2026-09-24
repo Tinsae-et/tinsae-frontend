@@ -2,7 +2,7 @@ import { Icon, type IconName } from "@/components/tinsae/icon";
 import { Pill } from "@/components/tinsae/pill";
 import Link from "next/link";
 
-const PRINCIPLES: Array<{
+export const PRINCIPLES: Array<{
   icon: IconName;
   accent: string;
   title: string;
@@ -34,7 +34,7 @@ const PRINCIPLES: Array<{
   },
 ];
 
-const TIMELINE = [
+export const TIMELINE = [
   {
     when: "2024 · Q3",
     title: "A wasted Saturday",
@@ -67,7 +67,7 @@ const TIMELINE = [
   },
 ];
 
-const TEAM = [
+export const TEAM = [
   {
     initials: "SM",
     name: "Selam Mekonnen",
@@ -97,6 +97,27 @@ const TEAM = [
     note: "Bole, then everywhere",
   },
 ];
+
+export const ABOUT_STATS = [
+  ["412", "verified shops in Bole"],
+  ["8,920", "listings live today"],
+  ["96%", "reconfirmed within 24h"],
+  ["0%", "commission, ever"],
+] as const;
+
+export const WHAT_WE_ARE = [
+  "A directory of shops verified in person",
+  "A live, daily-confirmed price comparison",
+  "A direct line to the shop on Telegram",
+  "Free to browse, with no markup on any price",
+] as const;
+
+export const WHAT_WE_ARE_NOT = [
+  "A payment processor or escrow service",
+  "A delivery company",
+  "A reseller — we own no stock",
+  "A reviews site with stale, unchecked listings",
+] as const;
 
 function Eyebrow({ children }: { children: string }) {
   return (
@@ -148,7 +169,7 @@ function AboutHero() {
     <section className="border-tn-hair2 overflow-hidden border-b bg-[radial-gradient(120%_90%_at_88%_-10%,#FFF1EB_0%,rgba(255,241,235,0)_52%),#FFF]">
       <div className="mx-auto grid max-w-[1240px] grid-cols-1 items-center gap-12 px-6 py-[60px] sm:px-8 lg:grid-cols-[1.04fr_0.96fr] lg:gap-14 lg:px-7 lg:py-[72px]">
         <div className="tn-rise">
-          <div className="border-tn-hair inline-flex items-center gap-2 rounded-full border bg-white px-3.5 py-1.5 text-xs font-bold text-[#3A3A38] shadow-[0_2px_10px_rgba(11,11,11,0.04)]">
+          <div className="border-tn-hair inline-flex items-center gap-2 rounded-full border bg-white px-3.5 py-1.5 text-[12.5px] font-bold text-tn-ink2 shadow-[0_2px_10px_rgba(11,11,11,0.04)]">
             <Icon name="building" size={14} className="text-tn-red" />
             About Tinsae
           </div>
@@ -157,21 +178,23 @@ function AboutHero() {
             <br />
             <span className="text-tn-red">legible.</span>
           </h1>
-          <p className="text-tn-mute mt-5 max-w-[520px] text-lg leading-[1.55] font-medium">
+          <p className="text-tn-mute mt-[22px] max-w-[520px] text-lg leading-[1.55] font-medium sm:text-[18.5px]">
             Addis already has honest shops and fair prices. What it lacked was
             proof — a way to know, before you cross town, which shop has the
             thing and what they will charge for it.
           </p>
-          <div className="font-tn-mono text-tn-mute mt-7 flex flex-wrap items-center gap-x-5 gap-y-3 text-[13px]">
+          <div className="font-tn-mono text-tn-mute mt-7 flex flex-wrap items-center gap-x-4 sm:gap-x-5 gap-y-3 text-[13px] sm:text-[13.5px]">
             <span className="inline-flex items-center gap-1.5">
               <Icon name="shield" size={14} className="text-tn-green" />
-              <b className="text-tn-green">412</b> verified shops
+              <b className="font-semibold text-tn-green">412</b> verified shops
             </span>
+            <span className="bg-tn-hair size-1 rounded-full" aria-hidden="true" />
             <span className="inline-flex items-center gap-1.5">
-              <b className="text-tn-ink">2022</b> founded in Addis
+              <b className="font-semibold text-tn-ink">2022</b> founded in Addis
             </span>
+            <span className="bg-tn-hair size-1 rounded-full" aria-hidden="true" />
             <span className="inline-flex items-center gap-1.5">
-              <b className="text-tn-ink">11</b> people
+              <b className="font-semibold text-tn-ink">11</b> people
             </span>
           </div>
         </div>
@@ -183,7 +206,7 @@ function AboutHero() {
             T I N S A E
           </div>
           <div className="mt-2 text-[15.5px] italic text-white/80">
-            &quot;rising&quot;
+            &ldquo;rising&rdquo;
           </div>
           <div className="mt-6 border-t border-white/20 pt-5 text-sm leading-relaxed font-medium text-white/85">
             The name is a promise about local commerce — that it can come up, be
@@ -204,11 +227,11 @@ function MissionSection() {
           Bole runs on trust between people. We just made it visible.
         </h2>
       </div>
-      <div className="text-tn-ink2 text-base leading-[1.7] sm:text-[16.5px]">
+      <div className="text-tn-ink2 text-base leading-[1.7] font-medium sm:text-[16.5px]">
         <p>
           Buying a phone in Addis has always been a social process. You ask a
           cousin who knows a guy. You call three shops. You take a taxi across
-          town on the strength of a maybe. The information exists - it just
+          town on the strength of a maybe. The information exists — it just
           lives in people&apos;s heads, and it expires by lunchtime.
         </p>
         <p className="mt-[18px]">
@@ -220,10 +243,11 @@ function MissionSection() {
         </p>
         <p className="mt-[18px]">
           That is the entire mechanism.{" "}
-          <b className="text-tn-ink">We never touch the money.</b> You browse,
-          you compare, you message the shop, you walk in and inspect the thing
-          before you pay a birr. We are not a middleman — we are the part that
-          was always missing, which is <b className="text-tn-ink">proof</b>.
+          <b className="text-tn-ink font-bold">We never touch the money.</b> You
+          browse, you compare, you message the shop, you walk in and inspect the
+          thing before you pay a birr. We are not a middleman — we are the part
+          that was always missing, which is{" "}
+          <b className="text-tn-ink font-bold">proof</b>.
         </p>
       </div>
     </section>
@@ -242,7 +266,7 @@ function PrinciplesSection() {
         {PRINCIPLES.map((principle) => (
           <article
             key={principle.title}
-            className="border-tn-hair rounded-[18px] border bg-white p-6 sm:p-7"
+            className="tn-card border-tn-hair rounded-[18px] border bg-white p-6 sm:p-7"
           >
             <span
               className="inline-flex size-[54px] items-center justify-center rounded-[15px]"
@@ -256,7 +280,7 @@ function PrinciplesSection() {
             <h3 className="text-tn-ink mt-[18px] text-xl font-extrabold tracking-[-0.02em]">
               {principle.title}
             </h3>
-            <p className="text-tn-mute mt-2 text-sm leading-[1.6] font-medium">
+            <p className="text-tn-mute mt-2 text-sm leading-[1.6] font-medium sm:text-[14.5px]">
               {principle.body}
             </p>
           </article>
@@ -268,7 +292,7 @@ function PrinciplesSection() {
 
 function TimelineSection() {
   return (
-    <section className="bg-tn-paper border-tn-hair2 mt-20 border-y px-6 py-[68px] sm:px-8 lg:mt-24">
+    <section className="bg-tn-paper border-tn-hair2 mt-20 border-y px-6 py-[68px] sm:px-8 sm:py-[72px] lg:mt-24">
       <div className="mx-auto max-w-[1240px] lg:px-7">
         <SectionHead
           eyebrow="How we got here"
@@ -278,9 +302,9 @@ function TimelineSection() {
           {TIMELINE.map((entry, index) => (
             <div
               key={entry.title}
-              className="grid grid-cols-[96px_28px_1fr] items-stretch sm:grid-cols-[132px_28px_1fr]"
+              className="grid grid-cols-[24px_1fr] items-stretch sm:grid-cols-[132px_28px_1fr]"
             >
-              <div className="font-tn-mono text-tn-mute pt-5 pr-3 text-right text-[11px] font-bold tracking-[0.04em] sm:pr-5 sm:text-[12.5px]">
+              <div className="font-tn-mono text-tn-mute hidden pt-5 pr-5 text-right text-[12.5px] font-bold tracking-[0.04em] sm:block">
                 {entry.when}
               </div>
               <div className="flex flex-col items-center pt-5">
@@ -292,12 +316,15 @@ function TimelineSection() {
                   }}
                 />
                 {index < TIMELINE.length - 1 && (
-                  <span className="bg-tn-hair mt-1.5 min-h-11 w-px flex-1" />
+                  <span className="bg-tn-hair mt-1.5 min-h-11 w-[1.5px] flex-1" />
                 )}
               </div>
               <div
                 className={`pl-4 sm:pl-[22px] ${index < TIMELINE.length - 1 ? "pb-6" : "pb-0"} pt-[15px]`}
               >
+                <div className="font-tn-mono text-tn-mute mb-1 text-[11.5px] font-bold tracking-[0.04em] sm:hidden">
+                  {entry.when}
+                </div>
                 <h3 className="text-tn-ink text-[17px] font-extrabold tracking-[-0.02em] sm:text-[19px]">
                   {entry.title}
                 </h3>
@@ -319,14 +346,14 @@ function TeamSection() {
       <SectionHead
         eyebrow="Who we are"
         title="Eleven people, all in Addis."
-        intro="Half the team spends its week inside shops rather than in front of a screen - that is deliberate, and it is why verification means something."
+        intro="Half the team spends its week inside shops rather than in front of a screen — that is deliberate, and it is why verification means something."
         link={{ label: "See open roles", href: "/careers" }}
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {TEAM.map((member) => (
           <article
             key={member.name}
-            className="border-tn-hair rounded-[18px] border bg-white p-[22px]"
+            className="tn-card border-tn-hair rounded-[18px] border bg-white p-[22px]"
           >
             <span
               className="inline-flex size-[60px] items-center justify-center rounded-2xl text-xl font-extrabold text-white"
@@ -346,7 +373,7 @@ function TeamSection() {
           </article>
         ))}
       </div>
-      <p className="font-tn-mono text-tn-mute mt-5 text-xs">
+      <p className="font-tn-mono text-tn-mute mt-5 text-[12.5px]">
         Plus 7 verification agents and support staff across Bole.
       </p>
     </section>
@@ -354,23 +381,20 @@ function TeamSection() {
 }
 
 function StatBand() {
-  const stats = [
-    ["412", "verified shops in Bole"],
-    ["8,920", "listings live today"],
-    ["96%", "reconfirmed within 24h"],
-    ["0%", "commission, ever"],
-  ];
   return (
     <section className="mx-auto mt-20 max-w-[1240px] px-6 sm:px-8 lg:mt-24 lg:px-7">
       <div className="bg-tn-ink relative overflow-hidden rounded-3xl px-6 py-10 sm:px-12 sm:py-[52px]">
-        <div className="font-tn-amh pointer-events-none absolute -top-10 right-[-20px] text-[220px] leading-none font-bold text-white/[0.04]">
+        <div
+          aria-hidden="true"
+          className="font-tn-amh pointer-events-none absolute -top-16 -right-10 select-none text-[260px] font-bold leading-none text-white/[0.04] sm:text-[300px]"
+        >
           ትንሳኤ
         </div>
         <div className="relative grid grid-cols-2 gap-y-8 sm:grid-cols-4 sm:gap-y-0">
-          {stats.map(([value, label], index) => (
+          {ABOUT_STATS.map(([value, label], index) => (
             <div
               key={label}
-              className={`px-3 sm:px-6 ${index > 0 ? "sm:border-l sm:border-white/10" : ""}`}
+              className={`px-3 sm:px-6 ${index > 0 ? "sm:border-l sm:border-white/12" : ""}`}
             >
               <div className="font-tn-mono text-[36px] leading-none font-semibold tracking-[-0.03em] text-white sm:text-[46px]">
                 {value}
@@ -392,7 +416,7 @@ function IdentityListCard({
   positive,
 }: {
   title: string;
-  items: string[];
+  items: readonly string[];
   positive: boolean;
 }) {
   return (
@@ -420,7 +444,7 @@ function IdentityListCard({
             strokeWidth={2.6}
           />
           <span
-            className={`text-sm leading-[1.5] font-medium ${positive ? "text-tn-ink2" : "text-tn-mute"}`}
+            className={`text-sm leading-[1.5] font-medium sm:text-[14.5px] ${positive ? "text-tn-ink2" : "text-tn-mute"}`}
           >
             {item}
           </span>
@@ -431,25 +455,13 @@ function IdentityListCard({
 }
 
 function IdentitySection() {
-  const whatWeAre = [
-    "A directory of shops verified in person",
-    "A live, daily-confirmed price comparison",
-    "A direct line to the shop on Telegram",
-    "Free to browse, with no markup on any price",
-  ];
-  const whatWeAreNot = [
-    "A payment processor or escrow service",
-    "A delivery company",
-    "A reseller — we own no stock",
-    "A reviews site with stale, unchecked listings",
-  ];
   return (
     <section className="mx-auto max-w-[920px] px-6 pt-20 sm:px-8 lg:pt-24">
       <div className="grid grid-cols-1 gap-[18px] sm:grid-cols-2">
-        <IdentityListCard title="What we are" items={whatWeAre} positive />
+        <IdentityListCard title="What we are" items={WHAT_WE_ARE} positive />
         <IdentityListCard
           title="What we're not"
-          items={whatWeAreNot}
+          items={WHAT_WE_ARE_NOT}
           positive={false}
         />
       </div>
@@ -461,7 +473,10 @@ function FinalCta() {
   return (
     <section className="mx-auto mt-20 max-w-[1240px] px-6 sm:px-8 lg:mt-24 lg:px-7">
       <div className="relative overflow-hidden rounded-3xl bg-[linear-gradient(135deg,#CC3000_0%,#E5562A_55%,#FF7A45_100%)] px-6 py-12 text-center sm:px-12 sm:py-[58px]">
-        <div className="font-tn-amh pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-[220px] font-bold leading-none text-white/[0.09] sm:text-[320px]">
+        <div
+          aria-hidden="true"
+          className="font-tn-amh pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none text-[220px] font-bold whitespace-nowrap text-white/[0.09] sm:text-[320px]"
+        >
           ትንሳኤ
         </div>
         <div className="relative">
@@ -472,12 +487,12 @@ function FinalCta() {
             Browse 412 verified shops, or put yours on the map.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
-            <Pill kind="light" size="md" iconAfter="arrow" href="/products">
+            <Pill kind="light" size="lg" iconAfter="arrow" href="/products">
               Browse listings
             </Pill>
             <Pill
               kind="ghost"
-              size="md"
+              size="lg"
               href="/signup"
               className="border-white/40 text-white hover:bg-white/10"
             >
@@ -501,7 +516,7 @@ export function AboutPageContent() {
       <StatBand />
       <IdentitySection />
       <FinalCta />
-      <div className="h-20" />
+      <div className="h-20 lg:h-[92px]" />
     </main>
   );
 }
