@@ -24,3 +24,41 @@ export function resolvePrimaryProductImage(
   const clean = normalizeImageUrl(firstImage);
   return clean && clean.trim().length > 0 ? clean : null;
 }
+
+/**
+ * Resolves all normalized image URLs from raw product image entries, which may be strings,
+ * ProductImage objects ({ url }), or ShopProductImage objects ({ image, preview, url }).
+ * The entry flagged `is_primary` comes first, so `[0]` is always the thumbnail to show.
+ * Normalizes all backend URLs to relative media paths (/media/...) for reliable local proxying.
+ */
+export function resolveProductImages(images?: unknown[]): string[] {
+  if (!images || !Array.isArray(images)) return [];
+  const isPrimary = (img: unknown) =>
+    typeof img === "object" && img !== null && (img as { is_primary?: unknown }).is_primary === true;
+  // A stable sort: the primary moves to the front, the rest keep their order.
+  const ordered = [...images].sort((a, b) => Number(isPrimary(b)) - Number(isPrimary(a)));
+  const urls: string[] = [];
+
+  for (const img of ordered) {
+    if (!img) continue;
+    let raw = "";
+    if (typeof img === "string") {
+      raw = img;
+    } else if (typeof img === "object") {
+      const obj = img as Record<string, unknown>;
+      raw =
+        (typeof obj.url === "string" && obj.url) ||
+        (typeof obj.image === "string" && obj.image) ||
+        (typeof obj.preview === "string" && obj.preview) ||
+        "";
+    }
+    if (raw && raw.trim().length > 0) {
+      const normalized = normalizeImageUrl(raw) || raw;
+      if (normalized && !urls.includes(normalized)) {
+        urls.push(normalized);
+      }
+    }
+  }
+
+  return urls;
+}

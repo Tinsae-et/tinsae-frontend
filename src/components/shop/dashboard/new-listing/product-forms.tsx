@@ -578,9 +578,11 @@ export function Form({
   const photoCount = (coverPhoto ? 1 : 0) + extraPhotos.filter(Boolean).length;
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 items-start">
-      {/* Main Form Column (max 660px per design) */}
-      <div className="flex-1 min-w-0 max-w-[660px] w-full">
+    // Full width by choice: the design caps the form at 660px, but here it
+    // fills whatever the 320px rail leaves, inside the shell's padding.
+    <div className="w-full flex flex-col lg:flex-row gap-6 items-start">
+      {/* Main Form Column (fills the remaining width) */}
+      <div className="flex-1 min-w-0 w-full">
         {serverError && (
           <div className="mb-4 flex items-center gap-2.5 rounded-[14px] bg-tn-red-soft p-4 text-xs font-semibold text-tn-red border border-tn-red/20">
             <AlertCircle size={17} className="shrink-0" />

@@ -18,8 +18,8 @@ type Props = {
 };
 
 export default function HowBuyersSee({
-  shopName = "Almeda Electronics",
-  location = "Bole · Atlas",
+  shopName = "Your Shop",
+  location = "Addis Ababa",
   isVerified = false,
 }: Props) {
   const initials = getInitials(shopName);

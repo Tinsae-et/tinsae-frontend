@@ -23,7 +23,7 @@ const NAVLINKS: NavLinkItem[] = [
   { to: "/shop/dashboard/overview", text: "Overview", icon: "home" },
   { to: "/shop/dashboard/listings", text: "Listings", icon: "box" },
   { to: "/shop/dashboard/listings/new", text: "Add product", icon: "plus" },
-  { to: "/shop/dashboard/shop-profile", text: "Shop settings", icon: "building" },
+  { to: "/shop/dashboard/shop-profile", text: "Shop profile", icon: "user" },
   { to: "/shop/dashboard/telegram", text: "Telegram setup", icon: "tg" },
   { to: "/shop/dashboard/get-verified", text: "Get verified", icon: "shield" },
 ];

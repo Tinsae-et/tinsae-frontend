@@ -13,6 +13,7 @@ import { Pill } from "@/components/tinsae/pill";
 import { cn } from "@/lib/utils";
 import { confirmFreshness, markSold, pauseProduct, resumeProduct } from "@/lib/api/client";
 import DeleteListing from "./delete-listing";
+import { resolveProductImages } from "@/lib/product-images";
 
 export type ListingRowProps = {
   product: ShopProduct;
@@ -26,6 +27,7 @@ export type ListingRowProps = {
   onError?: (msg: string) => void;
   rowIndex?: number;
   totalRows?: number;
+  onViewDetail?: (product: ShopProduct) => void;
 };
 
 export function ListingRow({
@@ -40,6 +42,7 @@ export function ListingRow({
   onError,
   rowIndex,
   totalRows,
+  onViewDetail,
 }: ListingRowProps) {
   const [fresh, setFresh] = useState<Freshness>(() =>
     freshness(product.last_confirmed_at, product.confirmation_status),
@@ -149,26 +152,31 @@ export function ListingRow({
   };
 
   const getImage = () => {
-    if (!product.images || product.images.length === 0) return "";
-    const image = product.images.find((i) => i.is_primary) ?? product.images[0];
-    return image?.url || "";
+    return resolveProductImages(product.images)[0] || "";
   };
 
   return (
     <tr
+      onClick={() => onViewDetail?.(product)}
       className={cn(
-        "border-b border-tn-hair2 last:border-b-0 transition-colors",
-        isSelected ? "bg-tn-red-soft" : "hover:bg-tn-paper/50",
+        "border-b border-tn-hair2 last:border-b-0 transition-colors cursor-pointer",
+        isSelected ? "bg-tn-red-soft" : "hover:bg-tn-paper/70",
       )}
     >
       {/* Checkbox */}
-      <td className="py-[13px] pl-5 pr-2 w-12">
+      <td
+        className="py-[13px] pl-5 pr-2 w-12"
+        onClick={(e) => e.stopPropagation()}
+      >
         <button
           type="button"
           role="checkbox"
           aria-checked={isSelected}
           aria-label={`Select ${product.name}`}
-          onClick={() => toggleOne(product.slug)}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleOne(product.slug);
+          }}
           className={cn(
             "flex h-4 w-4 items-center justify-center rounded-[4px] border transition-colors cursor-pointer",
             isSelected ? "border-tn-red bg-tn-red text-white" : "border-tn-hair bg-white",
@@ -180,18 +188,26 @@ export function ListingRow({
 
       {/* Product */}
       <td className="px-3 py-[13px]">
-        <div className="flex items-center gap-3">
-          <div className="size-[42px] rounded-[10px] bg-tn-paper flex items-center justify-center shrink-0 overflow-hidden">
+        <div className="flex items-center gap-3 group">
+          <div className="size-[42px] rounded-[10px] bg-tn-paper flex items-center justify-center shrink-0 overflow-hidden border border-tn-hair2/80">
             {getImage() ? (
-              <Image src={getImage()} alt={product.name} width={42} height={42} className="object-cover size-full" />
+              <Image src={getImage()} alt={product.name} width={42} height={42} className="object-cover size-full group-hover:scale-105 transition-transform" />
             ) : (
               <ProdPlaceholder kind={kindForSlug(product.category)} />
             )}
           </div>
           <div className="min-w-0 max-w-[240px]">
-            <div className="text-[13.5px] font-bold text-tn-ink truncate">
+            {/* The row is clickable for the mouse; this button is the keyboard path. */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewDetail?.(product);
+              }}
+              className="block max-w-full text-left text-[13.5px] font-bold text-tn-ink group-hover:text-tn-red transition-colors truncate cursor-pointer rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tn-ink"
+            >
               {product.name}
-            </div>
+            </button>
             <div className="text-[11.5px] text-tn-mute truncate">
               {product.description ? `${product.description} · ` : ""}
               {product.condition || "New"}
@@ -269,7 +285,10 @@ export function ListingRow({
       </td>
 
       {/* Actions */}
-      <td className="py-[13px] pl-2 pr-5 text-right">
+      <td
+        className="py-[13px] pl-2 pr-5 text-right"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-end gap-2">
           {needConfirm ? (
             <Pill
