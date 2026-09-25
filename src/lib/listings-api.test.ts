@@ -1,12 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ApiError } from "./api/public";
 import {
-  ApiError,
   confirmFreshness,
   confirmSelectedFreshness,
   createListing,
   deleteListingImage,
   deleteProduct,
-  getShopProduct,
   getShopProducts,
   markSold,
   pauseProduct,
@@ -14,7 +13,11 @@ import {
   updateListing,
   updateListingImage,
   uploadListingImage,
-} from "./api";
+} from "./api/client";
+
+// server.ts refuses to load outside the server; its session read needs Next.
+vi.mock("server-only", () => ({}));
+vi.mock("./auth/session", () => ({ readSession: async () => ({ access: "cookie-token" }) }));
 import { clearShopProductsCache, getShopProductsCacheKey } from "@/hooks/use-products";
 
 describe("Shop Product Listings API client", () => {
@@ -189,7 +192,7 @@ describe("Shop Product Listings API client", () => {
     expect(() => clearShopProductsCache()).not.toThrow();
   });
 
-  it("createListing sends POST request with decimal price string and auth header", async () => {
+  it("createListing POSTs to the same-origin route with a decimal price string and no token", async () => {
     const mockProduct = {
       name: "iPhone 15",
       brand: "Apple",
@@ -209,13 +212,15 @@ describe("Shop Product Listings API client", () => {
       json: async () => ({ id: 1, slug: "iphone-15", ...mockProduct }),
     });
 
-    const res = await createListing(mockProduct, "test-shop", "mock-token");
+    const res = await createListing(mockProduct, "test-shop");
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
     const [url, options] = mockFetch.mock.calls[0];
-    expect(url).toContain("/api/v1/shops/test-shop/products/");
+    // The browser never talks to Django or holds a JWT: the route handler
+    // attaches the Authorization header from the httpOnly cookie.
+    expect(url).toBe("/api/shop/test-shop/products");
     expect(options.method).toBe("POST");
-    expect(options.headers["Authorization"]).toBe("Bearer mock-token");
+    expect(options.headers["Authorization"]).toBeUndefined();
     expect(options.headers["Content-Type"]).toBe("application/json");
 
     const sentBody = JSON.parse(options.body);
@@ -237,7 +242,7 @@ describe("Shop Product Listings API client", () => {
     });
 
     try {
-      await createListing({} as unknown as Parameters<typeof createListing>[0], "test-shop", "mock-token");
+      await createListing({} as unknown as Parameters<typeof createListing>[0], "test-shop");
       expect.fail("Should have thrown ApiError");
     } catch (err: unknown) {
       expect(err).toBeInstanceOf(ApiError);
@@ -268,11 +273,11 @@ describe("Shop Product Listings API client", () => {
       json: async () => ({ id: 1, ...updateData }),
     });
 
-    const res = await updateListing(updateData, "test-shop", "mock-token");
+    const res = await updateListing(updateData, "test-shop");
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
     const [url, options] = mockFetch.mock.calls[0];
-    expect(url).toContain("/api/v1/shops/test-shop/products/iphone-15/");
+    expect(url).toBe("/api/shop/test-shop/products/iphone-15");
     expect(options.method).toBe("PATCH");
     expect(res.name).toBe("iPhone 15 Updated");
   });
@@ -291,14 +296,16 @@ describe("Shop Product Listings API client", () => {
       json: async () => ({ id: 10, url: "/media/cover.jpg", is_primary: true, display_order: 0 }),
     });
 
-    const res = await uploadListingImage("iphone-15", "test-shop", imagePayload, "mock-token");
+    const res = await uploadListingImage("iphone-15", "test-shop", imagePayload);
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
     const [url, options] = mockFetch.mock.calls[0];
-    expect(url).toContain("/api/v1/shops/test-shop/products/iphone-15/images/");
+    expect(url).toBe("/api/shop/test-shop/products/iphone-15/images");
     expect(options.method).toBe("POST");
-    expect(options.headers["Authorization"]).toBe("Bearer mock-token");
+    expect(options.headers).toBeUndefined();
     expect(options.body).toBeInstanceOf(FormData);
+    expect((options.body as FormData).get("image")).toBe(mockFile);
+    expect((options.body as FormData).get("is_primary")).toBe("true");
     expect(res.id).toBe(10);
   });
 
@@ -316,11 +323,11 @@ describe("Shop Product Listings API client", () => {
       json: async () => ({ id: 15, url: "/media/old.jpg", is_primary: false, display_order: 2 }),
     });
 
-    const res = await updateListingImage("iphone-15", "test-shop", imagePayload, "mock-token");
+    const res = await updateListingImage("iphone-15", "test-shop", imagePayload);
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
     const [url, options] = mockFetch.mock.calls[0];
-    expect(url).toContain("/api/v1/shops/test-shop/products/iphone-15/images/15/");
+    expect(url).toBe("/api/shop/test-shop/products/iphone-15/images/15");
     expect(options.method).toBe("PATCH");
     expect(res.display_order).toBe(2);
   });
@@ -331,23 +338,25 @@ describe("Shop Product Listings API client", () => {
       status: 204,
     });
 
-    await deleteListingImage("iphone-15", "test-shop", 22, "mock-token");
+    await deleteListingImage("iphone-15", "test-shop", 22);
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
     const [url, options] = mockFetch.mock.calls[0];
-    expect(url).toContain("/api/v1/shops/test-shop/products/iphone-15/images/22/");
+    expect(url).toBe("/api/shop/test-shop/products/iphone-15/images/22");
     expect(options.method).toBe("DELETE");
   });
 
-  it("getShopProduct fetches product and throws ApiError on 404", async () => {
+  it("getShopProduct reads the token from the session cookie and throws ApiError on 404", async () => {
+    const { getShopProduct } = await import("./api/server");
     mockFetch.mockResolvedValueOnce({
       ok: false,
       status: 404,
       json: async () => ({ detail: "Not found." }),
     });
 
-    await expect(getShopProduct("non-existent", "test-shop", "mock-token")).rejects.toThrow(
-      ApiError,
-    );
+    await expect(getShopProduct("test-shop", "non-existent")).rejects.toThrow(ApiError);
+    const [url, options] = mockFetch.mock.calls[0];
+    expect(url).toContain("/api/v1/shops/test-shop/products/non-existent/");
+    expect(options.headers.Authorization).toBe("Bearer cookie-token");
   });
 });

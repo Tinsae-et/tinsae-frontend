@@ -4,7 +4,7 @@ import { CompareProvider } from "@/context/compare-context";
 import { CompareDock } from "@/components/compare/compare-dock";
 import { CompareToast } from "@/components/compare/compare-toast";
 import { getCurrentUser } from "@/lib/auth/session";
-import { getPublicStats } from "@/lib/api";
+import { getPublicStats } from "@/lib/api/public";
 
 export default async function RootLayout({
   children,

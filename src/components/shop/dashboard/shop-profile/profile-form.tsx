@@ -1,12 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import Link from "next/link";
 import Image from "next/image";
 import { Icon } from "@/components/tinsae/icon";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { Pill } from "@/components/tinsae/pill";
-import { updateShopProfile } from "@/lib/api";
+import { updateShopProfile } from "@/lib/api/client";
 import type { Shop } from "@/lib/types";
 
 function getInitials(name: string): string {
@@ -22,18 +21,30 @@ function getInitials(name: string): string {
 type Props = {
   shop: Shop | null;
   slug: string;
-  access: string;
   onShopUpdated?: (shop: Shop) => void;
 };
 
-export default function ProfileForm({ shop, slug, access, onShopUpdated }: Props) {
+export default function ProfileForm({
+  shop,
+  slug,
+  onShopUpdated,
+}: Props) {
   const [name, setName] = useState<string>(shop?.name ?? "");
-  const [city, setCity] = useState<string>(shop?.city ?? "");
-  const [description, setDescription] = useState<string>(shop?.description ?? "");
+  // PLACEHOLDER: the Telegram handle is derived from the shop name and the logo
+  // is preview-only; neither is saved. Wire both to the API or hide them.
+  const [telegramHandle, setTelegramHandle] = useState<string>(
+    shop?.name ? `@${shop.name.replace(/\s+/g, "")}` : "@MyElectronics"
+  );
+  const [description, setDescription] = useState<string>(
+    shop?.description ?? ""
+  );
   const [logo, setLogo] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
-  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [feedback, setFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const logoRef = useRef<string | null>(null);
 
@@ -47,7 +58,6 @@ export default function ProfileForm({ shop, slug, access, onShopUpdated }: Props
     };
   }, []);
 
-
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -60,7 +70,9 @@ export default function ProfileForm({ shop, slug, access, onShopUpdated }: Props
   const handleReset = () => {
     if (shop) {
       setName(shop.name ?? "");
-      setCity(shop.city ?? "");
+      setTelegramHandle(
+        shop.name ? `@${shop.name.replace(/\s+/g, "")}` : "@MyElectronics"
+      );
       setDescription(shop.description ?? "");
     }
     setFeedback(null);
@@ -72,13 +84,10 @@ export default function ProfileForm({ shop, slug, access, onShopUpdated }: Props
 
     const trimmedName = name.trim();
     if (!trimmedName) {
-      setFeedback({ type: "error", message: "Shop name cannot be blank. Enter your shop's trade name." });
-      return;
-    }
-
-    const trimmedCity = city.trim();
-    if (!trimmedCity) {
-      setFeedback({ type: "error", message: "City / area is required so buyers can find your store." });
+      setFeedback({
+        type: "error",
+        message: "Shop name cannot be blank. Enter your shop's trade name.",
+      });
       return;
     }
 
@@ -88,20 +97,24 @@ export default function ProfileForm({ shop, slug, access, onShopUpdated }: Props
         slug,
         {
           name: trimmedName,
-          city: trimmedCity,
           description: description.trim(),
         },
-        access,
       );
 
       if (onShopUpdated) {
         onShopUpdated(updated);
       }
-      setFeedback({ type: "success", message: "Shop profile saved successfully." });
+      setFeedback({
+        type: "success",
+        message: "Shop profile saved successfully.",
+      });
     } catch (err) {
       setFeedback({
         type: "error",
-        message: err instanceof Error ? err.message : "Couldn't save your profile. Please try again.",
+        message:
+          err instanceof Error
+            ? err.message
+            : "Couldn't save your profile. Please try again.",
       });
     } finally {
       setSaving(false);
@@ -109,30 +122,21 @@ export default function ProfileForm({ shop, slug, access, onShopUpdated }: Props
   };
 
   const isVerified = Boolean(shop?.is_verified);
-  const telegramChatId = shop?.telegram_chat_id;
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="border border-tn-hair rounded-[18px] bg-white overflow-hidden"
+      className="border border-tn-hair rounded-[18px] bg-white overflow-hidden shadow-xs"
     >
       {/* Header */}
-      <div className="px-[22px] pt-[18px] pb-3.5 border-b border-tn-hair flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-[15.5px] font-extrabold text-tn-ink">Shop profile</h2>
-          <p className="text-[12.5px] leading-[1.45] text-tn-mute mt-0.5">
-            How your shop appears across Tinsae search and listings.
-          </p>
-        </div>
-        <Link
-          href={`/shops/${slug}`}
-          className="text-xs font-bold text-tn-red hover:underline shrink-0 inline-flex items-center gap-1"
-        >
-          <span>View live store</span>
-          <Icon name="arrow" size={12} />
-        </Link>
+      <div className="px-[22px] pt-[18px] pb-3.5 border-b border-tn-hair2">
+        <h2 className="text-[15.5px] font-extrabold tracking-[-0.015em] text-tn-ink">
+          Shop profile
+        </h2>
+        <p className="text-[12.5px] leading-[1.45] text-tn-mute mt-0.5">
+          How your shop appears across Tinsae search and listings.
+        </p>
       </div>
-
 
       {/* Body */}
       <div className="px-[22px] py-5 flex flex-col gap-5">
@@ -149,122 +153,63 @@ export default function ProfileForm({ shop, slug, access, onShopUpdated }: Props
               name={feedback.type === "success" ? "check" : "close"}
               size={14}
             />
-
             <span>{feedback.message}</span>
           </div>
         )}
 
         {/* Identity row */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            {logo ? (
-              <div className="size-[72px] rounded-2xl overflow-hidden border border-tn-hair bg-tn-paper flex items-center justify-center shrink-0">
-                <Image
-                  src={logo}
-                  alt="Shop logo"
-                  width={72}
-                  height={72}
-                  unoptimized={logo.startsWith("blob:")}
-                  className="object-cover"
-                />
-              </div>
-            ) : (
-              <div className="size-[72px] bg-tn-ink rounded-2xl flex items-center justify-center text-white font-extrabold text-2xl shrink-0">
-                {getInitials(name || shop?.name || "Shop")}
-              </div>
-            )}
-
-            <div>
-              <label className="inline-flex cursor-pointer">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleLogoUpload}
-                />
-                <span className="inline-flex items-center justify-center gap-2 rounded-full font-bold text-[13.5px] h-10 px-[18px] border-[1.5px] border-tn-hair bg-white text-tn-ink hover:border-tn-ink transition-colors">
-                  <Icon name="camera" size={16} />
-                  Change logo
-                </span>
-              </label>
-              <p className="text-[11.5px] text-tn-mute mt-1.5">
-                Square image, at least 256×256.
-              </p>
+        <div className="flex items-center gap-[18px] flex-wrap">
+          {logo ? (
+            <div className="size-[72px] rounded-2xl overflow-hidden border border-tn-hair bg-tn-paper flex items-center justify-center shrink-0">
+              <Image
+                src={logo}
+                alt="Shop logo"
+                width={72}
+                height={72}
+                unoptimized={logo.startsWith("blob:")}
+                className="object-cover"
+              />
             </div>
+          ) : (
+            <div className="size-[72px] bg-[#0F2A4D] rounded-2xl flex items-center justify-center text-white font-extrabold text-2xl shrink-0">
+              {getInitials(name || shop?.name || "Shop")}
+            </div>
+          )}
+
+          <div>
+            <label className="inline-flex cursor-pointer">
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={handleLogoUpload}
+              />
+              <span className="inline-flex items-center justify-center gap-2 rounded-full font-bold text-[13.5px] h-10 px-[18px] border-[1.5px] border-tn-hair bg-white text-tn-ink hover:border-tn-ink transition-colors">
+                <Icon name="camera" size={16} />
+                Change logo
+              </span>
+            </label>
+            <p className="text-[11.5px] text-tn-mute mt-2">
+              Square PNG, at least 256×256.
+            </p>
           </div>
 
-          {/* Verification status (Read-only w/ explanation) */}
-          <div className="shrink-0 self-start sm:self-center">
+          <div className="ml-auto shrink-0">
             {isVerified ? (
-              <div className="bg-tn-green-soft px-3.5 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold text-[#157049]">
-                <VerifiedBadge size={13} />
+              <div className="bg-tn-green-soft px-3.5 py-2 rounded-xl flex items-center gap-2 text-[12.5px] font-bold text-[#157049]">
+                <VerifiedBadge size={14} />
                 <span>Verified shop</span>
               </div>
             ) : (
-              <div className="bg-tn-paper border border-tn-hair px-3.5 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold text-tn-mute">
-                <Icon name="clock" size={13} />
+              <div className="bg-tn-paper border border-tn-hair px-3.5 py-2 rounded-xl flex items-center gap-2 text-[12.5px] font-bold text-tn-mute">
+                <Icon name="clock" size={14} />
                 <span>Unverified shop</span>
               </div>
             )}
           </div>
         </div>
 
-        {/* Verification Explanation Note */}
-        <div className="rounded-xl border border-tn-hair bg-tn-paper/70 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-          <div className="flex items-start gap-2.5">
-            <Icon name="shield" size={16} className="text-tn-mute shrink-0 mt-0.5" />
-            <p className="text-tn-ink2 leading-relaxed">
-              {isVerified
-                ? "Your shop is verified. Badge is displayed across search results and shop storefront to build buyer trust."
-                : "Verification is read-only and confirmed by Tinsae staff after reviewing business documents."}
-            </p>
-          </div>
-          {!isVerified && (
-            <Link
-              href="/shop/dashboard/get-verified"
-              className="text-tn-red font-bold hover:underline shrink-0 whitespace-nowrap self-end sm:self-auto"
-            >
-              Get verified →
-            </Link>
-          )}
-        </div>
-
-        {/* Telegram Link Status (Surfaced) */}
-        <div className="rounded-xl border border-tn-hair bg-tn-paper/70 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-          <div className="flex items-start gap-2.5">
-            <Icon name="tg" size={16} className="text-tn-telegram shrink-0 mt-0.5" />
-            <div>
-              <div className="font-bold text-tn-ink flex items-center gap-2">
-                <span>Telegram bot status:</span>
-                {telegramChatId ? (
-                  <span className="text-[#157049] inline-flex items-center gap-1 font-bold">
-                    <Icon name="check" size={11} strokeWidth={3} />
-                    Linked
-                  </span>
-                ) : (
-                  <span className="text-tn-mute font-bold">Not linked</span>
-                )}
-              </div>
-              <p className="text-tn-mute mt-0.5 leading-relaxed">
-                {telegramChatId
-                  ? "Connected to @TinsaeStockBot. You receive stock check-ins and inquiries here."
-                  : "Link your shop via @TinsaeStockBot to confirm daily stock in one tap without logging into the website."}
-              </p>
-            </div>
-          </div>
-          {!telegramChatId && (
-            <a
-              href="https://t.me/TinsaeStockBot"
-              target="_blank"
-              rel="noreferrer"
-              className="text-tn-telegram font-bold hover:underline shrink-0 whitespace-nowrap self-end sm:self-auto"
-            >
-              Open Bot →
-            </a>
-          )}
-        </div>
-
-        {/* 2-column fields */}
+        {/* 2-column fields: Shop name & Telegram handle */}
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <label className="text-[12.5px] font-bold text-tn-ink2 block mb-1.5">
@@ -279,39 +224,32 @@ export default function ProfileForm({ shop, slug, access, onShopUpdated }: Props
                 if (feedback) setFeedback(null);
               }}
               placeholder="e.g. Almeda Electronics"
-              className="h-12 w-full rounded-xl border-[1.5px] border-tn-hair bg-white px-3.5 text-[14.5px] text-tn-ink placeholder:text-tn-mute focus:outline-none focus:border-tn-ink"
+              className="h-12 w-full rounded-xl border-[1.5px] border-tn-hair bg-white px-3.5 text-[14.5px] font-medium text-tn-ink placeholder:text-tn-mute focus:outline-none focus:border-tn-ink transition-colors"
             />
-            <p className="text-[11px] text-tn-mute mt-1">
-              Public store name. Store URL slug (
-              <span className="font-mono text-tn-ink">/{slug}</span>) stays stable and will not change.
-            </p>
           </div>
 
           <div>
             <label className="text-[12.5px] font-bold text-tn-ink2 block mb-1.5">
-              City / Area
+              Telegram handle
             </label>
             <input
               type="text"
-              name="city"
-              value={city}
+              name="telegramHandle"
+              value={telegramHandle}
               onChange={(e) => {
-                setCity(e.target.value);
+                setTelegramHandle(e.target.value);
                 if (feedback) setFeedback(null);
               }}
-              placeholder="e.g. Addis Ababa or Bole"
-              className="h-12 w-full rounded-xl border-[1.5px] border-tn-hair bg-white px-3.5 text-[14.5px] text-tn-ink placeholder:text-tn-mute focus:outline-none focus:border-tn-ink"
+              placeholder="@ShopHandle"
+              className="font-tn-mono h-12 w-full rounded-xl border-[1.5px] border-tn-hair bg-white px-3.5 text-[14.5px] font-medium text-tn-ink placeholder:text-tn-mute focus:outline-none focus:border-tn-ink transition-colors"
             />
-            <p className="text-[11px] text-tn-mute mt-1">
-              Helps buyers find your store in local search filters.
-            </p>
           </div>
         </div>
 
         {/* About field */}
         <div>
           <label className="text-[12.5px] font-bold text-tn-ink2 block mb-1.5">
-            About your shop
+            About
           </label>
           <textarea
             name="description"
@@ -320,18 +258,18 @@ export default function ProfileForm({ shop, slug, access, onShopUpdated }: Props
               setDescription(e.target.value);
               if (feedback) setFeedback(null);
             }}
-            placeholder="Describe your shop, what you sell, warranty policies, store address..."
+            placeholder="Verified electronics retailer in Bole, Atlas — phones, laptops and audio. Sealed and open-box stock, confirmed daily. Walk-ins welcome behind Atlas Hotel."
             rows={3}
-            className="w-full rounded-xl border-[1.5px] border-tn-hair bg-white p-3.5 text-[14.5px] text-tn-ink placeholder:text-tn-mute focus:outline-none focus:border-tn-ink resize-y"
+            className="w-full rounded-xl border-[1.5px] border-tn-hair bg-white p-3.5 text-[14px] leading-relaxed text-tn-ink placeholder:text-tn-mute focus:outline-none focus:border-tn-ink resize-y transition-colors"
           />
         </div>
       </div>
 
       {/* Footer */}
-      <div className="px-[22px] py-3.5 border-t border-tn-hair bg-tn-paper flex justify-end items-center gap-3">
+      <div className="px-[22px] py-3.5 border-t border-tn-hair2 bg-tn-paper flex justify-end items-center gap-2.5">
         <Pill
           kind="outline"
-          size="md"
+          size="sm"
           type="button"
           onClick={handleReset}
           disabled={saving}
@@ -340,7 +278,7 @@ export default function ProfileForm({ shop, slug, access, onShopUpdated }: Props
         </Pill>
         <Pill
           kind="solid"
-          size="md"
+          size="sm"
           icon={saving ? undefined : "check"}
           type="submit"
           disabled={saving}

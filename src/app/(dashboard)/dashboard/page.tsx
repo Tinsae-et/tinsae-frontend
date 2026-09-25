@@ -1,19 +1,27 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
-import Overview from "@/components/shop/dashboard/overview/overview";
-import { DashboardNoShop } from "@/components/shop/dashboard/overview/dashboard-empty-states";
-import { getCurrentUser } from "@/lib/auth/session";
+import { hasShop } from "@/lib/auth/roles";
+import { requireSession } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
   title: "Overview — Shop dashboard — Tinsae",
   robots: { index: false, follow: false },
 };
 
-export default async function DashboardOverviewPage() {
-  const user = await getCurrentUser();
-  const shop = user?.shops[0];
-  if (!shop) return <DashboardNoShop />;
-  return (
-    <Overview slug={shop.slug} shopName={shop.name} basePath="/dashboard" />
-  );
+/**
+ * Universal dispatcher for /dashboard.
+ *
+ * Directs authenticated shop owners to their rich dashboard overview,
+ * accounts without a shop to the onboarding funnel, and unauthenticated
+ * visitors to sign in with return intent.
+ */
+export default async function DashboardPage() {
+  const { user } = await requireSession("/shop/dashboard/overview");
+
+  if (!hasShop(user)) {
+    redirect("/shop/onboarding");
+  }
+
+  redirect("/shop/dashboard/overview");
 }

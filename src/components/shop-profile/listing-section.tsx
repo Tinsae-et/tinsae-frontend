@@ -4,8 +4,8 @@ import  { useState, useCallback, useEffect, useRef } from "react";
 import CategoryChips from "./category-chips";
 import { Icon } from "@/components/tinsae/icon";
 import { SortDropdown } from "@/components/tinsae/sort-dropdown";
-import type { ShopProductQuery } from "@/lib/api";
-import { getPublicShopProducts } from "@/lib/api";
+import type { ShopProductQuery } from "@/lib/api/public";
+import { getPublicShopProducts } from "@/lib/api/public";
 import { ProductCard, ProductCardSkeleton } from "../products/product-card";
 import type { Product, Paginated } from "@/lib/types";
 

@@ -1,13 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  getProducts,
-  getPublicShopProducts,
-  getShopProducts,
-  ShopProductQuery,
-  type ProductQuery,
-} from "@/lib/api";
+import { getProducts, getPublicShopProducts, type ProductQuery, type ShopProductQuery } from "@/lib/api/public";
+import { getShopProducts } from "@/lib/api/client";
 import type { Paginated, Product, ShopProduct } from "@/lib/types";
 import { PRODUCTS_PAGE_SIZE } from "@/components/products/product-grid";
 

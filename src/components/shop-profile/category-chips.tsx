@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import type { ShopProductQuery } from "@/lib/api";
+import type { ShopProductQuery } from "@/lib/api/public";
 
 type CategoryFilter = "" | "phones" | "laptops" | "audio" | "tablets" | "accessories";
 

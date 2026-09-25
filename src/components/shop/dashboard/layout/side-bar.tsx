@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 
 import { LogoutButton } from "@/components/auth/logout-button";
 import type { AuthShop } from "@/lib/auth/types";
+import { getInitials } from "@/lib/shops-data";
 
 type NavLinkItem = {
   to: string;
@@ -19,11 +20,10 @@ type NavLinkItem = {
 };
 
 const NAVLINKS: NavLinkItem[] = [
-  { to: "/dashboard", text: "Overview", icon: "home" },
-  { to: "/dashboard/listings", text: "Listings", icon: "box" },
-  { to: "/dashboard/listings/new", text: "Add listing", icon: "plus" },
-  { to: "/dashboard/shop-settings", text: "Shop settings", icon: "building" },
-  { to: "/dashboard/telegram", text: "Telegram setup", icon: "tg" },
+  { to: "/shop/dashboard/overview", text: "Overview", icon: "home" },
+  { to: "/shop/dashboard/listings", text: "Listings", icon: "box" },
+  { to: "/shop/dashboard/shop-profile", text: "Shop profile", icon: "building" },
+  { to: "/shop/dashboard/get-verified", text: "Get verified", icon: "shield" },
 ];
 
 function Links({ links }: { links: NavLinkItem[] }) {
@@ -33,13 +33,10 @@ function Links({ links }: { links: NavLinkItem[] }) {
     <div className="px-3 py-1 flex flex-col gap-0.5">
       {links.map((l) => {
         const isActive =
-          l.to === "/dashboard"
-            ? pathname === "/dashboard" || pathname === "/dashboard/"
-            : l.to === "/dashboard/listings"
-              ? pathname === l.to ||
-                (pathname.startsWith(`${l.to}/`) &&
-                  pathname !== "/dashboard/listings/new")
-              : pathname === l.to;
+          pathname === l.to ||
+          pathname.startsWith(l.to + "/") ||
+          (l.to === "/shop/dashboard/overview" &&
+            (pathname === "/shop/dashboard" || pathname === "/shop/dashboard/"));
 
         return (
           <Link
@@ -49,7 +46,7 @@ function Links({ links }: { links: NavLinkItem[] }) {
               "flex items-center justify-between px-3 py-[11px] my-[2px] rounded-[11px] text-[13.5px] transition-colors",
               isActive
                 ? "bg-tn-ink text-white font-bold"
-                : "text-tn-ink2 font-semibold hover:bg-tn-paper",
+                : "text-tn-ink2 font-semibold hover:bg-tn-paper"
             )}
           >
             <div className="flex items-center gap-[11px]">
@@ -65,7 +62,7 @@ function Links({ links }: { links: NavLinkItem[] }) {
               <span
                 className={cn(
                   "font-tn-mono text-[10.5px] font-bold rounded-full px-[7px] py-0.5",
-                  isActive ? "bg-white text-tn-ink" : "bg-tn-red text-white",
+                  isActive ? "bg-white text-tn-ink" : "bg-tn-red text-white"
                 )}
               >
                 {l.count}
@@ -78,21 +75,13 @@ function Links({ links }: { links: NavLinkItem[] }) {
   );
 }
 
-function SideBar({
-  showSidebar,
-  shop,
-  userName,
-}: {
-  showSidebar: boolean;
-  shop?: AuthShop | null;
-  userName?: string;
-}) {
+function SideBar({ showSidebar, shop }: { showSidebar: boolean; shop: AuthShop }) {
   return (
     <aside
       className={cn(
         "w-[248px] shrink-0 h-screen border-r border-tn-hair bg-white flex flex-col justify-between z-30 transition-transform",
         "fixed inset-y-0 left-0 lg:sticky lg:top-0",
-        showSidebar ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+        showSidebar ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}
     >
       <div>
@@ -119,23 +108,25 @@ function SideBar({
             </span>
           </div>
 
-          {/* Shop Switcher */}
-          <div className="flex items-center gap-2.5 bg-tn-paper border border-tn-hair2 rounded-[14px] p-[11px_12px] mt-4 cursor-pointer">
+          {/* The signed-in merchant's shop. This used to be a hard-coded demo
+              shop, so every merchant saw "Almeda Electronics" here. */}
+          <div className="flex items-center gap-2.5 bg-tn-paper border border-tn-hair2 rounded-[14px] p-[11px_12px] mt-4">
             <div className="size-[34px] rounded-[9px] bg-tn-ink text-white font-bold text-sm flex items-center justify-center shrink-0">
-              AE
+              {getInitials(shop.name)}
             </div>
             <div className="flex-1 min-w-0 flex flex-col justify-center">
               <div className="flex items-center gap-1.5">
                 <span className="font-extrabold text-[13px] text-tn-ink truncate">
-                  {shop?.name ?? userName ?? "Your shop"}
+                  {shop.name}
                 </span>
-                <VerifiedBadge size={11} />
+                {shop.is_verified && <VerifiedBadge size={11} />}
               </div>
-              <span className="font-tn-mono text-[10.5px] text-tn-mute mt-0.5">
-                {shop?.city ?? "Set up your shop"}
-              </span>
+              {shop.city && (
+                <span className="font-tn-mono text-[10.5px] text-tn-mute mt-0.5 truncate">
+                  {shop.city}
+                </span>
+              )}
             </div>
-            <Icon name="chevd" size={14} className="text-tn-mute shrink-0" />
           </div>
         </div>
 
@@ -148,6 +139,8 @@ function SideBar({
         </div>
       </div>
 
+      {/* PLACEHOLDER: bot status is not reported by the API yet; this card is
+          the same for every shop. */}
       {/* Bot status card */}
       <div className="p-3.5 mt-auto">
         <div className="bg-tn-green-soft rounded-[14px] px-[14px] py-[13px] flex flex-col gap-1">

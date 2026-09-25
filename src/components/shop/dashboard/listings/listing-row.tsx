@@ -11,7 +11,7 @@ import { ShopProduct } from "@/lib/types";
 import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
 import { Pill } from "@/components/tinsae/pill";
 import { cn } from "@/lib/utils";
-import { confirmFreshness, markSold, pauseProduct, resumeProduct } from "@/lib/api";
+import { confirmFreshness, markSold, pauseProduct, resumeProduct } from "@/lib/api/client";
 import DeleteListing from "./delete-listing";
 
 export type ListingRowProps = {

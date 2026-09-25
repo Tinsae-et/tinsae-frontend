@@ -8,7 +8,7 @@ import { useCompare } from "@/hooks/use-compare";
 import { CompareTable } from "./compare-table";
 import { CompareEmptyState } from "./compare-empty-state";
 import { CompareAddModal } from "./compare-add-modal";
-import { getProduct } from "@/lib/api";
+import { getProduct } from "@/lib/api/public";
 import type { CompareItem } from "@/lib/compare-helpers";
 
 export function ComparePageClient({

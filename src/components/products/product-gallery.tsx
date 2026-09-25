@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useSyncExternalStore } from "react";
+import { useModal } from "@/hooks/use-modal";
 import Image from "next/image";
 import { createPortal } from "react-dom";
 import { Maximize2, ZoomIn, ZoomOut, X, ChevronLeft, ChevronRight } from "lucide-react";
@@ -131,17 +132,18 @@ export function ProductGallery({
     }
   };
 
-  // Lightbox keyboard & scroll-lock handlers
+  // Escape, focus trap, focus restore and scroll lock.
+  const lightboxRef = useModal<HTMLDivElement>(lightboxOpen, () => {
+    setLightboxOpen(false);
+    setIsZoomed(false);
+  });
+
+  // Arrow keys page through images while the lightbox is open.
   useEffect(() => {
     if (!lightboxOpen) return;
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
 
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setLightboxOpen(false);
-        setIsZoomed(false);
-      } else if (e.key === "ArrowLeft") {
+      if (e.key === "ArrowLeft") {
         setIdx((i) => (i - 1 + total) % total);
         setIsZoomed(false);
       } else if (e.key === "ArrowRight") {
@@ -151,10 +153,7 @@ export function ProductGallery({
     };
 
     window.addEventListener("keydown", handleGlobalKeyDown);
-    return () => {
-      document.body.style.overflow = originalOverflow;
-      window.removeEventListener("keydown", handleGlobalKeyDown);
-    };
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
   }, [lightboxOpen, total]);
 
   const handleImageError = (imageIdx: number) => {
@@ -328,6 +327,7 @@ export function ProductGallery({
       {/* ── Fullscreen Lightbox & Zoom Modal ── */}
       {mounted && lightboxOpen && hasImages && createPortal(
         <div
+          ref={lightboxRef}
           role="dialog"
           aria-modal="true"
           aria-label="Fullscreen image viewer"

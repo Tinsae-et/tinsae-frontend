@@ -13,12 +13,7 @@ import {
 } from "@/components/tinsae/prod-placeholder";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import {
-  confirmFreshness,
-  markSold,
-  pauseProduct,
-  resumeProduct,
-} from "@/lib/api";
+import { confirmFreshness, markSold, pauseProduct, resumeProduct } from "@/lib/api/client";
 import DeleteListing from "../listings/delete-listing";
 import {
   Loader2,
@@ -749,7 +744,11 @@ export default function Overview({
   shopName: string;
   basePath?: string;
 }) {
-  const { products, loading } = useShopProducts({}, slug);
+  // The KPI tiles are computed from these rows, so ask for as many as the
+  // backend allows (max_page_size = 100). DRF's default page of 20 made every
+  // total wrong for larger shops. Beyond 100 listings the tiles need a
+  // server-side stats endpoint.
+  const { products, loading } = useShopProducts({ pageSize: 100 }, slug);
 
   if (loading) {
     return (

@@ -1,40 +1,62 @@
 "use client";
 
-import React, { useState } from "react";
-import type { AuthShop } from "@/lib/auth/types";
-import SideBar from "@/components/shop/dashboard/layout/side-bar";
-import DashboardHeader from "@/components/shop/dashboard/layout/dashboard-header";
+import React, { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
-export default function DashboardShell({
-  children,
+import type { AuthShop } from "@/lib/auth/types";
+import SideBar from "./side-bar";
+import DashboardHeader from "./dashboard-header";
+
+/**
+ * The interactive half of the dashboard layout: only the mobile sidebar
+ * drawer needs client state. The layout itself stays a Server Component, so
+ * it can resolve the merchant's shop once and hand it down.
+ */
+export function DashboardShell({
   shop,
-  userName,
+  children,
 }: {
+  shop: AuthShop;
   children: React.ReactNode;
-  shop: AuthShop | null;
-  userName: string;
 }) {
   const [showSidebar, setShowSidebar] = useState(false);
+  const pathname = usePathname();
+
+  // Close the drawer after navigating, and on Escape.
+  const [lastPath, setLastPath] = useState(pathname);
+  if (pathname !== lastPath) {
+    setLastPath(pathname);
+    setShowSidebar(false);
+  }
+
+  useEffect(() => {
+    if (!showSidebar) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowSidebar(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showSidebar]);
 
   return (
-    <div className="flex min-h-screen bg-tn-paper">
+    <div className="min-h-screen bg-tn-paper flex">
       {showSidebar && (
-        <div
+        <button
+          type="button"
+          aria-label="Close menu"
           onClick={() => setShowSidebar(false)}
-          className="fixed inset-0 z-20 bg-tn-ink/40 backdrop-blur-xs lg:hidden"
-          aria-hidden="true"
+          className="fixed inset-0 bg-tn-ink/40 backdrop-blur-xs z-20 lg:hidden"
         />
       )}
-      <SideBar showSidebar={showSidebar} shop={shop} userName={userName} />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <DashboardHeader setShowSidebar={() => setShowSidebar(true)} />
-        <main
-          onClick={() => showSidebar && setShowSidebar(false)}
-          className="flex-1 px-4 pb-12 pt-5 sm:px-6 lg:px-8 lg:pt-[26px]"
-        >
-          {children}
-        </main>
+
+      <SideBar showSidebar={showSidebar} shop={shop} />
+
+      <div className="flex-1 min-w-0 flex flex-col">
+        <DashboardHeader setShowSidebar={setShowSidebar} shopSlug={shop.slug} />
+        <main className="flex-1 px-4 pt-[26px] pb-12 sm:px-8">{children}</main>
       </div>
     </div>
   );
 }
+
+export default DashboardShell;

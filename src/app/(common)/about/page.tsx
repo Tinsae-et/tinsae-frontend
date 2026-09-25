@@ -9,6 +9,8 @@ export const metadata: Metadata = {
     title: "About Tinsae — We made the trust legible",
     description:
       "The story behind Tinsae, the verified electronics marketplace for Addis Ababa.",
+    url: "https://tinsae.et/about",
+    siteName: "Tinsae",
     type: "website",
   },
 };

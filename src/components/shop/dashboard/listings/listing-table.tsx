@@ -27,8 +27,9 @@ import {
   markSold,
   pauseProduct,
   resumeProduct,
-  ShopProductQuery,
-} from "@/lib/api";
+} from "@/lib/api/client";
+import type { ShopProductQuery } from "@/lib/api/public";
+import { getShopProducts } from "@/lib/api/client";
 import { useShopProducts } from "@/hooks/use-products";
 import { formatETB, Freshness, freshness } from "@/lib/format";
 import {
@@ -724,47 +725,40 @@ export default function ListingsTable({
   const { products, setProducts, total, loading, error, refetch } =
     useShopProducts(query, slug);
 
-  // Maintain stable tab counts across tab switches
+  // Exact per-tab totals from the server: one page_size=1 request per tab,
+  // reading only `count`, with the same filters each tab sends. These used to
+  // be tallied from the rows on screen, so a shop with more than one page of
+  // listings saw wrong numbers on every tab. Local optimistic adjustments
+  // below keep them responsive; `countsVersion` re-syncs after each change.
+  const [countsVersion, setCountsVersion] = useState(0);
+  const recount = () => setCountsVersion((v) => v + 1);
+
   useEffect(() => {
-    if (activeTab === "all" && products.length > 0) {
-      let live = 0;
-      let needsAttention = 0;
-      let sold = 0;
-      let drafts = 0;
-
-      for (const p of products) {
-        if (p.is_available) {
-          live++;
-          const f = freshness(p.last_confirmed_at, p.confirmation_status);
-          if (f.tone !== "fresh") {
-            needsAttention++;
-          }
-        } else if (p.status === "draft") {
-          drafts++;
-        } else {
-          sold++;
+    const controller = new AbortController();
+    const tabs: [keyof typeof tabCounts, ShopProductQuery][] = [
+      ["all", {}],
+      ["live", { status: "live" }],
+      ["needs-attention", { fresh: "false" }],
+      ["drafts", { status: "draft" }],
+      ["sold", { status: "sold" }],
+    ];
+    Promise.all(
+      tabs.map(([key, q]) =>
+        getShopProducts(slug, { ...q, pageSize: 1 }, { signal: controller.signal }).then(
+          (res) => [key, res.count] as const,
+        ),
+      ),
+    )
+      .then((entries) => {
+        if (!controller.signal.aborted) {
+          setTabCounts(Object.fromEntries(entries) as typeof tabCounts);
         }
-      }
-
-      queueMicrotask(() => {
-        setTabCounts({
-          all: total || products.length,
-          live,
-          "needs-attention": needsAttention,
-          drafts,
-          sold,
-        });
+      })
+      .catch(() => {
+        // Counts are secondary: keep the last known values on failure.
       });
-    } else if (products.length > 0 && tabCounts.all === 0) {
-      queueMicrotask(() => {
-        setTabCounts((prev) => ({
-          ...prev,
-          [activeTab]: total || products.length,
-          all: Math.max(prev.all, total || products.length),
-        }));
-      });
-    }
-  }, [products, total, activeTab, tabCounts.all]);
+    return () => controller.abort();
+  }, [slug, countsVersion]);
 
   // Client-side fallback filter so tabs work smoothly regardless of backend filter variations
   const displayedProducts = useMemo(() => {
@@ -853,6 +847,7 @@ export default function ListingsTable({
         `Successfully confirmed ${res.confirmed.length} listings.`,
       );
       refetch();
+      recount();
     } catch {
       setGlobalError("Failed to confirm selected listings. Please try again.");
     } finally {
@@ -881,6 +876,7 @@ export default function ListingsTable({
       }
       return { ...prev, live: nextLive, sold: nextSold };
     });
+    recount();
   };
 
   const handleProductDeleted = (deletedSlug: string) => {
@@ -899,6 +895,7 @@ export default function ListingsTable({
       }));
     }
     refetch();
+    recount();
   };
 
   useEffect(() => {
