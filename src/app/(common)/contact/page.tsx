@@ -10,13 +10,24 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-const channels = [
+interface SupportChannel {
+  label: string;
+  value: string;
+  note: string;
+  href: string;
+  icon: IconName;
+  color: string;
+  bg: string;
+  primary?: boolean;
+}
+
+const channels: SupportChannel[] = [
   {
     label: "Telegram",
     value: "@TinsaeSupport",
     note: "Fastest - usually under 2 hours, 8am-8pm",
     href: "https://t.me/TinsaeSupport",
-    icon: "tg" as IconName,
+    icon: "tg",
     color: "text-tn-telegram",
     bg: "bg-tn-telegram-soft",
     primary: true,
@@ -26,7 +37,7 @@ const channels = [
     value: "help@tinsae.et",
     note: "Same working day for anything not urgent",
     href: "mailto:help@tinsae.et",
-    icon: "msg" as IconName,
+    icon: "msg",
     color: "text-tn-green",
     bg: "bg-tn-green-soft",
   },
@@ -35,90 +46,118 @@ const channels = [
     value: "+251 91 000 1234",
     note: "Mon-Sat, 8:30am - 6:30pm",
     href: "tel:+251910001234",
-    icon: "phone" as IconName,
+    icon: "phone",
     color: "text-tn-red",
     bg: "bg-tn-red-soft",
   },
 ];
 
-const routes = [
+interface SupportRoute {
+  icon: IconName;
+  accent: string;
+  title: string;
+  body: string;
+  handle: string;
+  href: string;
+  cta: string;
+  ctaIcon: IconName;
+  urgent?: boolean;
+}
+
+const routes: SupportRoute[] = [
   {
-    icon: "heart" as IconName,
+    icon: "heart",
     accent: "text-tn-red",
     title: "I am a buyer",
-    body: "A shop is unresponsive, a price looks wrong, or something about a listing is off.",
+    body: "A shop is unresponsive, a price looks wrong, or something about a product is off.",
     handle: "@TinsaeSupport",
     href: "https://t.me/TinsaeSupport",
     cta: "Buyer support",
+    ctaIcon: "tg",
   },
   {
-    icon: "building" as IconName,
+    icon: "building",
     accent: "text-tn-green",
     title: "I run a shop",
-    body: "Verification, the Telegram bot, listings, billing, or getting onto Tinsae in the first place.",
+    body: "Verification, the Telegram bot, products, billing, or getting onto Tinsae in the first place.",
     handle: "@TinsaeShops",
     href: "https://t.me/TinsaeShops",
     cta: "Shop support",
+    ctaIcon: "tg",
   },
   {
-    icon: "shield" as IconName,
+    icon: "shield",
     accent: "text-tn-warn",
     title: "I want to report something",
-    body: "A shop asking for a deposit, a suspected fake listing, or anything that feels like a scam.",
+    body: "A shop asking for a deposit, a suspected fake product, or anything that feels like a scam.",
     handle: "@TinsaeTrust",
     href: "https://t.me/TinsaeTrust",
     cta: "Report a problem",
+    ctaIcon: "tg",
     urgent: true,
   },
   {
-    icon: "msg" as IconName,
+    icon: "msg",
     accent: "text-[#7A2EBF]",
     title: "Press or partnerships",
     body: "Media enquiries, interviews, brand assets, or working together.",
     handle: "press@tinsae.et",
     href: "mailto:press@tinsae.et",
     cta: "Press office",
+    ctaIcon: "msg",
   },
 ];
 
-const hours = [
-  ["Monday - Friday", "8:00 am - 8:00 pm"],
-  ["Saturday", "9:00 am - 6:00 pm"],
-  ["Sunday", "Telegram only"],
+interface SupportHours {
+  day: string;
+  value: string;
+  isNotice?: boolean;
+}
+
+const hours: SupportHours[] = [
+  { day: "Monday - Friday", value: "8:00 am - 8:00 pm" },
+  { day: "Saturday", value: "9:00 am - 6:00 pm" },
+  { day: "Sunday", value: "Telegram only", isNotice: true },
 ];
 
 function ChannelStack() {
   return (
     <div className="overflow-hidden rounded-[20px] border border-tn-hair bg-white shadow-[0_24px_60px_rgba(11,11,11,0.09)]">
-      {channels.map((channel, index) => (
-        <a
-          key={channel.label}
-          href={channel.href}
-          className={`flex items-center gap-3.5 px-5 py-[18px] transition hover:bg-tn-paper ${channel.primary ? "bg-tn-red-soft" : ""} ${index ? "border-t border-tn-hair2" : ""}`}
-        >
-          <span
-            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${channel.primary ? "bg-white" : channel.bg}`}
+      {channels.map((channel, index) => {
+        const isExternal = channel.href.startsWith("http");
+        return (
+          <a
+            key={channel.label}
+            href={channel.href}
+            {...(isExternal
+              ? { target: "_blank", rel: "noopener noreferrer" }
+              : {})}
+            className={`flex items-center gap-3.5 px-5 py-[18px] transition hover:bg-tn-paper ${channel.primary ? "bg-tn-red-soft" : ""} ${index ? "border-t border-tn-hair2" : ""}`}
           >
-            <Icon name={channel.icon} size={21} className={channel.color} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-[14.5px] font-extrabold tracking-[-0.01em] text-tn-ink">
-              {channel.label}
+            <span
+              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${channel.primary ? "bg-white" : channel.bg}`}
+            >
+              <Icon name={channel.icon} size={21} className={channel.color} />
             </span>
-            <span className="font-tn-mono mt-0.5 block text-[13px] text-tn-ink2">
-              {channel.value}
+            <span className="min-w-0 flex-1">
+              <span className="block text-[14.5px] font-extrabold tracking-[-0.01em] text-tn-ink">
+                {channel.label}
+              </span>
+              <span className="font-tn-mono mt-0.5 block text-[13px] text-tn-ink2">
+                {channel.value}
+              </span>
+              <span className="mt-1 block text-[11.5px] font-medium text-tn-mute">
+                {channel.note}
+              </span>
             </span>
-            <span className="mt-1 block text-[11.5px] font-medium text-tn-mute">
-              {channel.note}
-            </span>
-          </span>
-          <Icon
-            name="arrow"
-            size={16}
-            className={`shrink-0 ${channel.primary ? "text-tn-red" : "text-tn-mute"}`}
-          />
-        </a>
-      ))}
+            <Icon
+              name="arrow"
+              size={16}
+              className={`shrink-0 ${channel.primary ? "text-tn-red" : "text-tn-mute"}`}
+            />
+          </a>
+        );
+      })}
     </div>
   );
 }
@@ -185,7 +224,7 @@ function OfficeCard() {
           <a
             href="https://www.google.com/maps/search/?api=1&query=Atlas+Building+Bole+Road+Addis+Ababa"
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="flex h-10 flex-1 items-center justify-center gap-2 rounded-full border-[1.5px] border-tn-hair text-[13.5px] font-bold text-tn-ink transition hover:border-tn-ink"
           >
             <Icon name="pin" size={15} />
@@ -203,20 +242,20 @@ function OfficeCard() {
           <div className="mb-2.5 text-[11px] font-extrabold uppercase tracking-[0.08em] text-tn-mute">
             Support hours
           </div>
-          {hours.map(([day, value], index) => (
+          {hours.map((item, index) => (
             <div
-              key={day}
+              key={item.day}
               className={`flex items-center justify-between py-1.5 ${index ? "border-t border-tn-hair2" : ""}`}
             >
               <span
-                className={`text-[12.5px] font-semibold ${index === 2 ? "text-tn-mute" : "text-tn-ink2"}`}
+                className={`text-[12.5px] font-semibold ${item.isNotice ? "text-tn-mute" : "text-tn-ink2"}`}
               >
-                {day}
+                {item.day}
               </span>
               <span
-                className={`font-tn-mono text-[12px] font-semibold ${index === 2 ? "text-tn-mute" : "text-tn-ink"}`}
+                className={`font-tn-mono text-[12px] font-semibold ${item.isNotice ? "text-tn-mute" : "text-tn-ink"}`}
               >
-                {value}
+                {item.value}
               </span>
             </div>
           ))}
@@ -273,34 +312,40 @@ export default function ContactPage() {
           general line.
         </p>
         <div className="mt-[26px] grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {routes.map((route) => (
-            <div
-              key={route.title}
-              className={`flex flex-col rounded-[18px] border bg-white px-[22px] py-6 ${route.urgent ? "border-[#FBD9C7]" : "border-tn-hair"}`}
-            >
-              <span
-                className={`flex h-12 w-12 items-center justify-center rounded-[13px] bg-current/10 ${route.accent}`}
+          {routes.map((route) => {
+            const isExternal = route.href.startsWith("http");
+            return (
+              <div
+                key={route.title}
+                className={`flex flex-col rounded-[18px] border bg-white px-[22px] py-6 ${route.urgent ? "border-[#FBD9C7]" : "border-tn-hair"}`}
               >
-                <Icon name={route.icon} size={22} />
-              </span>
-              <h3 className="mt-4 text-[17px] font-extrabold tracking-[-0.02em]">
-                {route.title}
-              </h3>
-              <p className="mt-2 flex-1 text-[13.5px] font-medium leading-relaxed text-tn-mute">
-                {route.body}
-              </p>
-              <div className="font-tn-mono mt-3 border-t border-tn-hair2 pt-3 text-xs text-tn-ink2">
-                {route.handle}
+                <span
+                  className={`flex h-12 w-12 items-center justify-center rounded-[13px] bg-current/10 ${route.accent}`}
+                >
+                  <Icon name={route.icon} size={22} />
+                </span>
+                <h3 className="mt-4 text-[17px] font-extrabold tracking-[-0.02em]">
+                  {route.title}
+                </h3>
+                <p className="mt-2 flex-1 text-[13.5px] font-medium leading-relaxed text-tn-mute">
+                  {route.body}
+                </p>
+                <div className="font-tn-mono mt-3 border-t border-tn-hair2 pt-3 text-xs text-tn-ink2">
+                  {route.handle}
+                </div>
+                <a
+                  href={route.href}
+                  {...(isExternal
+                    ? { target: "_blank", rel: "noopener noreferrer" }
+                    : {})}
+                  className={`mt-3 flex h-10 items-center justify-center rounded-full px-4 text-[13.5px] font-bold transition ${route.urgent ? "bg-tn-red text-white shadow-[0_8px_22px_rgba(204,48,0,0.2)] hover:bg-tn-red-dark" : "border-[1.5px] border-tn-hair text-tn-ink hover:border-tn-ink"}`}
+                >
+                  <Icon name={route.ctaIcon} size={15} className="mr-2" />
+                  {route.cta}
+                </a>
               </div>
-              <a
-                href={route.href}
-                className={`mt-3 flex h-10 items-center justify-center rounded-full px-4 text-[13.5px] font-bold transition ${route.urgent ? "bg-tn-red text-white shadow-[0_8px_22px_rgba(204,48,0,0.2)] hover:bg-tn-red-dark" : "border-[1.5px] border-tn-hair text-tn-ink hover:border-tn-ink"}`}
-              >
-                <Icon name="tg" size={15} className="mr-2" />
-                {route.cta}
-              </a>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -372,6 +417,8 @@ export default function ContactPage() {
             </div>
             <a
               href="https://t.me/TinsaeTrust"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-white px-[18px] text-[13.5px] font-bold text-tn-red transition hover:bg-tn-red-soft"
             >
               <Icon name="shield" size={15} />
@@ -393,6 +440,8 @@ export default function ContactPage() {
           <div className="mt-[30px] flex flex-wrap justify-center gap-[11px]">
             <a
               href="https://t.me/TinsaeSupport"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-white px-6 text-[15px] font-bold text-tn-red hover:bg-tn-red-soft"
             >
               <Icon name="tg" size={17} />

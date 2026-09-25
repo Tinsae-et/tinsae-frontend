@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Icon } from "@/components/tinsae/icon";
 
-const REASONS = [
+export const CONTACT_REASONS = [
   "Buyer support",
   "Shop support",
   "Report a problem",
@@ -11,8 +11,10 @@ const REASONS = [
   "Something else",
 ] as const;
 
+export type ContactReason = (typeof CONTACT_REASONS)[number];
+
 export function ContactForm() {
-  const [reason, setReason] = useState<(typeof REASONS)[number]>(REASONS[0]);
+  const [reason, setReason] = useState<ContactReason>(CONTACT_REASONS[0]);
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
 
@@ -117,7 +119,7 @@ export function ContactForm() {
             What is this about?
           </legend>
           <div className="flex flex-wrap gap-2">
-            {REASONS.map((value) => {
+            {CONTACT_REASONS.map((value) => {
               const selected = reason === value;
               return (
                 <button
