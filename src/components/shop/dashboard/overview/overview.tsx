@@ -13,6 +13,7 @@ import {
 } from "@/components/tinsae/prod-placeholder";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import Image from "next/image";
 import { confirmFreshness, markSold, pauseProduct, resumeProduct } from "@/lib/api/client";
 import DeleteListing from "../listings/delete-listing";
 import {
@@ -25,6 +26,8 @@ import {
   Trash,
 } from "lucide-react";
 import { GuidedFirstRun } from "./guided-first-run";
+import { ListingDetailDrawer } from "../listings/listing-detail-drawer";
+import { resolveProductImages } from "@/lib/product-images";
 
 type KpiItem = {
   label: string;
@@ -435,6 +438,7 @@ function TableRow({
   shopSlug,
   rowIndex,
   totalRows,
+  onViewDetail,
 }: {
   product: ShopProduct;
   isSelected: boolean;
@@ -444,6 +448,7 @@ function TableRow({
   shopSlug?: string;
   rowIndex?: number;
   totalRows?: number;
+  onViewDetail?: (product: ShopProduct) => void;
 }) {
   const [fresh, setFresh] = useState<Freshness>(() =>
     freshness(product.last_confirmed_at, product.confirmation_status),
@@ -459,6 +464,10 @@ function TableRow({
   );
   const [confirming, setConfirming] = useState<boolean>(false);
   const [rowError, setRowError] = useState<string | null>(null);
+
+  const getImage = () => {
+    return resolveProductImages(product.images)[0] || "";
+  };
 
   const dotColor =
     fresh.tone === "fresh"
@@ -485,19 +494,26 @@ function TableRow({
 
   return (
     <tr
+      onClick={() => onViewDetail?.(product)}
       className={cn(
-        "border-b border-tn-hair2 last:border-b-0 transition-colors",
-        isSelected ? "bg-tn-red-soft" : "hover:bg-tn-paper/50",
+        "border-b border-tn-hair2 last:border-b-0 transition-colors cursor-pointer",
+        isSelected ? "bg-tn-red-soft" : "hover:bg-tn-paper/70",
       )}
     >
       {/* Checkbox */}
-      <td className="py-[13px] pl-5 pr-2 w-12">
+      <td
+        className="py-[13px] pl-5 pr-2 w-12"
+        onClick={(e) => e.stopPropagation()}
+      >
         <button
           type="button"
           role="checkbox"
           aria-checked={isSelected}
           aria-label={`Select ${product.name}`}
-          onClick={() => toggleOne(product.id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleOne(product.id);
+          }}
           className={cn(
             "flex h-4 w-4 items-center justify-center rounded-[4px] border transition-colors cursor-pointer",
             isSelected
@@ -511,16 +527,34 @@ function TableRow({
 
       {/* Product */}
       <td className="px-3 py-[13px]">
-        <div className="flex items-center gap-3">
-          <div className="size-11 rounded-[10px] bg-tn-paper flex items-center justify-center shrink-0 overflow-hidden">
-            <ProdPlaceholder kind={kindForSlug(product.category)} />
+        <div className="flex items-center gap-3 group">
+          <div className="size-11 rounded-[10px] bg-tn-paper flex items-center justify-center shrink-0 overflow-hidden border border-tn-hair2/80">
+            {getImage() ? (
+              <Image
+                src={getImage()}
+                alt={product.name}
+                width={44}
+                height={44}
+                className="object-cover size-full group-hover:scale-105 transition-transform"
+              />
+            ) : (
+              <ProdPlaceholder kind={kindForSlug(product.category)} />
+            )}
           </div>
           <div className="min-w-0">
-            <div className="text-[13.5px] font-bold text-tn-ink truncate">
+            {/* The row is clickable for the mouse; this button is the keyboard path. */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewDetail?.(product);
+              }}
+              className="block max-w-full text-left text-[13.5px] font-bold text-tn-ink group-hover:text-tn-red transition-colors truncate cursor-pointer rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tn-ink"
+            >
               {product.name}
-            </div>
+            </button>
             <div className="text-[11.5px] text-tn-mute truncate">
-              {product.description}
+              {product.description || (product.brand ? `${product.brand} · ${product.category}` : product.category)}
             </div>
             {rowError && (
               <div className="text-[10.5px] text-red-600 font-semibold mt-0.5">
@@ -560,7 +594,10 @@ function TableRow({
       </td>
 
       {/* Action */}
-      <td className="py-[13px] pl-2 pr-5 text-right">
+      <td
+        className="py-[13px] pl-2 pr-5 text-right"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex justify-end items-center">
           {needConfirm ? (
             <Pill
@@ -578,7 +615,10 @@ function TableRow({
                 type="button"
                 aria-label="Row actions"
                 aria-expanded={isMenuOpen}
-                onClick={() => setOpenMenuId(isMenuOpen ? null : product.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenMenuId(isMenuOpen ? null : product.id);
+                }}
                 className="size-8 rounded-full border border-tn-hair flex items-center justify-center text-tn-mute hover:border-tn-ink hover:text-tn-ink transition-colors bg-white cursor-pointer"
               >
                 <MoreHorizontal className="size-4" />
@@ -602,12 +642,15 @@ function TableRow({
 function ListingsTable({
   products,
   shopSlug,
+  onProductUpdated,
 }: {
   products: ShopProduct[];
   shopSlug?: string;
+  onProductUpdated?: () => void;
 }) {
   const [selected, setSelected] = useState<number[]>([]);
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const [detailProduct, setDetailProduct] = useState<ShopProduct | null>(null);
 
   const toggleOne = (id: number) => {
     if (selected.includes(id)) {
@@ -670,12 +713,25 @@ function ListingsTable({
                   shopSlug={shopSlug}
                   rowIndex={idx}
                   totalRows={products.length}
+                  onViewDetail={(p) => setDetailProduct(p)}
                 />
               );
             })}
           </tbody>
         </table>
       </div>
+
+      {/* Listing Detail Drawer */}
+      <ListingDetailDrawer
+        product={detailProduct}
+        isOpen={Boolean(detailProduct)}
+        onClose={() => setDetailProduct(null)}
+        shopSlug={shopSlug || ""}
+        onProductUpdated={(updated) => {
+          setDetailProduct(updated);
+          onProductUpdated?.();
+        }}
+      />
     </div>
   );
 }
@@ -763,7 +819,7 @@ export default function Overview({
   // backend allows (max_page_size = 100). DRF's default page of 20 made every
   // total wrong for larger shops. Beyond 100 listings the tiles need a
   // server-side stats endpoint.
-  const { products, loading } = useShopProducts({ pageSize: 100 }, slug);
+  const { products, loading, refetch } = useShopProducts({ pageSize: 100 }, slug);
 
   if (loading) {
     return (
@@ -842,7 +898,7 @@ export default function Overview({
         <DailyStockCheckIn products={products} />
         <RecentActivities />
       </div>
-      <ListingsTable products={products} shopSlug={slug} />
+      <ListingsTable products={products} shopSlug={slug} onProductUpdated={refetch} />
     </div>
   );
 }

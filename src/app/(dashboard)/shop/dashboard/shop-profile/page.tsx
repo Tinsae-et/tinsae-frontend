@@ -7,13 +7,20 @@ import { requireMerchant } from "@/lib/auth/merchant";
 export const metadata: Metadata = { title: "Shop profile — Tinsae" };
 
 export default async function ShopProfilePage() {
-  const { shop } = await requireMerchant();
+  const { user, shop } = await requireMerchant();
   // The editor must start from what Django has now, not the public pages'
   // cached copy, or a second edit would begin from stale values.
   const fullShop = await getShop(shop.slug, { cache: "no-store" }).catch(() => null);
+
   return (
     <section>
-      <ShopProfile initialShop={fullShop} slug={shop.slug} />
+      <ShopProfile
+        initialShop={fullShop}
+        slug={shop.slug}
+        ownerName={user.full_name || user.username}
+        ownerPhone={user.phone}
+        telegramUsername={user.telegram_username}
+      />
     </section>
   );
 }

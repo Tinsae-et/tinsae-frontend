@@ -902,11 +902,11 @@ export function SiteHeader({
                             className="text-tn-ink2 hover:bg-tn-paper hover:text-tn-ink flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13.5px] font-semibold transition-colors"
                           >
                             <Icon
-                              name="building"
+                              name="user"
                               size={16}
                               className="text-tn-mute"
                             />
-                            <span>Shop settings</span>
+                            <span>Shop profile</span>
                           </Link>
                         </>
                       ) : (

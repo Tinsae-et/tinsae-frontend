@@ -38,7 +38,10 @@ export type IconName =
   | "tag"
   | "home"
   | "user"
-  | "back";
+  | "back"
+  | "gallery"
+  | "trash"
+  | "ellipsis";
 
 type IconProps = {
   name: IconName;
@@ -238,6 +241,28 @@ export function Icon({ name, size = 18, className, strokeWidth = 1.6 }: IconProp
         <svg {...stroke}>
           <rect x="3" y="3" width="18" height="18" rx="2" />
           <path d="M8 9h8M8 13h8M8 17h5" />
+        </svg>
+      );
+    case "gallery":
+      return (
+        <svg {...stroke}>
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <circle cx="9" cy="9" r="2" />
+          <path d="M21 15l-5-5L5 21" />
+        </svg>
+      );
+    case "trash":
+      return (
+        <svg {...stroke}>
+          <path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2M6 7l1 13a1 1 0 001 1h8a1 1 0 001-1l1-13" />
+        </svg>
+      );
+    case "ellipsis":
+      return (
+        <svg {...filled}>
+          <circle cx="6" cy="12" r="1.5" />
+          <circle cx="12" cy="12" r="1.5" />
+          <circle cx="18" cy="12" r="1.5" />
         </svg>
       );
     case "building":

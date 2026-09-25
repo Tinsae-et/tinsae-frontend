@@ -21,6 +21,8 @@ import { Icon } from "@/components/tinsae/icon";
 import { ListingRow } from "./listing-row";
 import DeleteListing from "./delete-listing";
 import { ShopProduct } from "@/lib/types";
+import { ListingDetailDrawer } from "./listing-detail-drawer";
+import { resolveProductImages } from "@/lib/product-images";
 import {
   confirmSelectedFreshness,
   confirmFreshness,
@@ -377,9 +379,7 @@ function ListingGridCard({
   };
 
   const getImage = () => {
-    if (!product.images || product.images.length === 0) return "";
-    const image = product.images.find((i) => i.is_primary) ?? product.images[0];
-    return image?.url || "";
+    return resolveProductImages(product.images)[0] || "";
   };
 
   return (
@@ -657,6 +657,7 @@ export default function ListingsTable({
   const [page, setPage] = useState<number>(1);
   const [view, setView] = useState<"rows" | "grid">("rows");
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const [detailProduct, setDetailProduct] = useState<ShopProduct | null>(null);
   const [bulkInFlight, setBulkInFlight] = useState<boolean>(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [globalSuccess, setGlobalSuccess] = useState<string | null>(null);
@@ -1120,6 +1121,7 @@ export default function ListingsTable({
                     onError={setGlobalError}
                     rowIndex={index}
                     totalRows={displayedProducts.length}
+                    onViewDetail={(p) => setDetailProduct(p)}
                   />
                 ))}
               </tbody>
@@ -1161,6 +1163,18 @@ export default function ListingsTable({
           )}
         </div>
       )}
+
+      {/* Listing Detail Drawer */}
+      <ListingDetailDrawer
+        product={detailProduct}
+        isOpen={Boolean(detailProduct)}
+        onClose={() => setDetailProduct(null)}
+        shopSlug={slug}
+        onProductUpdated={(updated) => {
+          setDetailProduct(updated);
+          handleProductUpdated(updated);
+        }}
+      />
     </div>
   );
 }
