@@ -33,6 +33,8 @@ export function Pill({
   icon,
   iconAfter,
   href,
+  download = false,
+  newTab = false,
   onClick,
   type = "button",
   disabled = false,
@@ -44,6 +46,10 @@ export function Pill({
   icon?: IconName;
   iconAfter?: IconName;
   href?: string;
+  /** Serve `href` as a file download rather than navigating to it. */
+  download?: boolean;
+  /** Open `href` in a new tab — for links that leave the site. */
+  newTab?: boolean;
   onClick?: () => void;
   type?: "button" | "submit";
   disabled?: boolean;
@@ -78,11 +84,32 @@ export function Pill({
     );
   }
 
-  return (
-    <Link href={href ?? "#"} className={classes}>
+  const content = (
+    <>
       {icon && <Icon name={icon} size={size === "lg" ? 18 : 17} />}
       {children}
       {iconAfter && <Icon name={iconAfter} size={size === "lg" ? 16 : 15} />}
+    </>
+  );
+
+  // Files and off-site links skip client-side routing, which can do neither.
+  if (download || newTab) {
+    return (
+      <a
+        href={href}
+        download={download || undefined}
+        target={newTab ? "_blank" : undefined}
+        rel={newTab ? "noopener noreferrer" : undefined}
+        className={classes}
+      >
+        {content}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={href ?? "#"} className={classes}>
+      {content}
     </Link>
   );
 }
