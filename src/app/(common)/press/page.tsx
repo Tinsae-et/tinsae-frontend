@@ -1,19 +1,12 @@
-import Presshead, { BrandAssets, FactSheet, PressCoverage } from "@/components/press/press";
+import type { Metadata } from "next";
+import { PressPage } from "@/components/press/press-page";
 
+export const metadata: Metadata = {
+  title: "Press & media — Tinsae",
+  description:
+    "Tinsae's media kit: approved boilerplate, a checked fact sheet, downloadable logos and palette, and a press contact who answers.",
+};
 
-
-export default function PressPage(){
-    return(
-        <div >
-            <div className="mx-auto max-w-7xl">
-                <Presshead/>
-                <FactSheet/>
-            </div>
-            
-            <BrandAssets/>
-            <div className="mx-auto max-w-7xl">
-                <PressCoverage/>
-            </div>
-        </div>
-    )
+export default function PressRoute() {
+  return <PressPage />;
 }
