@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Icon } from "@/components/tinsae/icon";
 
+// PLACEHOLDER: alerts and saved searches are not built yet; these counts are
+// invented. Hide the panel or wire it to the API before launch.
 const ALERT_STATS = [
   { icon: "tag" as const, label: "Price-drop alerts", value: "4 active", color: "text-tn-green" },
   { icon: "box" as const, label: "Back-in-stock alerts", value: "2 active", color: "text-tn-red" },

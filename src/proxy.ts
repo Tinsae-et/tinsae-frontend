@@ -1,10 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { ACCESS_COOKIE, REFRESH_COOKIE } from "@/lib/auth/session";
+import { authDriver } from "@/lib/auth/driver";
+import { refreshOnce } from "@/lib/auth/refresh-lock";
+import {
+  ACCESS_COOKIE,
+  REFRESH_COOKIE,
+  clearSessionCookies,
+  setAccessCookie,
+  setRefreshCookie,
+} from "@/lib/auth/session";
+import { AuthApiError } from "@/lib/auth/types";
 
 const SIGNIN = "/signin";
-const AUTH_PAGES = new Set(["/signin", "/signup"]);
-const DASHBOARD = "/dashboard";
 
 function isProtectedRoute(pathname: string): boolean {
   return (
@@ -31,13 +38,10 @@ export default async function proxy(request: NextRequest) {
   const hasAccess = Boolean(request.cookies.get(ACCESS_COOKIE)?.value);
   const protectedRoute = isProtectedRoute(pathname);
 
-  // Already signed in? The auth pages have nothing to offer.
-  if (AUTH_PAGES.has(pathname)) {
-    if (hasRefresh) {
-      return NextResponse.redirect(new URL(DASHBOARD, request.url));
-    }
-    return NextResponse.next();
-  }
+  // /signin and /signup are deliberately not special-cased here. Redirecting
+  // them to the dashboard on cookie *presence* looped whenever the cookies were
+  // stale: the dashboard bounced back to /signin, which bounced forward again.
+  // The pages themselves redirect once /me/ confirms the session is live.
 
   // Unauthenticated user trying to hit a protected dashboard route
   if (protectedRoute && !hasRefresh) {
@@ -49,52 +53,46 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Access token expired, but refresh cookie is present: refresh it silently
+  // Access token expired, but refresh cookie is present: refresh it silently.
+  //
+  // In-process, not by fetching our own /api/auth/refresh over HTTP. That
+  // hairpin reached Django from this server's address, so every user's
+  // refresh shared one per-IP throttle bucket (60/min) — busy enough, and
+  // signed-in merchants start getting logged out. The browser's address is
+  // passed through instead, and the round trip through the load balancer goes.
+  const refresh = request.cookies.get(REFRESH_COOKIE)!.value;
+  const forwardedFor =
+    request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip") ?? undefined;
+
+  let renewed: { access: string; refresh?: string };
   try {
-    const refreshed = await fetch(new URL("/api/auth/refresh", request.url), {
-      method: "POST",
-      headers: { cookie: request.headers.get("cookie") ?? "" },
-    });
-
-    if (!refreshed.ok) {
-      if (protectedRoute) return redirectToLogin(request, pathname + search);
-      const res = NextResponse.next();
-      res.cookies.delete(ACCESS_COOKIE);
-      res.cookies.delete(REFRESH_COOKIE);
-      return res;
-    }
-
-    const setCookies = refreshed.headers.getSetCookie();
-    const access = readCookieValue(setCookies, ACCESS_COOKIE);
-    if (!access) {
-      if (protectedRoute) return redirectToLogin(request, pathname + search);
-      const res = NextResponse.next();
-      res.cookies.delete(ACCESS_COOKIE);
-      res.cookies.delete(REFRESH_COOKIE);
-      return res;
-    }
-
-    let cookieHeader = withCookie(request.headers.get("cookie"), ACCESS_COOKIE, access);
-    const rotated = readCookieValue(setCookies, REFRESH_COOKIE);
-    if (rotated) cookieHeader = withCookie(cookieHeader, REFRESH_COOKIE, rotated);
-
-    const headers = new Headers(request.headers);
-    headers.set("cookie", cookieHeader);
-
-    const res = NextResponse.next({ request: { headers } });
-    for (const cookie of setCookies) res.headers.append("set-cookie", cookie);
+    renewed = await refreshOnce(refresh, () => authDriver.refresh(refresh, forwardedFor));
+  } catch (error) {
+    // A rejected token ends the session. Anything else — Django down, a
+    // timeout, a 429 — is transient: keep the cookies and try again on the
+    // next navigation rather than signing the merchant out.
+    const rejected =
+      error instanceof AuthApiError && [400, 401, 403].includes(error.status);
+    if (protectedRoute) return redirectToLogin(request, pathname + search, rejected);
+    const res = NextResponse.next();
+    if (rejected) clearSessionCookies(res);
     return res;
-  } catch {
-    if (protectedRoute) return redirectToLogin(request, pathname + search);
-    return NextResponse.next();
   }
-}
 
-/** Pulls one cookie's value out of a Set-Cookie header list. */
-function readCookieValue(setCookies: string[], name: string): string | undefined {
-  const header = setCookies.find((cookie) => cookie.startsWith(`${name}=`));
-  const value = header?.slice(name.length + 1).split(";")[0];
-  return value || undefined;
+  // Downstream Server Components read cookies from the *request*, so the new
+  // tokens go there as well as onto the response for the browser.
+  let cookieHeader = withCookie(request.headers.get("cookie"), ACCESS_COOKIE, renewed.access);
+  if (renewed.refresh) cookieHeader = withCookie(cookieHeader, REFRESH_COOKIE, renewed.refresh);
+
+  const headers = new Headers(request.headers);
+  headers.set("cookie", cookieHeader);
+
+  const res = NextResponse.next({ request: { headers } });
+  setAccessCookie(res, renewed.access);
+  // Rotation blacklists the token we just spent; without the replacement the
+  // next refresh would fail and end the session.
+  if (renewed.refresh) setRefreshCookie(res, renewed.refresh);
+  return res;
 }
 
 /** Replaces (or adds) one cookie in a request's Cookie header. */
@@ -106,12 +104,14 @@ function withCookie(header: string | null, name: string, value: string): string 
   return [...others, `${name}=${value}`].join("; ");
 }
 
-function redirectToLogin(request: NextRequest, from: string) {
+function redirectToLogin(request: NextRequest, from: string, clear = true) {
   const url = new URL(SIGNIN, request.url);
   if (from && from !== "/") url.searchParams.set("next", from);
   const res = NextResponse.redirect(url);
-  res.cookies.delete(ACCESS_COOKIE);
-  res.cookies.delete(REFRESH_COOKIE);
+  // Not res.cookies.delete(): that omits `Secure`, and browsers ignore a
+  // __Host- cookie set without it — so in production the stale cookies
+  // survived every "delete". Clear with the attributes they were set with.
+  if (clear) clearSessionCookies(res);
   return res;
 }
 

@@ -23,7 +23,7 @@ const COPY: Record<ErrorPageKind, Copy> = {
   "500": {
     chip: "HTTP 500 · OUR END, NOT YOURS",
     title: ["Something broke", "on our side."],
-    body: "Our team has been paged automatically. Your account, saved listings and alerts are all safe — try again in a moment.",
+    body: "Your account, saved listings and alerts are all safe — try again in a moment.",
     dot: "#B8741F",
   },
 };
@@ -38,13 +38,13 @@ const LINKS: Array<{
   {
     href: "/products",
     label: "Browse listings",
-    sub: "2,840 live",
+    sub: "All listings",
     icon: "search",
   },
   {
     href: "/products?verified_only=1",
     label: "Verified shops",
-    sub: "412 in Bole",
+    sub: "Verified only",
     icon: "shield",
   },
   { href: "/help", label: "Help center", sub: "Talk to us", icon: "msg" },
@@ -129,7 +129,17 @@ function PulseGraphic() {
   );
 }
 
-export default function NotFound({ kind = "404" }: { kind?: ErrorPageKind }) {
+export default function NotFound({
+  kind = "404",
+  reference,
+  onRetry,
+}: {
+  kind?: ErrorPageKind;
+  /** Error digest, shown so a support report can be matched to the server log. */
+  reference?: string;
+  /** Re-render the failed segment; falls back to a full reload. */
+  onRetry?: () => void;
+}) {
   const [query, setQuery] = useState("");
   const router = useRouter();
   const copy = COPY[kind];
@@ -160,11 +170,14 @@ export default function NotFound({ kind = "404" }: { kind?: ErrorPageKind }) {
           <p className="mt-5 max-w-[470px] text-[17.5px] font-medium leading-[1.55] text-tn-mute">
             {copy.body}
           </p>
+          {kind === "500" && reference && (
+            <p className="font-tn-mono mt-3 text-xs text-tn-mute">Reference: {reference}</p>
+          )}
           {kind === "500" ? (
             <div className="mt-8 flex gap-3">
               <button
                 type="button"
-                onClick={() => window.location.reload()}
+                onClick={() => (onRetry ? onRetry() : window.location.reload())}
                 className="bg-tn-red inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-bold text-white"
               >
                 <Icon name="pulse" size={16} />

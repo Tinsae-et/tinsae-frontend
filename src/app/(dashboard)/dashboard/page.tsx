@@ -1,33 +1,31 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { authDriver } from "@/lib/auth/driver";
+import { DashboardNoShop } from "@/components/shop/dashboard/overview/dashboard-empty-states";
 import { hasShop } from "@/lib/auth/roles";
-import { readSession } from "@/lib/auth/session";
-import type { AuthUser } from "@/lib/auth/types";
+import { requireSession } from "@/lib/auth/session";
 
-export const metadata: Metadata = { title: "Dashboard — Tinsae" };
+export const metadata: Metadata = {
+  title: "Overview — Shop dashboard — Tinsae",
+  robots: { index: false, follow: false },
+};
 
 /**
  * Universal dispatcher for /dashboard.
  *
  * Directs authenticated shop owners to their rich dashboard overview,
- * accounts without a shop to the onboarding funnel, and unauthenticated
- * visitors to sign in with return intent.
+ * accounts without a shop to the empty state linking to onboarding,
+ * and unauthenticated visitors to sign in with return intent.
  */
 export default async function DashboardPage() {
-  const { access } = await readSession();
-  if (!access) redirect("/signin?next=/shop/dashboard/overview");
-
-  let user: AuthUser;
-  try {
-    user = await authDriver.me(access);
-  } catch {
-    redirect("/signin?next=/shop/dashboard/overview");
-  }
+  const { user } = await requireSession("/dashboard");
 
   if (!hasShop(user)) {
-    redirect("/shop/onboarding");
+    return (
+      <main className="min-h-screen flex items-center justify-center p-4">
+        <DashboardNoShop />
+      </main>
+    );
   }
 
   redirect("/shop/dashboard/overview");

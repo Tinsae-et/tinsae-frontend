@@ -4,11 +4,9 @@ import { Shirt, Sofa, Wrench } from "lucide-react";
 import { Icon, type IconName } from "@/components/tinsae/icon";
 import { ProdPlaceholder, type ProductKind } from "@/components/tinsae/prod-placeholder";
 import { ProductCard } from "@/components/products/product-card";
-import { getProducts, getPublicStats } from "@/lib/api";
+import { getProducts, getPublicStats } from "@/lib/api/public";
 import { formatCount, formatETB } from "@/lib/format";
 import type { Product } from "@/lib/types";
-
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Everything on Tinsae — All Categories",
@@ -23,8 +21,6 @@ type LiveCategoryConfig = {
   subtitle: string;
   icon: IconName;
   placeholderKind: ProductKind;
-  defaultCount: number;
-  defaultFrom: number;
 };
 
 const LIVE_CATEGORIES: LiveCategoryConfig[] = [
@@ -35,8 +31,6 @@ const LIVE_CATEGORIES: LiveCategoryConfig[] = [
     subtitle: "iPhone · Samsung · Tecno",
     icon: "phone",
     placeholderKind: "phone",
-    defaultCount: 142,
-    defaultFrom: 8500,
   },
   {
     id: "laptop",
@@ -45,8 +39,6 @@ const LIVE_CATEGORIES: LiveCategoryConfig[] = [
     subtitle: "MacBook · Dell · HP",
     icon: "laptop",
     placeholderKind: "laptop",
-    defaultCount: 86,
-    defaultFrom: 22000,
   },
   {
     id: "audio",
@@ -55,8 +47,6 @@ const LIVE_CATEGORIES: LiveCategoryConfig[] = [
     subtitle: "AirPods · JBL · Sony",
     icon: "audio",
     placeholderKind: "audio",
-    defaultCount: 210,
-    defaultFrom: 1200,
   },
   {
     id: "tablet",
@@ -65,8 +55,6 @@ const LIVE_CATEGORIES: LiveCategoryConfig[] = [
     subtitle: "iPad · Galaxy Tab",
     icon: "tablet",
     placeholderKind: "tablet",
-    defaultCount: 54,
-    defaultFrom: 14000,
   },
   {
     id: "accessories",
@@ -75,8 +63,6 @@ const LIVE_CATEGORIES: LiveCategoryConfig[] = [
     subtitle: "Chargers · Cases · Cables",
     icon: "plug",
     placeholderKind: "phone",
-    defaultCount: 320,
-    defaultFrom: 350,
   },
   {
     id: "camera",
@@ -85,8 +71,6 @@ const LIVE_CATEGORIES: LiveCategoryConfig[] = [
     subtitle: "Canon · Sony · GoPro",
     icon: "camera",
     placeholderKind: "camera",
-    defaultCount: 38,
-    defaultFrom: 18000,
   },
 ];
 
@@ -145,10 +129,10 @@ export default async function CategoriesPage() {
           const rawPrice = Number(res?.results?.[0]?.price);
           return {
             slug: c.slug,
-            price: Number.isFinite(rawPrice) && rawPrice > 0 ? rawPrice : c.defaultFrom,
+            price: Number.isFinite(rawPrice) && rawPrice > 0 ? rawPrice : null,
           };
         } catch {
-          return { slug: c.slug, price: c.defaultFrom };
+          return { slug: c.slug, price: null };
         }
       }),
     ),
@@ -157,7 +141,9 @@ export default async function CategoriesPage() {
   const minPriceMap = new Map(minPrices.map((m) => [m.slug, m.price]));
   const trendingProducts: Product[] = trendingRes?.results ?? [];
 
-  const verifiedShopsCount = stats?.verified_shops ?? 850;
+  // Real figures only: when stats are unavailable these are hidden rather
+  // than replaced with invented counts.
+  const verifiedShopsCount = stats?.verified_shops ?? null;
 
   return (
     <main className="min-h-screen bg-white">
@@ -189,10 +175,14 @@ export default async function CategoriesPage() {
             <span>
               <strong className="font-bold text-tn-ink">{LIVE_CATEGORIES.length}</strong> categories live
             </span>
-            <span className="text-tn-hair">·</span>
-            <span>
-              <strong className="font-bold text-tn-ink">{verifiedShopsCount}+</strong> verified shops
-            </span>
+            {verifiedShopsCount !== null && (
+              <>
+                <span className="text-tn-hair">·</span>
+                <span>
+                  <strong className="font-bold text-tn-ink">{verifiedShopsCount}</strong> verified shops
+                </span>
+              </>
+            )}
             <span className="text-tn-hair">·</span>
             <span className="inline-flex items-center gap-2">
               <span className="size-2 rounded-full bg-tn-green inline-block animate-pulse" />
@@ -228,8 +218,8 @@ export default async function CategoriesPage() {
 
         <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {LIVE_CATEGORIES.map((cat) => {
-            const count = stats?.category_product_count?.[cat.slug] ?? cat.defaultCount;
-            const minPrice = minPriceMap.get(cat.slug) ?? cat.defaultFrom;
+            const count = stats?.category_product_count?.[cat.slug] ?? null;
+            const minPrice = minPriceMap.get(cat.slug) ?? null;
 
             return (
               <Link
@@ -246,9 +236,11 @@ export default async function CategoriesPage() {
                   <span className="inline-flex size-[50px] items-center justify-center rounded-[14px] bg-[#F7F6F2] text-tn-ink transition-colors group-hover:bg-[#F0EEE6]">
                     <Icon name={cat.icon} size={24} />
                   </span>
-                  <span className="font-tn-mono text-xs font-semibold text-tn-mute">
-                    {formatCount(count)} listings
-                  </span>
+                  {count !== null && (
+                    <span className="font-tn-mono text-xs font-semibold text-tn-mute">
+                      {formatCount(count)} listings
+                    </span>
+                  )}
                 </div>
 
                 <h3 className="mt-4 text-[21px] font-extrabold tracking-[-0.02em] text-tn-ink">
@@ -257,14 +249,18 @@ export default async function CategoriesPage() {
                 <p className="mt-1 text-[13px] text-tn-mute line-clamp-1">{cat.subtitle}</p>
 
                 <div className="mt-4 pt-3.5 border-t border-tn-hair2 flex items-center justify-between">
-                  <span className="flex items-baseline gap-1.5">
-                    <span className="text-[10.5px] font-bold tracking-[0.04em] uppercase text-tn-mute">
-                      From
+                  {minPrice !== null ? (
+                    <span className="flex items-baseline gap-1.5">
+                      <span className="text-[10.5px] font-bold tracking-[0.04em] uppercase text-tn-mute">
+                        From
+                      </span>
+                      <span className="font-tn-mono text-[15px] font-semibold text-tn-red">
+                        {formatETB(minPrice)}
+                      </span>
                     </span>
-                    <span className="font-tn-mono text-[15px] font-semibold text-tn-red">
-                      {formatETB(minPrice)}
-                    </span>
-                  </span>
+                  ) : (
+                    <span className="text-[13px] font-semibold text-tn-mute">Browse</span>
+                  )}
                   <Icon
                     name="arrow"
                     size={17}

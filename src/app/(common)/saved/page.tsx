@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ChevronRight, Trash2 } from "lucide-react";
 import { Pill } from "@/components/tinsae/pill";
 import { useSaved } from "@/hooks/use-saved";
-import { getProduct } from "@/lib/api";
+import { getProduct } from "@/lib/api/public";
 import { SavedListingRow, type SavedItemData } from "@/components/saved/saved-listing-row";
 import { SavedSidebar } from "@/components/saved/saved-sidebar";
 import { SavedEmptyState } from "@/components/saved/saved-empty-state";

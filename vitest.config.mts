@@ -2,7 +2,8 @@ import path from "node:path";
 import { defineConfig } from "vitest/config";
 
 // Unit tests only, and deliberately narrow: `include` covers lib/, which is
-// where the pure logic lives. Components and route handlers need a DOM or a
+// where the pure logic lives, plus the proxy, whose redirect and cookie
+// handling can lock users out if it regresses. Components and route handlers need a DOM or a
 // running Next server and are verified by `next build` plus the browser passes
 // described in docs/architecture.md.
 export default defineConfig({
@@ -12,7 +13,7 @@ export default defineConfig({
     },
   },
   test: {
-    include: ["src/lib/**/*.test.ts"],
+    include: ["src/lib/**/*.test.ts", "src/proxy.test.ts"],
     environment: "node",
   },
 });

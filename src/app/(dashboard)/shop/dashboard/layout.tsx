@@ -1,38 +1,14 @@
-"use client";
+import { DashboardShell } from "@/components/shop/dashboard/layout/dashboard-shell";
+import { requireMerchant } from "@/lib/auth/merchant";
 
-import React, { useState } from "react";
-import SideBar from "@/components/shop/dashboard/layout/side-bar";
-import DashboardHeader from "@/components/shop/dashboard/layout/dashboard-header";
-
-function ShopDashboardLayout({ children }: { children: React.ReactNode }) {
-  const [showSidebar, setShowSidebar] = useState<boolean>(false);
-
-  return (
-    <div className="min-h-screen bg-tn-paper flex">
-      {/* Mobile backdrop scrim */}
-      {showSidebar && (
-        <div
-          onClick={() => setShowSidebar(false)}
-          className="fixed inset-0 bg-tn-ink/40 backdrop-blur-xs z-20 lg:hidden"
-          aria-hidden="true"
-        />
-      )}
-
-      <SideBar showSidebar={showSidebar} />
-
-      <div className="flex-1 min-w-0 flex flex-col">
-        <DashboardHeader setShowSidebar={setShowSidebar} />
-        <main
-          onClick={() => {
-            if (showSidebar) setShowSidebar(false);
-          }}
-          className="flex-1 px-8 pt-[26px] pb-12"
-        >
-          {children}
-        </main>
-      </div>
-    </div>
-  );
+/**
+ * Shell for every /shop/dashboard section.
+ *
+ * A Server Component, so the merchant's shop is resolved once here (and shared
+ * with the page through requireMerchant's per-request cache) instead of every
+ * section fetching it again. Only the mobile drawer is client-side.
+ */
+export default async function ShopDashboardLayout({ children }: { children: React.ReactNode }) {
+  const { shop } = await requireMerchant();
+  return <DashboardShell shop={shop}>{children}</DashboardShell>;
 }
-
-export default ShopDashboardLayout;

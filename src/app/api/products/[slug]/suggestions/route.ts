@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getProduct } from "@/lib/api";
+import { getProduct } from "@/lib/api/public";
 import { getNextSuggestions } from "@/lib/suggestions";
 
 export async function GET(
