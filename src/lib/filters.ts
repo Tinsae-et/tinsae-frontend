@@ -1,4 +1,4 @@
-import type { ProductQuery } from "./api";
+import type { ProductQuery } from "./api/public";
 
 // Single source of truth for the /products search & filter state.
 // Every value round-trips through the URL so results are shareable, linkable,

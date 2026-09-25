@@ -18,6 +18,8 @@ export type TopShopItem = {
 };
 
 // Design block 6. Static demo data from the design deck — fallback when backend is unavailable.
+// PLACEHOLDER: demo shops shown when the API returns none. Replace with an
+// empty state once real verified shops exist.
 const SHOPS: TopShopItem[] = [
   { name: "Almeda Electronics", slug: "almeda-electronics", hood: "Atlas", rating: 4.9, ratings: 312, listings: 142, reply: 14, dist: 0.6, color: "#0F2A4D", isVerified: true },
   { name: "Sheba Computers", slug: "sheba-computers", hood: "Japan", rating: 4.9, ratings: 188, listings: 96, reply: 16, dist: 1.1, color: "#2D4A5E", isVerified: true },

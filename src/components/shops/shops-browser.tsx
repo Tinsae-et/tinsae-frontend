@@ -4,7 +4,7 @@ import { useTransition, useMemo } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Icon } from "@/components/tinsae/icon";
 import { Pill } from "@/components/tinsae/pill";
-import { type DirectoryShop, SHOPS_RICH } from "@/lib/shops-data";
+import type { DirectoryShop } from "@/lib/shops-data";
 import { SortDropdown } from "@/components/tinsae/sort-dropdown";
 import { SegToggle } from "./seg-toggle";
 import { ShopCard, ShopCardSkeleton } from "./shop-card";
@@ -18,9 +18,9 @@ export const SHOP_SORT_OPTIONS = [
 export type SortOption = (typeof SHOP_SORT_OPTIONS)[number]["value"];
 
 export function ShopsBrowser({
-  initialShops = SHOPS_RICH,
+  initialShops,
 }: {
-  initialShops?: DirectoryShop[];
+  initialShops: DirectoryShop[];
 }) {
   const router = useRouter();
   const pathname = usePathname();

@@ -27,11 +27,15 @@ import {
   markSold,
   pauseProduct,
   resumeProduct,
-  ShopProductQuery,
-} from "@/lib/api";
+} from "@/lib/api/client";
+import type { ShopProductQuery } from "@/lib/api/public";
+import { getShopProducts } from "@/lib/api/client";
 import { useShopProducts } from "@/hooks/use-products";
 import { formatETB, Freshness, freshness } from "@/lib/format";
-import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
+import {
+  ProdPlaceholder,
+  kindForSlug,
+} from "@/components/tinsae/prod-placeholder";
 import { Pill } from "@/components/tinsae/pill";
 import { cn } from "@/lib/utils";
 import { SortDropdown } from "@/components/tinsae/sort-dropdown";
@@ -85,7 +89,9 @@ function StatusFilter({
               <span
                 className={cn(
                   "font-tn-mono text-[11px] font-bold px-[7px] py-px rounded-full",
-                  isActive ? "bg-tn-ink text-white" : "bg-tn-paper text-tn-mute",
+                  isActive
+                    ? "bg-tn-ink text-white"
+                    : "bg-tn-paper text-tn-mute",
                 )}
               >
                 {counts[tab.key]}
@@ -98,7 +104,12 @@ function StatusFilter({
         <span>
           <b className="font-bold text-tn-ink">{counts.live}</b> live
           {" · "}
-          <b className={cn("font-bold", counts["needs-attention"] > 0 ? "text-tn-warn" : "text-tn-ink")}>
+          <b
+            className={cn(
+              "font-bold",
+              counts["needs-attention"] > 0 ? "text-tn-warn" : "text-tn-ink",
+            )}
+          >
             {counts["needs-attention"]}
           </b>{" "}
           need attention
@@ -147,11 +158,7 @@ function ToolBar({
       </div>
 
       <div className="flex items-center gap-2.5 flex-wrap">
-        <CategoryDropdown
-          value={category}
-          onChange={setCategory}
-          size="sm"
-        />
+        <CategoryDropdown value={category} onChange={setCategory} size="sm" />
 
         <SortDropdown
           value={ordering}
@@ -257,8 +264,12 @@ function ListingGridCard({
     freshness(product.last_confirmed_at, product.confirmation_status),
   );
   const [available, setAvailable] = useState<boolean>(product.is_available);
-  const [status, setStatus] = useState<string>(product.status || (product.is_available ? "live" : "sold"));
-  const [inFlightAction, setInFlightAction] = useState<"confirm" | "pause" | "resume" | "sold" | null>(null);
+  const [status, setStatus] = useState<string>(
+    product.status || (product.is_available ? "live" : "sold"),
+  );
+  const [inFlightAction, setInFlightAction] = useState<
+    "confirm" | "pause" | "resume" | "sold" | null
+  >(null);
   const [cardError, setCardError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
 
@@ -279,11 +290,18 @@ function ListingGridCard({
     setCardError(null);
 
     // Optimistic UI update
-    setFresh({ ...fresh, tone: "fresh", age: "Just now", confirmed: "Confirmed moments ago" });
+    setFresh({
+      ...fresh,
+      tone: "fresh",
+      age: "Just now",
+      confirmed: "Confirmed moments ago",
+    });
 
     try {
       const updated = await confirmFreshness(shopSlug, product.slug);
-      setFresh(freshness(updated.last_confirmed_at, updated.confirmation_status));
+      setFresh(
+        freshness(updated.last_confirmed_at, updated.confirmation_status),
+      );
       setAvailable(updated.is_available);
       onProductUpdated?.(updated);
     } catch {
@@ -457,7 +475,9 @@ function ListingGridCard({
             <span
               className={cn(
                 "font-tn-mono text-xs",
-                product.stock === 0 ? "text-tn-red font-semibold" : "text-tn-mute",
+                product.stock === 0
+                  ? "text-tn-red font-semibold"
+                  : "text-tn-mute",
               )}
             >
               {product.stock !== undefined ? `${product.stock} in stock` : "—"}
@@ -533,7 +553,8 @@ function ListingGridCard({
                       onClick={handlePauseToggle}
                       className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-semibold text-tn-ink hover:bg-tn-paper transition-colors cursor-pointer disabled:opacity-50"
                     >
-                      {inFlightAction === "pause" || inFlightAction === "resume" ? (
+                      {inFlightAction === "pause" ||
+                      inFlightAction === "resume" ? (
                         <Loader2 className="size-3.5 animate-spin text-tn-mute" />
                       ) : available ? (
                         <Pause className="size-3.5 text-tn-mute" />
@@ -619,9 +640,16 @@ function TableSkeleton() {
 
 const PAGE_SIZE = 20;
 
-export default function ListingsTable({ slug }: { slug: string }) {
+export default function ListingsTable({
+  slug,
+  initialTab = "all",
+}: {
+  slug: string;
+  initialTab?: TabKey;
+}) {
   const [selected, setSelected] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<TabKey>("all");
+  const [prevInitialTab, setPrevInitialTab] = useState<TabKey>(initialTab);
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [debouncedQuery, setDebouncedQuery] = useState<string>("");
   const [category, setCategory] = useState<string>("");
@@ -645,6 +673,13 @@ export default function ListingsTable({ slug }: { slug: string }) {
     drafts: 0,
     sold: 0,
   });
+
+  // Keep active tab in sync if initialTab prop updates (e.g. from navigation)
+  if (initialTab !== prevInitialTab) {
+    setPrevInitialTab(initialTab);
+    setActiveTab(initialTab);
+    setPage(1);
+  }
 
   // Debounce search input
   useEffect(() => {
@@ -695,52 +730,43 @@ export default function ListingsTable({ slug }: { slug: string }) {
     return q;
   }, [page, ordering, debouncedQuery, category, activeTab]);
 
-  const { products, setProducts, total, loading, error, refetch } = useShopProducts(
-    query,
-    slug,
-  );
+  const { products, setProducts, total, loading, error, refetch } =
+    useShopProducts(query, slug);
 
-  // Maintain stable tab counts across tab switches
+  // Exact per-tab totals from the server: one page_size=1 request per tab,
+  // reading only `count`, with the same filters each tab sends. These used to
+  // be tallied from the rows on screen, so a shop with more than one page of
+  // listings saw wrong numbers on every tab. Local optimistic adjustments
+  // below keep them responsive; `countsVersion` re-syncs after each change.
+  const [countsVersion, setCountsVersion] = useState(0);
+  const recount = () => setCountsVersion((v) => v + 1);
+
   useEffect(() => {
-    if (activeTab === "all" && products.length > 0) {
-      let live = 0;
-      let needsAttention = 0;
-      let sold = 0;
-      let drafts = 0;
-
-      for (const p of products) {
-        if (p.is_available) {
-          live++;
-          const f = freshness(p.last_confirmed_at, p.confirmation_status);
-          if (f.tone !== "fresh") {
-            needsAttention++;
-          }
-        } else if (p.status === "draft") {
-          drafts++;
-        } else {
-          sold++;
+    const controller = new AbortController();
+    const tabs: [keyof typeof tabCounts, ShopProductQuery][] = [
+      ["all", {}],
+      ["live", { status: "live" }],
+      ["needs-attention", { fresh: "false" }],
+      ["drafts", { status: "draft" }],
+      ["sold", { status: "sold" }],
+    ];
+    Promise.all(
+      tabs.map(([key, q]) =>
+        getShopProducts(slug, { ...q, pageSize: 1 }, { signal: controller.signal }).then(
+          (res) => [key, res.count] as const,
+        ),
+      ),
+    )
+      .then((entries) => {
+        if (!controller.signal.aborted) {
+          setTabCounts(Object.fromEntries(entries) as typeof tabCounts);
         }
-      }
-
-      queueMicrotask(() => {
-        setTabCounts({
-          all: total || products.length,
-          live,
-          "needs-attention": needsAttention,
-          drafts,
-          sold,
-        });
+      })
+      .catch(() => {
+        // Counts are secondary: keep the last known values on failure.
       });
-    } else if (products.length > 0 && tabCounts.all === 0) {
-      queueMicrotask(() => {
-        setTabCounts((prev) => ({
-          ...prev,
-          [activeTab]: total || products.length,
-          all: Math.max(prev.all, total || products.length),
-        }));
-      });
-    }
-  }, [products, total, activeTab, tabCounts.all]);
+    return () => controller.abort();
+  }, [slug, countsVersion]);
 
   // Client-side fallback filter so tabs work smoothly regardless of backend filter variations
   const displayedProducts = useMemo(() => {
@@ -766,14 +792,18 @@ export default function ListingsTable({ slug }: { slug: string }) {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const allVisibleSelected =
-    displayedProducts.length > 0 && displayedProducts.every((p) => selected.includes(p.slug));
+    displayedProducts.length > 0 &&
+    displayedProducts.every((p) => selected.includes(p.slug));
 
   const toggleAll = () => {
     if (allVisibleSelected) {
       const visibleSlugs = new Set(displayedProducts.map((p) => p.slug));
       setSelected(selected.filter((slug) => !visibleSlugs.has(slug)));
     } else {
-      const newSelected = new Set([...selected, ...displayedProducts.map((p) => p.slug)]);
+      const newSelected = new Set([
+        ...selected,
+        ...displayedProducts.map((p) => p.slug),
+      ]);
       setSelected(Array.from(newSelected));
     }
   };
@@ -814,14 +844,20 @@ export default function ListingsTable({ slug }: { slug: string }) {
 
       setTabCounts((prev) => ({
         ...prev,
-        "needs-attention": Math.max(0, prev["needs-attention"] - res.confirmed.length),
+        "needs-attention": Math.max(
+          0,
+          prev["needs-attention"] - res.confirmed.length,
+        ),
       }));
 
       setSelected([]);
-      setGlobalSuccess(`Successfully confirmed ${res.confirmed.length} listings.`);
+      setGlobalSuccess(
+        `Successfully confirmed ${res.confirmed.length} products.`,
+      );
       refetch();
+      recount();
     } catch {
-      setGlobalError("Failed to confirm selected listings. Please try again.");
+      setGlobalError("Failed to confirm selected products. Please try again.");
     } finally {
       setBulkInFlight(false);
     }
@@ -848,6 +884,7 @@ export default function ListingsTable({ slug }: { slug: string }) {
       }
       return { ...prev, live: nextLive, sold: nextSold };
     });
+    recount();
   };
 
   const handleProductDeleted = (deletedSlug: string) => {
@@ -860,10 +897,13 @@ export default function ListingsTable({ slug }: { slug: string }) {
         ...prev,
         all: Math.max(0, prev.all - 1),
         live: deletedProd.is_available ? Math.max(0, prev.live - 1) : prev.live,
-        sold: !deletedProd.is_available ? Math.max(0, prev.sold - 1) : prev.sold,
+        sold: !deletedProd.is_available
+          ? Math.max(0, prev.sold - 1)
+          : prev.sold,
       }));
     }
     refetch();
+    recount();
   };
 
   useEffect(() => {
@@ -985,7 +1025,9 @@ export default function ListingsTable({ slug }: { slug: string }) {
       ) : error && products.length === 0 ? (
         <div className="py-16 px-5 text-center bg-white rounded-[18px] border border-tn-hair">
           <AlertCircle className="size-10 text-tn-red mx-auto mb-3" />
-          <h2 className="text-lg font-bold text-tn-ink">Couldn&apos;t load listings</h2>
+          <h2 className="text-lg font-bold text-tn-ink">
+            Couldn&apos;t load products
+          </h2>
           <p className="text-sm text-tn-mute mt-1 mb-4">{error}</p>
           <button
             type="button"
@@ -1029,7 +1071,12 @@ export default function ListingsTable({ slug }: { slug: string }) {
           </div>
           {!isFiltered && (
             <p className="text-xs text-tn-mute mt-6 max-w-[360px] leading-relaxed">
-              <strong className="text-tn-ink font-bold">What happens next:</strong> Once added, your product is immediately discoverable to local buyers. Confirm availability each morning to keep your stock active.
+              <strong className="text-tn-ink font-bold">
+                What happens next:
+              </strong>{" "}
+              Once added, your product is immediately discoverable to local
+              buyers. Confirm availability each morning to keep your stock
+              active.
             </p>
           )}
         </div>

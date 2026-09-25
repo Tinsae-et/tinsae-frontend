@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { JsonLd } from "@/components/json-ld";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -117,10 +118,7 @@ export default async function RoleDetailPage({ params }: Props) {
   return (
     <div className="min-h-screen bg-white">
       {/* JSON-LD Structured Data for Google Jobs */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <JsonLd data={jsonLd} />
 
       {/* Top Breadcrumb & Hero */}
       <section className="border-b border-tn-hair bg-tn-paper/40 px-4 pt-8 pb-12 sm:px-8 sm:pt-10 sm:pb-14 lg:px-12 xl:px-16">

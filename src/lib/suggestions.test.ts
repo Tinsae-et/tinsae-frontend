@@ -6,9 +6,9 @@ import {
   getNextSuggestions,
 } from "./suggestions";
 import type { Product } from "./types";
-import * as api from "./api";
+import * as api from "./api/public";
 
-vi.mock("./api", () => ({
+vi.mock("./api/public", () => ({
   getProducts: vi.fn(),
 }));
 

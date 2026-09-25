@@ -1,4 +1,4 @@
-import { getProducts } from "./api";
+import { getProducts } from "./api/public";
 import type { Product } from "./types";
 
 /**

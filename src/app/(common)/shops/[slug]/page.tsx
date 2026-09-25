@@ -4,10 +4,9 @@ import { notFound } from "next/navigation";
 import { Icon } from "@/components/tinsae/icon";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { TabsBar } from "@/components/shop-profile/tabs-bar";
-import { getPublicShopProducts, getShop } from "@/lib/api";
+import { getPublicShopProducts, getShop } from "@/lib/api/public";
 import { Pill } from "@/components/tinsae/pill";
-import { getInitials, getShopColor, SHOPS_RICH } from "@/lib/shops-data";
-import type { Shop } from "@/lib/types";
+import { getInitials, getShopColor } from "@/lib/shops-data";
 
 type Stat = {
   value: string;
@@ -70,44 +69,36 @@ function getTimeSince(timeString: string | undefined) {
 export default async function ShopProfilePage({ params }: Props) {
   const { slug } = await params;
 
-  let shop: Shop;
-  try {
-    shop = await getShop(slug);
-  } catch {
-    notFound();
-  }
+  // Independent reads, so in parallel. The listings are fetched server-side
+  // for indexing and a fast first paint.
+  const [shop, initialProducts] = await Promise.all([
+    getShop(slug).catch(() => null),
+    getPublicShopProducts(slug, {
+      page: 1,
+      pageSize: 12,
+      ordering: "-created_at",
+    }).catch(() => null),
+  ]);
 
   if (!shop || shop.slug !== slug) {
     notFound();
   }
 
-  // Fetch initial page of listings server-side for indexing & fast FCP
-  const initialProducts = await getPublicShopProducts(slug, {
-    page: 1,
-    pageSize: 12,
-    ordering: "-created_at",
-  }).catch(() => null);
-
-  const matchedRich = SHOPS_RICH.find((s) => s.slug === slug);
-  const brandColor = matchedRich?.color || getShopColor(shop.name);
+  // Only real data from the API is shown here. Ratings, reviews, response
+  // rate and opening hours used to fall back to invented numbers (4.9 stars,
+  // 296 reviews, 98% replies) for every shop; they stay hidden until the
+  // backend provides them.
+  const brandColor = getShopColor(shop.name);
   const initials = getInitials(shop.name);
   const totalCount = initialProducts?.count ?? 0;
 
-  const rating = matchedRich?.rating ?? 4.9;
-  const reviewsCount = matchedRich?.ratings ?? 296;
-  const replyRate = matchedRich?.replyRate ?? 98;
-  const responseTime = matchedRich?.responseTime ?? 12;
-
-  const telegramUsername = matchedRich?.telegramUsername;
-  const phone = shop.phone || matchedRich?.phone;
+  const phone = shop.phone;
 
   let contactHref = "#";
   let contactLabel = "Contact on Telegram";
   let contactIcon: "tg" | "phone" = "tg";
 
-  if (telegramUsername) {
-    contactHref = `https://t.me/${telegramUsername}`;
-  } else if (phone && phone.startsWith("@")) {
+  if (phone && phone.startsWith("@")) {
     contactHref = `https://t.me/${phone.slice(1)}`;
   } else if (phone) {
     contactHref = `tel:${phone}`;
@@ -117,11 +108,9 @@ export default async function ShopProfilePage({ params }: Props) {
 
   const memberYear = shop.created_at
     ? new Date(shop.created_at).getFullYear()
-    : matchedRich?.memberSince || new Date().getFullYear();
+    : new Date().getFullYear();
 
   const STATS: Stat[] = [
-    { value: `${replyRate}%`, label: "Response rate", sublabel: "last 30 days" },
-    { value: `~${responseTime} min`, label: "Avg. response", sublabel: "open hours" },
     {
       value: totalCount.toLocaleString(),
       label: "Active listings",
@@ -131,11 +120,6 @@ export default async function ShopProfilePage({ params }: Props) {
       value: getTimeSince(shop.created_at),
       label: "On Tinsae",
       sublabel: `since ${memberYear}`,
-    },
-    {
-      value: rating.toFixed(1),
-      label: "Buyer rating",
-      sublabel: `${reviewsCount} reviews`,
     },
   ];
 
@@ -191,26 +175,12 @@ export default async function ShopProfilePage({ params }: Props) {
                     Unverified
                   </span>
                 )}
-                <span className="bg-tn-red-soft text-tn-red inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold">
-                  <Icon name="star" size={11} className="fill-tn-red text-tn-red" />
-                  Top-rated shop
-                </span>
               </div>
 
               <div className="text-tn-ink2 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13.5px]">
                 <span className="flex items-center gap-1.5">
                   <Icon name="pin" size={14} className="text-tn-mute shrink-0" />
                   {shop.city ? `${shop.city} · Addis Ababa` : "Bole · Addis Ababa"}
-                </span>
-                <span className="text-tn-hair">|</span>
-                <span className="flex items-center gap-1.5">
-                  <Icon name="clock" size={14} className="text-tn-mute shrink-0" />
-                  Open today 9:00 – 19:30
-                </span>
-                <span className="text-tn-hair">|</span>
-                <span className="text-tn-green flex items-center gap-1.5 font-bold">
-                  <span className="bg-tn-green size-1.5 rounded-full" />
-                  Active now
                 </span>
               </div>
             </div>
@@ -238,7 +208,7 @@ export default async function ShopProfilePage({ params }: Props) {
         </div>
 
         {/* ── Stat Strip ── */}
-        <div className="border-tn-hair2 mt-7 grid grid-cols-2 gap-4 border-t py-4 sm:grid-cols-5 sm:gap-0 sm:py-5">
+        <div className="border-tn-hair2 mt-7 grid grid-cols-2 gap-4 border-t py-4 sm:max-w-md sm:gap-0 sm:py-5">
           {STATS.map((stat, i) => (
             <div
               key={stat.label}

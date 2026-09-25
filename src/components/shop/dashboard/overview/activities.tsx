@@ -50,7 +50,7 @@ export function DailyStockCheckIn({ products }: { products: ShopProduct[] }) {
             <div>
               Confirmed{" "}
               <strong className="font-bold text-white">
-                {confirmed} of {active.length} listings
+                {confirmed} of {active.length} products
               </strong>
               {needsAttention > 0 ? ` · ${needsAttention} need attention` : ""}
             </div>
@@ -60,7 +60,7 @@ export function DailyStockCheckIn({ products }: { products: ShopProduct[] }) {
           </>
         ) : (
           <div className="text-white/60">
-            No active listings to confirm yet.
+            No active products to confirm yet.
           </div>
         )}
       </div>
@@ -72,7 +72,7 @@ export function DailyStockCheckIn({ products }: { products: ShopProduct[] }) {
         <Pill
           kind="ghost"
           size="sm"
-          href="/shop/dashboard/telegram-bot"
+          href="/shop/dashboard/telegram"
           className="border-white/25 text-white hover:border-white/40 hover:bg-white/10 hover:text-white"
         >
           Connect the bot

@@ -1,84 +1,14 @@
-import { NextResponse } from "next/server";
-import { authedFetch } from "@/lib/auth/authed-fetch";
-import { setAccessCookie, setRefreshCookie } from "@/lib/auth/session";
+import { djangoPath, proxyToDjango } from "@/lib/auth/django-proxy";
 
-const API_URL =
-  process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+type Params = { params: Promise<{ slug: string }> };
 
-export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ slug: string }> },
-) {
+/** Current verification state (GET) and a new verification request (POST). */
+export async function GET(request: Request, { params }: Params) {
   const { slug } = await params;
-  const target = `${API_URL}/api/v1/shops/${encodeURIComponent(slug)}/verification/state/`;
-
-  const result = await authedFetch(target);
-
-  if (!result.ok) {
-    return NextResponse.json(
-      { detail: "Your session has ended. Sign in again." },
-      { status: result.reason === "no-session" ? 401 : 419 },
-    );
-  }
-
-  const body = await result.response.text();
-  const res = new NextResponse(body, {
-    status: result.response.status,
-    headers: { "content-type": "application/json" },
-  });
-
-  if (result.rotated) {
-    setAccessCookie(res, result.rotated.access);
-    if (result.rotated.refresh) {
-      setRefreshCookie(res, result.rotated.refresh);
-    }
-  }
-
-  return res;
+  return proxyToDjango(request, djangoPath("shops", slug, "verification", "state"));
 }
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ slug: string }> },
-) {
+export async function POST(request: Request, { params }: Params) {
   const { slug } = await params;
-
-  let bodyData: unknown;
-  try {
-    bodyData = await request.json();
-  } catch {
-    return NextResponse.json(
-      { supporting_detail: ["Malformed request body."] },
-      { status: 400 },
-    );
-  }
-
-  const target = `${API_URL}/api/v1/shops/${encodeURIComponent(slug)}/verification/`;
-  const result = await authedFetch(target, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(bodyData),
-  });
-
-  if (!result.ok) {
-    return NextResponse.json(
-      { detail: "Your session has ended. Sign in again." },
-      { status: result.reason === "no-session" ? 401 : 419 },
-    );
-  }
-
-  const body = await result.response.text();
-  const res = new NextResponse(body, {
-    status: result.response.status,
-    headers: { "content-type": "application/json" },
-  });
-
-  if (result.rotated) {
-    setAccessCookie(res, result.rotated.access);
-    if (result.rotated.refresh) {
-      setRefreshCookie(res, result.rotated.refresh);
-    }
-  }
-
-  return res;
+  return proxyToDjango(request, djangoPath("shops", slug, "verification"));
 }

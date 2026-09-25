@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import { Pill } from "@/components/tinsae/pill";
 import { Icon } from "@/components/tinsae/icon";
 
+// PLACEHOLDER: shop photos are not stored by the API yet; these are colour
+// swatches and nothing here is saved.
 const INITIAL_PHOTOS = [
   { id: "1", tone: "#0F2A4D", isCover: true },
   { id: "2", tone: "#3a342c", isCover: false },

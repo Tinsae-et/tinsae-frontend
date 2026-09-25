@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPublicStats } from "@/lib/api";
-
-export const dynamic = "force-dynamic";
+import { getPublicStats } from "@/lib/api/public";
 
 export async function GET() {
   try {

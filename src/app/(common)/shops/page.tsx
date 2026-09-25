@@ -2,8 +2,8 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { ShopsBrowser } from "@/components/shops/shops-browser";
 import { ShopCardSkeleton } from "@/components/shops/shop-card";
-import { SHOPS_RICH, mapShopToDirectoryShop } from "@/lib/shops-data";
-import { getShops } from "@/lib/api";
+import { mapShopToDirectoryShop, type DirectoryShop } from "@/lib/shops-data";
+import { getShops } from "@/lib/api/public";
 
 export const metadata: Metadata = {
   title: "Verified Shops in Bole — Tinsae",
@@ -11,17 +11,15 @@ export const metadata: Metadata = {
     "Browse verified electronics shops across Bole, Addis Ababa by rating, reply speed, and distance.",
 };
 
-export const dynamic = "force-dynamic";
-
 export default async function ShopsPage() {
-  let shops = SHOPS_RICH;
+  // No demo fallback: showing invented shops when the API is down or empty
+  // presents fake businesses as real. The browser renders its empty state.
+  let shops: DirectoryShop[] = [];
   try {
     const data = await getShops({ pageSize: 100 });
-    if (data?.results && data.results.length > 0) {
-      shops = data.results.map(mapShopToDirectoryShop);
-    }
+    shops = data?.results?.map(mapShopToDirectoryShop) ?? [];
   } catch (error) {
-    console.error("Failed to fetch shops from backend, falling back to static shops:", error);
+    console.error("Failed to fetch shops from backend:", error);
   }
 
   return (
