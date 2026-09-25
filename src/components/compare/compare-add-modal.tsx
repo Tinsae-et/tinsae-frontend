@@ -10,6 +10,7 @@ import { getProducts } from "@/lib/api/public";
 import type { Product } from "@/lib/types";
 import { useCompare } from "@/hooks/use-compare";
 import { useDebouncedValue } from "@/hooks/use-debounce";
+import { useCategories } from "@/hooks/use-categories";
 
 export function CompareAddModal({
   isOpen,
@@ -23,6 +24,7 @@ export function CompareAddModal({
   const { isInCompare, addToCompare } = useCompare();
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState(currentCategory);
+  const categories = useCategories();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -121,12 +123,7 @@ export function CompareAddModal({
           </div>
 
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-            {[
-              { label: "Phones", slug: "phones" },
-              { label: "Laptops", slug: "laptops" },
-              { label: "Audio", slug: "audio" },
-              { label: "All", slug: "" },
-            ].map((cat) => (
+            {[...categories, { label: "All", slug: "" }].map((cat) => (
               <button
                 key={cat.slug}
                 type="button"

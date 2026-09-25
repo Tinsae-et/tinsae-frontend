@@ -4,7 +4,6 @@ import { ProductsBrowser } from "@/components/products/products-browser";
 import { ProductCardSkeleton } from "@/components/products/product-card";
 import { PRODUCTS_PAGE_SIZE } from "@/components/products/product-grid";
 import { filtersFromSearchParams, filtersToProductQuery } from "@/lib/filters";
-import { NAV_CATEGORIES } from "@/lib/nav-categories";
 
 export const metadata = {
   title: "Browse listings — Tinsae",
@@ -49,10 +48,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   ]);
 
   const initial = data ? { products: data.results, total: data.count } : null;
-  const categoryOptions =
-    categories && categories.results.length > 0
-      ? categories.results.map((c) => ({ slug: c.slug, name: c.name }))
-      : NAV_CATEGORIES.map((c) => ({ slug: c.slug, name: c.label }));
+  // Backend-owned: an outage shows no category filter rather than a stale list.
+  const categoryOptions = (categories?.results ?? [])
+    .filter((c) => c.parent === null)
+    .map((c) => ({ slug: c.slug, name: c.name }));
 
   return (
     <main>

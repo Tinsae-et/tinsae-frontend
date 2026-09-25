@@ -1,5 +1,7 @@
 import { formatETB, freshness } from "@/lib/format";
 import type { Product } from "@/lib/types";
+import { formatSpecs, type SpecRow } from "@/lib/specs/display";
+import type { CategorySchema } from "@/lib/specs/schema";
 
 export type CompareItem =
   | {
@@ -174,7 +176,11 @@ export function extractConditions(product: Product): {
 /**
  * Builds the complete sections and rows for the compare table matching 10 Compare.png.
  */
-export function buildCompareSections(items: CompareItem[], now = Date.now()): CompareSectionData[] {
+export function buildCompareSections(
+  items: CompareItem[],
+  schemas: Record<string, CategorySchema | null> = {},
+  now = Date.now(),
+): CompareSectionData[] {
   const availableItems = items.filter((item): item is { isAvailable: true; product: Product } => item.isAvailable);
 
   // 1. Calculate best numeric benchmarks across available products
@@ -205,32 +211,6 @@ export function buildCompareSections(items: CompareItem[], now = Date.now()): Co
 
   const areaCounts = availableItems.map((item) => extractAreasCount(item.product));
   const maxAreas = areaCounts.length > 0 ? Math.max(...areaCounts) : null;
-
-  // Key Specs benchmarks
-  const rams = availableItems
-    .map((item) => extractNumber(item.product.specs?.ram))
-    .filter((n): n is number => n !== null);
-  const maxRam = rams.length > 0 ? Math.max(...rams) : null;
-
-  const storages = availableItems
-    .map((item) => extractNumber(item.product.specs?.storage))
-    .filter((n): n is number => n !== null);
-  const maxStorage = storages.length > 0 ? Math.max(...storages) : null;
-
-  const cameras = availableItems
-    .map((item) => extractNumber(item.product.specs?.camera ?? item.product.specs?.main_camera))
-    .filter((n): n is number => n !== null);
-  const maxCamera = cameras.length > 0 ? Math.max(...cameras) : null;
-
-  const batteries = availableItems
-    .map((item) => extractNumber(item.product.specs?.battery))
-    .filter((n): n is number => n !== null);
-  const maxBattery = batteries.length > 0 ? Math.max(...batteries) : null;
-
-  const weights = availableItems
-    .map((item) => extractNumber(item.product.specs?.weight ?? item.product.specs?.weigth))
-    .filter((n): n is number => n !== null);
-  const minWeight = weights.length > 0 ? Math.min(...weights) : null;
 
   // ── Section 1: COMPARING ─────────────────────────────────────
   const comparingRows: CompareRowData[] = [
@@ -382,92 +362,10 @@ export function buildCompareSections(items: CompareItem[], now = Date.now()): Co
   ];
 
   // ── Section 3: KEY SPECS ─────────────────────────────────────
-  const specsRows: CompareRowData[] = [
-    {
-      id: "display",
-      label: "Display",
-      cells: items.map((item) => {
-        if (!item.isAvailable) return null;
-        const display =
-          typeof item.product.specs?.display === "string"
-            ? item.product.specs.display
-            : "6.7\" OLED · 120Hz";
-        return { value: display };
-      }),
-    },
-    {
-      id: "chip",
-      label: "Chip",
-      cells: items.map((item) => {
-        if (!item.isAvailable) return null;
-        const chip =
-          typeof item.product.specs?.chip === "string"
-            ? item.product.specs.chip
-            : "A17 Pro";
-        return { value: chip };
-      }),
-    },
-    {
-      id: "ram",
-      label: "RAM",
-      cells: items.map((item) => {
-        if (!item.isAvailable) return null;
-        const raw = item.product.specs?.ram;
-        const ramStr = typeof raw === "string" ? raw : "8 GB";
-        const ramNum = extractNumber(ramStr);
-        const isBest = maxRam !== null && ramNum === maxRam && ramNum !== null;
-        return { value: ramStr, isBest };
-      }),
-    },
-    {
-      id: "storage",
-      label: "Storage",
-      cells: items.map((item) => {
-        if (!item.isAvailable) return null;
-        const raw = item.product.specs?.storage;
-        const str = typeof raw === "string" ? raw : "256 GB";
-        const num = extractNumber(str);
-        const isBest = maxStorage !== null && num === maxStorage && num !== null;
-        return { value: str, isBest };
-      }),
-    },
-    {
-      id: "camera",
-      label: "Main camera",
-      cells: items.map((item) => {
-        if (!item.isAvailable) return null;
-        const raw = item.product.specs?.camera ?? item.product.specs?.main_camera;
-        const str = typeof raw === "string" ? raw : "48 MP";
-        const num = extractNumber(str);
-        const isBest = maxCamera !== null && num === maxCamera && num !== null;
-        return { value: str, isBest };
-      }),
-    },
-    {
-      id: "battery",
-      label: "Battery",
-      cells: items.map((item) => {
-        if (!item.isAvailable) return null;
-        const raw = item.product.specs?.battery;
-        const str = typeof raw === "string" ? raw : "4,422 mAh";
-        const num = extractNumber(str);
-        const isBest = maxBattery !== null && num === maxBattery && num !== null;
-        return { value: str, isBest };
-      }),
-    },
-    {
-      id: "weight",
-      label: "Weight",
-      cells: items.map((item) => {
-        if (!item.isAvailable) return null;
-        const raw = item.product.specs?.weight ?? item.product.specs?.weigth;
-        const str = typeof raw === "string" ? raw : "221 g";
-        const num = extractNumber(str);
-        const isBest = minWeight !== null && num === minWeight && num !== null;
-        return { value: str, isBest };
-      }),
-    },
-  ];
+  // Rows come from the listings' own specs, labelled by their category's
+  // schema, so a laptop compare shows processor and screen size rather than a
+  // phone's rows. A listing without a value shows a dash; nothing is invented.
+  const specsRows = buildSpecRows(items, schemas);
 
   // ── Section 4: CONDITION AVAILABLE ───────────────────────────
   const conditionRows: CompareRowData[] = [
@@ -515,4 +413,80 @@ export function buildCompareSections(items: CompareItem[], now = Date.now()): Co
     { id: "specs", title: "KEY SPECS", rows: specsRows },
     { id: "conditions", title: "CONDITION AVAILABLE", rows: conditionRows },
   ];
+}
+
+// Which way is better for the specs a compare highlights; anything else is
+// shown without a "best" marker.
+const HIGHER_IS_BETTER = new Set([
+  "storage",
+  "ram",
+  "battery_health",
+  "battery_capacity",
+  "megapixels",
+  "output_power",
+  "power_output",
+  "screen_size",
+  "battery",
+  "camera",
+]);
+const LOWER_IS_BETTER = new Set(["weight", "battery_cycles", "shutter_count"]);
+
+/** "1 TB" -> 1024, "512 MB" -> 0.5, "4,422 mAh" -> 4422; null when not numeric. */
+export function specMagnitude(value: string): number | null {
+  const match = value.replace(/,/g, "").match(/(\d+(?:\.\d+)?)\s*(tb|gb|mb)?/i);
+  if (!match) return null;
+  const n = Number.parseFloat(match[1]);
+  const unit = match[2]?.toLowerCase();
+  return unit === "tb" ? n * 1024 : unit === "mb" ? n / 1024 : n;
+}
+
+export function buildSpecRows(
+  items: CompareItem[],
+  schemas: Record<string, CategorySchema | null>,
+): CompareRowData[] {
+  const perItem: (Map<string, SpecRow> | null)[] = items.map((item) => {
+    if (!item.isAvailable) return null;
+    const slug = item.product.category?.slug ?? "";
+    const rows = formatSpecs(schemas[slug] ?? null, item.product.specs);
+    return new Map(rows.map((r) => [r.key, r]));
+  });
+
+  // Row order: first appearance across the compared listings.
+  const order: { key: string; label: string }[] = [];
+  const seen = new Set<string>();
+  for (const rows of perItem) {
+    for (const row of rows?.values() ?? []) {
+      if (!seen.has(row.key)) {
+        seen.add(row.key);
+        order.push({ key: row.key, label: row.label });
+      }
+    }
+  }
+
+  return order.map(({ key, label }) => {
+    const nums = perItem.map((rows) => {
+      const value = rows?.get(key)?.value;
+      return value === undefined ? null : specMagnitude(value);
+    });
+    const known = nums.filter((n): n is number => n !== null);
+    const direction = HIGHER_IS_BETTER.has(key) ? 1 : LOWER_IS_BETTER.has(key) ? -1 : 0;
+    // A "best" only means something when at least two listings differ.
+    const best =
+      direction !== 0 && known.length >= 2 && new Set(known).size > 1
+        ? direction === 1
+          ? Math.max(...known)
+          : Math.min(...known)
+        : null;
+
+    return {
+      id: `spec-${key}`,
+      label,
+      cells: items.map((item, i) => {
+        if (!item.isAvailable) return null;
+        const row = perItem[i]?.get(key);
+        if (!row) return { value: "—", badge: "dash" as const };
+        return { value: row.value, isBest: best !== null && nums[i] === best };
+      }),
+    };
+  });
 }

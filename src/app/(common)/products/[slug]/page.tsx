@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProduct } from "@/lib/api/public";
+import { getCategorySchema, getProduct } from "@/lib/api/public";
+import { formatSpecs, type SpecRow } from "@/lib/specs/display";
+import { parseSizeGb } from "@/lib/specs/schema";
 import { SITE_URL } from "@/lib/config";
 import { JsonLd } from "@/components/json-ld";
 import { formatETB, freshness, type FreshnessTone } from "@/lib/format";
@@ -82,76 +84,28 @@ function productJsonLd(product: Product): Record<string, unknown> {
   };
 }
 
-/** Per-category spec labels; anything unknown passes through title-cased. */
-const SPEC_LABELS: Record<string, string> = {
-  storage: "Storage",
-  display: "Display",
-  chip: "Chip",
-  camera: "Camera",
-  battery: "Battery",
-  n5g: "5G",
-  year: "Year",
-  weigth: "Weight",
-  weight: "Weight",
-  sim: "SIM",
-  ram: "RAM",
-  capacity: "Capacity",
-  power: "Power",
-  type: "Type",
-  length: "Length",
-  material: "Material",
-  port: "Port",
-  driver: "Driver",
-  bluetooth: "Bluetooth",
-  water_resistance: "Water resistance",
-};
-
-function titleCase(key: string): string {
-  return key
-    .replace(/([a-z])([A-Z])/g, "$1 $2")
-    .replace(/[_-]+/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function specLabel(key: string): string {
-  return SPEC_LABELS[key] ?? titleCase(key);
-}
-
-// Canonical order for the Key specifications grid, from the design README:
-// Storage, Display, Chip, Camera, Battery, 5G, Year, Weight, SIM. RAM rides
-// along with the phone set; unknown keys fall through after the known ones.
-const SPEC_ORDER = [
-  "storage",
-  "display",
-  "chip",
-  "camera",
-  "battery",
-  "ram",
-  "n5g",
-  "year",
-  "weight",
-  "sim",
-];
-
-/** Sort spec entries: known keys first in design order, then the rest. */
-function orderSpecs(specs: [string, unknown][]): [string, unknown][] {
-  const rank = (key: string) => {
-    const i = SPEC_ORDER.indexOf(key);
-    return i === -1 ? SPEC_ORDER.length : i;
-  };
-  return [...specs].sort((a, b) => rank(a[0]) - rank(b[0]));
-}
-
-/** Split "iPhone 15 Pro 256GB" into name + muted capacity tail when present. */
+/**
+ * Split "iPhone 15 Pro 256GB" into name + muted capacity tail when the title
+ * ends with the listing's storage. Storage is stored in GB (1024 = 1 TB) while
+ * titles are free text ("256GB", "1 TB"), so the match is loose.
+ */
 function splitCapacity(
   title: string,
   specs: Record<string, unknown>,
 ): [string, string] {
-  const cap = specs.storage;
-  if (typeof cap === "string" && cap && title.endsWith(cap)) {
-    return [title.slice(0, title.length - cap.length).trim(), cap];
-  }
-  return [title, ""];
+  // Storage is a number of GB; older listings stored "256gb".
+  const gb =
+    typeof specs.storage === "number"
+      ? specs.storage
+      : typeof specs.storage === "string"
+        ? parseSizeGb(specs.storage)
+        : null;
+  if (!gb) return [title, ""];
+  const [num, unit] = gb >= 1024 ? [gb / 1024, "tb"] : [gb, "gb"];
+  const digits = String(num).replace(".", "\\.");
+  const tail = title.match(new RegExp(`\\s*${digits}\\s*${unit}$`, "i"));
+  if (!tail || tail.index === undefined || tail.index === 0) return [title, ""];
+  return [title.slice(0, tail.index).trim(), tail[0].trim()];
 }
 
 const initials = (name: string) =>
@@ -260,7 +214,15 @@ const HERO_BADGE: Record<FreshnessTone, string> = {
   unconfirmed: "bg-tn-paper text-tn-mute",
 };
 
-function ShopComparison({ product, now }: { product: Product; now: number }) {
+function ShopComparison({
+  product,
+  now,
+  specs,
+}: {
+  product: Product;
+  now: number;
+  specs: SpecRow[];
+}) {
   const f = freshness(
     product.last_confirmed_at,
     product.confirmation_status,
@@ -271,10 +233,6 @@ function ShopComparison({ product, now }: { product: Product; now: number }) {
     : null;
   const responded = product.last_confirmed_at !== null;
   const tone = f.tone;
-
-  const specs = orderSpecs(
-    Object.entries(product.specs).filter(([, v]) => v !== null && v !== ""),
-  );
 
   return (
     <div>
@@ -363,13 +321,13 @@ function ShopComparison({ product, now }: { product: Product; now: number }) {
                 Key specifications
               </h2>
               <div className="grid grid-cols-2 gap-[12px_16px] sm:grid-cols-3">
-                {specs.map(([key, value]) => (
-                  <div key={key} className="rounded-xl bg-tn-paper px-3.5 py-3">
+                {specs.map((spec) => (
+                  <div key={spec.key} className="rounded-xl bg-tn-paper px-3.5 py-3">
                     <div className="text-tn-mute text-[10.5px] font-bold tracking-[0.05em] uppercase">
-                      {specLabel(key)}
+                      {spec.label}
                     </div>
                     <div className="text-tn-ink mt-1 text-sm font-bold">
-                      {String(value)}
+                      {spec.value}
                     </div>
                   </div>
                 ))}
@@ -502,6 +460,13 @@ export default async function ProductDetailPage({ params }: Props) {
   }
   if (product.slug !== slug) notFound();
 
+  // Labels, order and units come from the category's schema; without one the
+  // specs still render with their stored keys and values.
+  const schema = product.category?.slug
+    ? await getCategorySchema(product.category.slug).catch(() => null)
+    : null;
+  const specRows = formatSpecs(schema, product.specs);
+
   // Server component: freshness is relative to request time, rendered once.
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
@@ -526,7 +491,7 @@ export default async function ProductDetailPage({ params }: Props) {
       </nav>
 
       <div className="pt-5">
-        <ShopComparison product={product} now={now} />
+        <ShopComparison product={product} now={now} specs={specRows} />
       </div>
 
       {/* Similar & infinite scrolling suggestion feed. Streamed: the tiered

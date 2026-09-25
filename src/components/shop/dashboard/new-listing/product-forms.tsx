@@ -24,22 +24,14 @@ import {
 } from "@/lib/api/client";
 import { ApiError, getCategories } from "@/lib/api/public";
 import { BeforePublication, DailyStockCheckIn, ProductPreview } from "./buyer-preview";
+import { SpecFields } from "./spec-fields";
+import { FormCombobox } from "@/components/tinsae/form-select";
+import { useListingSpecs } from "./use-listing-specs";
 import { normalizeImageUrl } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-const BRANDS = [
-  "Apple",
-  "Samsung",
-  "Sony",
-  "Dell",
-  "HP",
-  "JBL",
-  "Anker",
-  "Tecno",
-  "Xiaomi",
-  "Google",
-  "Other",
-];
+// Suggested brands before a category (and its schema) is picked.
+const BRANDS = ["Apple", "Samsung", "Tecno", "Infinix", "Xiaomi", "Sony", "Dell", "HP", "Lenovo", "JBL"];
 
 const CONDITION_OPTIONS = [
   { value: "new", label: "New · Sealed" },
@@ -146,6 +138,29 @@ export function Form({
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
+  const specs = useListingSpecs({
+    category: formData.category,
+    condition: formData.condition,
+    initialProduct,
+  });
+  const { schema, context: specContext, errors: specErrors } = specs;
+
+  const updateSpec = (key: string, value: string) => {
+    specs.setValue(key, value);
+    const errorKey = `spec.${key}`;
+    if (fieldErrors[errorKey]) {
+      setFieldErrors((prev) => {
+        const copy = { ...prev };
+        delete copy[errorKey];
+        return copy;
+      });
+    }
+  };
+
+  // Suggestions only; any brand can be typed.
+  const brandOptions = schema?.brands ?? BRANDS;
+
+
   // Categories
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadingCats, setLoadingCats] = useState<boolean>(true);
@@ -232,9 +247,10 @@ export function Form({
       formData.condition !== (initialProduct?.condition || "new") ||
       formData.is_available !== (initialProduct ? initialProduct.is_available : true) ||
       formData.stock !== (initialProduct?.stock ?? 1) ||
-      variant !== ((initialProduct?.specs?.variant as string) || "")
+      variant !== ((initialProduct?.specs?.variant as string) || "") ||
+      specs.isDirty
     );
-  }, [formData, initialProduct, variant]);
+  }, [formData, initialProduct, variant, specs.isDirty]);
 
   useEffect(() => {
     const isPhotosModified =
@@ -420,6 +436,9 @@ export function Form({
     if (formData.stock < 0) {
       errors.stock = "Stock count cannot be negative";
     }
+    for (const [key, message] of Object.entries(specErrors)) {
+      errors[`spec.${key}`] = message;
+    }
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
@@ -445,10 +464,7 @@ export function Form({
         condition: formData.condition,
         is_available: formData.is_available,
         stock: Number(formData.stock) || 0,
-        specs: {
-          ...(initialProduct?.specs || {}),
-          ...(variant.trim() ? { variant: variant.trim() } : {}),
-        },
+        specs: specs.toPayload(variant),
         status: formData.status || "live",
         slug: formData.slug,
       };
@@ -530,6 +546,24 @@ export function Form({
         const errorsMap: Record<string, string> = {};
         let mappedAny = false;
         Object.entries(err.data).forEach(([key, val]) => {
+          // Spec errors arrive nested: {"specs": {"storage": ["..."]}}.
+          if (key === "specs" && val && typeof val === "object" && !Array.isArray(val)) {
+            const shown = new Set(schema?.fields.map((f) => f.key) ?? []);
+            const unshown: string[] = [];
+            Object.entries(val as Record<string, unknown>).forEach(([specKey, specVal]) => {
+              const message = Array.isArray(specVal) ? specVal.join(" ") : String(specVal);
+              if (shown.has(specKey)) {
+                errorsMap[`spec.${specKey}`] = message;
+                mappedAny = true;
+              } else {
+                // No field to show it on (e.g. an old key): surface it rather
+                // than failing silently.
+                unshown.push(message);
+              }
+            });
+            if (unshown.length) setServerError(`Specifications: ${unshown.join(" ")}`);
+            return;
+          }
           if (fieldKeys.includes(key)) {
             const message = Array.isArray(val) ? val.join(" ") : String(val);
             errorsMap[key] = message;
@@ -660,27 +694,20 @@ export function Form({
               </div>
 
               <div>
-                <label className="text-[12.5px] font-bold text-tn-ink2 mb-1.5 block">
+                <label htmlFor="listing-brand" className="text-[12.5px] font-bold text-tn-ink2 mb-1.5 block">
                   Brand
                 </label>
-                <div className="relative">
-                  <select
-                    value={formData.brand}
-                    onChange={(e) => updateField("brand", e.target.value)}
-                    className="w-full h-[46px] px-3.5 appearance-none rounded-[11px] border border-tn-hair bg-white text-sm font-semibold text-tn-ink focus:outline-none focus:ring-2 focus:ring-tn-hair focus:border-tn-ink transition-colors cursor-pointer"
-                  >
-                    <option value="">Select brand</option>
-                    {BRANDS.map((b) => (
-                      <option key={b} value={b}>
-                        {b}
-                      </option>
-                    ))}
-                  </select>
-                  <Icon
-                    name="chevd"
-                    className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-tn-mute"
-                  />
-                </div>
+                {/* Typed, with the category's common brands suggested: a list
+                    with an "Other" entry saved the word "Other" as the brand. */}
+                <FormCombobox
+                  id="listing-brand"
+                  value={formData.brand}
+                  onChange={(v) => updateField("brand", v)}
+                  suggestions={brandOptions}
+                  maxLength={100}
+                  placeholder={brandOptions.length ? `e.g. ${brandOptions[0]}` : "Brand"}
+                  className="font-semibold placeholder:font-normal"
+                />
                 {fieldErrors.brand && (
                   <span className="text-xs text-tn-red mt-1 block">
                     {fieldErrors.brand}
@@ -884,7 +911,36 @@ export function Form({
             </div>
           </ProductCardSection>
 
-          {/* Section 3: Price & Stock */}
+          {/* Section 3: Specifications (driven by the category's schema) */}
+          <ProductCardSection
+            title="Specifications"
+            hint={categories.find((c) => c.slug === formData.category)?.name}
+          >
+            {!formData.category ? (
+              <p className="text-[13px] text-tn-mute">Pick a category to see the specs buyers compare on.</p>
+            ) : specs.loadFailed ? (
+              <p className="text-[13px] text-tn-red">
+                Couldn&rsquo;t load the spec fields for this category. Check your connection and pick it again.
+              </p>
+            ) : specs.loading ? (
+              <p className="text-[13px] text-tn-mute">Loading spec fields…</p>
+            ) : !schema ? (
+              <p className="text-[13px] text-tn-mute">This category has no spec fields yet.</p>
+            ) : (
+              <SpecFields
+                schema={schema}
+                values={specContext}
+                errors={Object.fromEntries(
+                  Object.entries(fieldErrors)
+                    .filter(([k]) => k.startsWith("spec."))
+                    .map(([k, v]) => [k.slice(5), v]),
+                )}
+                onChange={updateSpec}
+              />
+            )}
+          </ProductCardSection>
+
+          {/* Section 4: Price & Stock */}
           <ProductCardSection title="Price & stock">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-4">
               <div>
@@ -1023,6 +1079,7 @@ export function Form({
           name={formData.name}
           price={formData.price}
           condition={formData.condition}
+          specsComplete={!specs.loading && !specs.loadFailed && Object.keys(specErrors).length === 0}
           coverPhoto={coverPhoto}
           extraPhotos={extraPhotos}
           action={action}

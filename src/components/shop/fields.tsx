@@ -1,5 +1,6 @@
 "use client";
 
+import { FormSelect, type FormOption } from "@/components/tinsae/form-select";
 import { cn } from "@/lib/utils";
 
 /**
@@ -73,33 +74,30 @@ export function TextField({
   );
 }
 
+/** A labelled dropdown; the site's own menu, not the OS-drawn <select> popup. */
 export function SelectField({
   id,
   label,
   hint,
   error,
-  children,
-  className,
-  ...props
+  value,
+  onChange,
+  options,
 }: {
   id: string;
   label: string;
   hint?: React.ReactNode;
   error?: string;
-} & React.ComponentProps<"select">) {
+  value: string;
+  onChange: (value: string) => void;
+  options: FormOption[];
+}) {
   return (
     <div>
       <FieldLabel htmlFor={id} hint={hint}>
         {label}
       </FieldLabel>
-      <select
-        id={id}
-        aria-invalid={error ? true : undefined}
-        className={cn(CONTROL, error && INVALID, className)}
-        {...props}
-      >
-        {children}
-      </select>
+      <FormSelect id={id} value={value} onChange={onChange} options={options} />
       <FieldError id={`${id}-error`}>{error}</FieldError>
     </div>
   );

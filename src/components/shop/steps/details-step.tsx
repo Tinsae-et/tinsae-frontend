@@ -2,6 +2,7 @@
 
 import { Icon } from "@/components/tinsae/icon";
 import { Chip, FieldError, SelectField, TextField } from "@/components/shop/fields";
+import { FormSelect } from "@/components/tinsae/form-select";
 import { formatAsTyped } from "@/lib/auth/phone";
 import {
   AREAS,
@@ -70,14 +71,9 @@ export function DetailsStep({
             id="shop-area"
             label="Area in Bole"
             value={state.area}
-            onChange={(e) => dispatch({ type: "set", field: "area", value: e.target.value })}
-          >
-            {AREAS.map((area) => (
-              <option key={area} value={area}>
-                Bole · {area}
-              </option>
-            ))}
-          </SelectField>
+            onChange={(value) => dispatch({ type: "set", field: "area", value })}
+            options={AREAS.map((area) => ({ value: area, label: `Bole · ${area}` }))}
+          />
 
           <TextField
             id="shop-phone"
@@ -122,33 +118,25 @@ export function DetailsStep({
           </div>
 
           <div className="flex items-center gap-3">
-            <label htmlFor="open-time" className="sr-only">
-              Opens at
-            </label>
-            <select
-              id="open-time"
-              value={state.openTime}
-              onChange={(e) => dispatch({ type: "set", field: "openTime", value: e.target.value })}
-              className="border-tn-hair text-tn-ink h-11 flex-1 rounded-xl border bg-white px-3 text-[14px] outline-none focus:border-tn-ink2"
-            >
-              {TIMES.map((time) => (
-                <option key={time}>{time}</option>
-              ))}
-            </select>
+            <div className="flex-1">
+              <FormSelect
+                id="open-time"
+                ariaLabel="Opens at"
+                value={state.openTime}
+                onChange={(value) => dispatch({ type: "set", field: "openTime", value })}
+                options={TIMES.map((time) => ({ value: time, label: time }))}
+              />
+            </div>
             <span className="text-tn-mute text-sm font-semibold">to</span>
-            <label htmlFor="close-time" className="sr-only">
-              Closes at
-            </label>
-            <select
-              id="close-time"
-              value={state.closeTime}
-              onChange={(e) => dispatch({ type: "set", field: "closeTime", value: e.target.value })}
-              className="border-tn-hair text-tn-ink h-11 flex-1 rounded-xl border bg-white px-3 text-[14px] outline-none focus:border-tn-ink2"
-            >
-              {TIMES.map((time) => (
-                <option key={time}>{time}</option>
-              ))}
-            </select>
+            <div className="flex-1">
+              <FormSelect
+                id="close-time"
+                ariaLabel="Closes at"
+                value={state.closeTime}
+                onChange={(value) => dispatch({ type: "set", field: "closeTime", value })}
+                options={TIMES.map((time) => ({ value: time, label: time }))}
+              />
+            </div>
           </div>
           <FieldError id="days-error">{state.showErrors ? errors.days : undefined}</FieldError>
           {/* One range across every selected day: "Sat 9–1" can't be expressed. */}

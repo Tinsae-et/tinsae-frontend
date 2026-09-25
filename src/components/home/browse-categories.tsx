@@ -1,11 +1,17 @@
 import Link from "next/link";
 import { Icon } from "@/components/tinsae/icon";
 import { SectionHead } from "./section-head";
-import { NAV_CATEGORIES } from "@/lib/nav-categories";
+import type { NavCategory } from "@/lib/nav-categories";
 import { formatCount } from "@/lib/format";
 import type { ShopMetrics } from "@/lib/types";
 
-export function BrowseCategories({ stats }: { stats?: ShopMetrics | null }) {
+export function BrowseCategories({
+  stats,
+  categories,
+}: {
+  stats?: ShopMetrics | null;
+  categories: NavCategory[];
+}) {
   const categoryCounts = stats?.category_product_count;
 
   return (
@@ -16,8 +22,8 @@ export function BrowseCategories({ stats }: { stats?: ShopMetrics | null }) {
         href="/categories"
         link="All categories"
       />
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 lg:gap-3.5">
-        {NAV_CATEGORIES.map((c) => {
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 lg:gap-3.5">
+        {categories.map((c) => {
           const count = categoryCounts?.[c.slug];
           const hasCount = count != null && count > 0;
           return (

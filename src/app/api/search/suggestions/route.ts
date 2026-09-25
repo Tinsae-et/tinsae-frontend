@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getProducts } from "@/lib/api/public";
-import { NAV_CATEGORIES } from "@/lib/nav-categories";
+import { getNavCategories } from "@/lib/nav-categories";
 
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get("q")?.trim() ?? "";
@@ -13,10 +13,13 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const paginated = await getProducts({ q, pageSize: 4 });
+    const [paginated, categories] = await Promise.all([
+      getProducts({ q, pageSize: 4 }),
+      getNavCategories(),
+    ]);
 
     const qLower = q.toLowerCase();
-    const matchedCategories = NAV_CATEGORIES.filter(
+    const matchedCategories = categories.filter(
       (c) =>
         c.label.toLowerCase().includes(qLower) ||
         c.slug.toLowerCase().includes(qLower) ||

@@ -1,84 +1,71 @@
 import type { IconName } from "@/components/tinsae/icon";
+import { getCategories } from "@/lib/api/public";
+import type { Category } from "@/lib/types";
 
 export type NavCategory = {
   icon: IconName;
   label: string;
   slug: string;
   subtitle: string;
-  count?: number;
   status?: "live" | "soon";
   badge?: string;
 };
 
-// All live marketplace categories backed by the database catalog
-export const LIVE_CATEGORIES: NavCategory[] = [
-  {
-    icon: "phone",
-    label: "Phones",
-    slug: "phones",
-    subtitle: "iPhone · Samsung · Tecno · Xiaomi",
-    status: "live",
-  },
-  {
-    icon: "laptop",
-    label: "Laptops & PCs",
-    slug: "laptops",
-    subtitle: "MacBook · Dell · ThinkPad · HP",
-    status: "live",
-  },
-  {
-    icon: "audio",
-    label: "Audio & Sound",
-    slug: "audio",
-    subtitle: "AirPods · JBL · Sony · Soundbars",
-    status: "live",
-  },
+// The backend owns which categories exist, their names and their order. This
+// map only decorates them; a category the backend adds without an entry here
+// still shows, with a generic icon and no tagline.
+const CATEGORY_PRESENTATION: Record<string, { icon: IconName; subtitle: string }> = {
+  phones: { icon: "phone", subtitle: "iPhone · Samsung · Tecno · Xiaomi" },
+  laptops: { icon: "laptop", subtitle: "MacBook · Dell · ThinkPad · HP" },
+  audio: { icon: "audio", subtitle: "AirPods · JBL · Sony · Soundbars" },
+  tablets: { icon: "tablet", subtitle: "iPad · Galaxy Tab · Surface" },
+  cameras: { icon: "camera", subtitle: "Canon · Sony · Nikon · GoPro" },
+  accessories: { icon: "plug", subtitle: "Chargers · Cases · Cables · Power" },
+};
+
+/** Top-level backend categories, in the backend's order, ready for navigation. */
+export function toNavCategories(categories: Category[]): NavCategory[] {
+  return categories
+    .filter((c) => c.parent === null)
+    .map((c) => ({
+      slug: c.slug,
+      label: c.name,
+      icon: CATEGORY_PRESENTATION[c.slug]?.icon ?? "tag",
+      subtitle: CATEGORY_PRESENTATION[c.slug]?.subtitle ?? "",
+      status: "live" as const,
+    }));
+}
+
+/**
+ * The live category list from the backend. An outage yields an empty list
+ * rather than a stale hard-coded one, so nothing links to a category that no
+ * longer exists.
+ */
+export async function getNavCategories(): Promise<NavCategory[]> {
+  try {
+    const res = await getCategories();
+    return toNavCategories(res.results);
+  } catch {
+    return [];
+  }
+}
+
+// Roadmap verticals. They are not in the backend yet, so the frontend owns
+// this list until categories carry a status there.
+export const UPCOMING_CATEGORIES: NavCategory[] = [
   {
     icon: "car",
     label: "Vehicles & Auto",
     slug: "vehicles",
-    subtitle: "Cars · Bikes · Spare Parts · Auto",
-    status: "live",
+    subtitle: "Cars · Bikes · Spare Parts",
+    status: "soon",
   },
-  {
-    icon: "tablet",
-    label: "Tablets",
-    slug: "tablets",
-    subtitle: "iPad · Galaxy Tab · Surface",
-    status: "live",
-  },
-  {
-    icon: "camera",
-    label: "Cameras & Photo",
-    slug: "cameras",
-    subtitle: "Canon · Sony · Nikon · Drones",
-    status: "live",
-  },
-  {
-    icon: "plug",
-    label: "Accessories",
-    slug: "accessories",
-    subtitle: "Chargers · Cases · Cables · Power",
-    status: "live",
-  },
-  {
-    icon: "spec",
-    label: "Electronics & Tech",
-    slug: "electronics",
-    subtitle: "Displays · Monitors · Smart Home",
-    status: "live",
-  },
-];
-
-// Upcoming marketplace categories (aligned with Tinsae expansion roadmap)
-export const UPCOMING_CATEGORIES: NavCategory[] = [
   {
     icon: "building",
     label: "Property & Rentals",
     slug: "property",
     subtitle: "Apartments · Villas · Commercial",
     status: "soon",
-    badge: "Q3 2026",
   },
   {
     icon: "tag",
@@ -86,7 +73,6 @@ export const UPCOMING_CATEGORIES: NavCategory[] = [
     slug: "fashion",
     subtitle: "Clothing · Shoes · Bags · Watches",
     status: "soon",
-    badge: "Q3 2026",
   },
   {
     icon: "home",
@@ -94,7 +80,6 @@ export const UPCOMING_CATEGORIES: NavCategory[] = [
     slug: "home",
     subtitle: "Furniture · Office · Appliances",
     status: "soon",
-    badge: "Q4 2026",
   },
   {
     icon: "shield",
@@ -102,9 +87,5 @@ export const UPCOMING_CATEGORIES: NavCategory[] = [
     slug: "services",
     subtitle: "Device Repairs · Tech Support",
     status: "soon",
-    badge: "2027",
   },
 ];
-
-// Default nav categories for general consumption
-export const NAV_CATEGORIES: NavCategory[] = LIVE_CATEGORIES;

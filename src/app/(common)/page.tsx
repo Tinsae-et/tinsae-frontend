@@ -11,13 +11,14 @@ import { StatBand } from "@/components/home/stat-band";
 import { ShopBand } from "@/components/home/shop-band";
 import { FinalCTA } from "@/components/home/final-cta";
 import { getCurrentUser } from "@/lib/auth/session";
+import { getNavCategories } from "@/lib/nav-categories";
 
 export default async function Home() {
   const user = await getCurrentUser();
 
   // The landing page must render even with the backend down, so the fetch
   // degrades to empty rather than throwing the whole route.
-  const [products, stats, shopsData] = await Promise.all([
+  const [products, stats, shopsData, categories] = await Promise.all([
     getProducts({
       // `freshness` excludes NULL last_confirmed_at, which matters: ordering by
       // -last_confirmed_at alone would sort never-confirmed rows to the top in
@@ -32,6 +33,7 @@ export default async function Home() {
       ordering: "-active_listings_count",
       pageSize: 4,
     }).catch(() => null),
+    getNavCategories(),
   ]);
 
   const freshest: Product[] = products?.results ?? [];
@@ -58,8 +60,8 @@ export default async function Home() {
 
   return (
     <main>
-      <Hero user={user} stats={stats} />
-      <BrowseCategories stats={stats} />
+      <Hero user={user} stats={stats} categories={categories} />
+      <BrowseCategories stats={stats} categories={categories} />
       <TopShops shops={topShops} />
       <FreshListings products={freshest} />
       <Features />

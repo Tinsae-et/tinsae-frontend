@@ -175,6 +175,7 @@ export function BeforePublication({
   name,
   price,
   condition,
+  specsComplete,
   coverPhoto,
   extraPhotos,
   action,
@@ -183,6 +184,8 @@ export function BeforePublication({
   name: string;
   price: string;
   condition: string;
+  /** Every required spec for the chosen category is filled in and valid. */
+  specsComplete: boolean;
   coverPhoto: ShopProductImage | null;
   extraPhotos: (ShopProductImage | null)[];
   action: string;
@@ -198,6 +201,7 @@ export function BeforePublication({
     { id: "name", label: "Product name", done: isNameSet },
     { id: "photo", label: "At least one photo", done: hasPhoto },
     { id: "price", label: "Price set", done: isPriceSet },
+    { id: "specs", label: "Required specs", done: specsComplete },
     { id: "condition", label: "Condition", done: isConditionSet },
   ];
 

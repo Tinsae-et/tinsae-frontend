@@ -2,22 +2,8 @@
 
 import React from "react";
 import type { ShopProductQuery } from "@/lib/api/public";
+import { useCategories } from "@/hooks/use-categories";
 
-type CategoryFilter = "" | "phones" | "laptops" | "audio" | "tablets" | "accessories";
-
-type CategoryChip = {
-  id: CategoryFilter;
-  label: string;
-};
-
-const CATEGORY_CHIPS: CategoryChip[] = [
-  { id: "", label: "All" },
-  { id: "phones", label: "Phones" },
-  { id: "laptops", label: "Laptops" },
-  { id: "audio", label: "Audio" },
-  { id: "tablets", label: "Tablets" },
-  { id: "accessories", label: "Accessories" },
-];
 
 export function CategoryChips({
   query,
@@ -28,11 +14,13 @@ export function CategoryChips({
   setQuery: React.Dispatch<React.SetStateAction<ShopProductQuery>>;
   total: number;
 }) {
-  const currentCategory = (query.category ?? "") as CategoryFilter;
+  const categories = useCategories();
+  const chips = [{ id: "", label: "All" }, ...categories.map((c) => ({ id: c.slug, label: c.label }))];
+  const currentCategory = query.category ?? "";
 
   return (
     <div className="mt-4 flex flex-wrap gap-2 overflow-x-auto pb-1">
-      {CATEGORY_CHIPS.map((chip) => {
+      {chips.map((chip) => {
         const active = currentCategory === chip.id;
         return (
           <button

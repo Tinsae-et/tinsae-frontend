@@ -3,22 +3,19 @@
 import { useState, useRef, useEffect } from "react";
 import { Icon } from "@/components/tinsae/icon";
 import { cn } from "@/lib/utils";
-import { LIVE_CATEGORIES } from "@/lib/nav-categories";
+import { useCategories } from "@/hooks/use-categories";
 
 export type CategoryOption = {
   value: string;
   label: string;
 };
 
-export const DEFAULT_CATEGORY_OPTIONS: readonly CategoryOption[] = [
-  { value: "", label: "All categories" },
-  ...LIVE_CATEGORIES.map((c) => ({ value: c.slug, label: c.label })),
-];
+const ALL_OPTION: CategoryOption = { value: "", label: "All categories" };
 
 export function CategoryDropdown({
   value,
   onChange,
-  options = DEFAULT_CATEGORY_OPTIONS,
+  options: optionsProp,
   size = "sm",
   className,
 }: {
@@ -29,7 +26,13 @@ export function CategoryDropdown({
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const categories = useCategories();
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const options = optionsProp ?? [
+    ALL_OPTION,
+    ...categories.map((c) => ({ value: c.slug, label: c.label })),
+  ];
 
   const selectedOption = options.find((o) => o.value === value) ?? options[0];
   const label = selectedOption?.label ?? "All categories";

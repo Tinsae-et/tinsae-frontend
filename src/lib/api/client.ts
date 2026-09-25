@@ -141,6 +141,19 @@ export async function updateListing(product: NewProduct, shopSlug: string): Prom
   return res.json();
 }
 
+/** One of the shop's own products' images, oldest first. */
+export async function getListingImages(
+  shopSlug: string,
+  productSlug: string,
+): Promise<ProductImage[]> {
+  const res = await fetch(shopPath(shopSlug, "products", productSlug, "images"), {
+    cache: "no-store",
+  });
+  if (!res.ok) return failure(res, "Could not load product images");
+  const data = (await res.json()) as ProductImage[] | Paginated<ProductImage>;
+  return Array.isArray(data) ? data : data.results;
+}
+
 function imageForm(image: ShopProductImage): FormData {
   const formData = new FormData();
   if (image.image instanceof File) formData.append("image", image.image);

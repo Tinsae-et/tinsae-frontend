@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { Icon, type IconName } from "@/components/tinsae/icon";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
-import { NAV_CATEGORIES, LIVE_CATEGORIES, UPCOMING_CATEGORIES } from "@/lib/nav-categories";
+import { UPCOMING_CATEGORIES, type NavCategory } from "@/lib/nav-categories";
 import { useCompare } from "@/hooks/use-compare";
 import { useModal } from "@/hooks/use-modal";
 import { hasShop } from "@/lib/auth/roles";
@@ -413,7 +413,13 @@ function SearchField({
   );
 }
 
-function BrowseMenu({ categoryCounts }: { categoryCounts?: Record<string, number> }) {
+function BrowseMenu({
+  categories,
+  categoryCounts,
+}: {
+  categories: NavCategory[];
+  categoryCounts?: Record<string, number>;
+}) {
   const [open, setOpen] = useState(false);
   const [fetchedCounts, setFetchedCounts] = useState<Record<string, number> | undefined>(undefined);
   const hasAttemptedRef = useRef(false);
@@ -548,7 +554,7 @@ function BrowseMenu({ categoryCounts }: { categoryCounts?: Record<string, number
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  {LIVE_CATEGORIES.map((c) => {
+                  {categories.map((c) => {
                     const count = counts?.[c.slug];
                     const countLabel =
                       count != null && count > 0
@@ -651,7 +657,7 @@ function BrowseMenu({ categoryCounts }: { categoryCounts?: Record<string, number
             {/* Bottom banner: View All Products */}
             <div className="border-t border-tn-hair2 bg-tn-paper/70 px-5 py-3 flex items-center justify-between">
               <span className="text-[12px] text-tn-mute font-medium">
-                Browse verified electronics, vehicles, and tech across Addis Ababa
+                Browse verified electronics and tech across Addis Ababa
               </span>
               <Link
                 href="/products"
@@ -672,9 +678,11 @@ function BrowseMenu({ categoryCounts }: { categoryCounts?: Record<string, number
 export function SiteHeader({
   user,
   stats,
+  categories,
 }: {
   user?: AuthUser | null;
   stats?: ShopMetrics | null;
+  categories: NavCategory[];
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -767,7 +775,7 @@ export function SiteHeader({
       {/* Desktop bar */}
       <div className="mx-auto hidden h-[72px] max-w-[1480px] items-center gap-5 px-6 sm:px-8 lg:px-12 xl:px-16 lg:flex">
         <Logo />
-        <BrowseMenu categoryCounts={stats?.category_product_count} />
+        <BrowseMenu categories={categories} categoryCounts={stats?.category_product_count} />
         <SearchField
           className="hidden max-w-[760px] flex-1 lg:block"
           inputRef={searchRef}
@@ -971,7 +979,7 @@ export function SiteHeader({
             </Link>
             <div className="h-3.5 w-px bg-tn-hair shrink-0" />
             <div className="flex items-center gap-5 overflow-x-auto scrollbar-none py-1 min-w-0">
-              {NAV_CATEGORIES.map((c) => (
+              {categories.map((c) => (
                 <Link
                   key={c.slug}
                   href={`/products?category=${c.slug}`}
@@ -1064,7 +1072,7 @@ export function SiteHeader({
                 <p className="text-tn-mute mt-6 mb-2 text-[10.5px] font-extrabold tracking-[0.09em] uppercase">
                   Categories
                 </p>
-                {NAV_CATEGORIES.map((c) => {
+                {categories.map((c) => {
                   const count = stats?.category_product_count?.[c.slug];
                   return (
                     <Link

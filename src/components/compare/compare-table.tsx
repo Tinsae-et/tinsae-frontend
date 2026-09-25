@@ -11,6 +11,7 @@ import {
   type CompareSectionData,
   extractShopCount,
 } from "@/lib/compare-helpers";
+import { useCategorySchemas } from "@/hooks/use-category-schemas";
 
 export function CompareTable({
   items,
@@ -23,7 +24,10 @@ export function CompareTable({
   onOpenAddModal: () => void;
   maxItems?: number;
 }) {
-  const sections: CompareSectionData[] = buildCompareSections(items);
+  const { schemas } = useCategorySchemas(
+    items.map((item) => (item.isAvailable ? (item.product.category?.slug ?? "") : "")),
+  );
+  const sections: CompareSectionData[] = buildCompareSections(items, schemas);
   const showAddSlot = items.length < maxItems;
 
   return (
@@ -49,6 +53,7 @@ export function CompareTable({
                     {item.isAvailable ? (
                       <CompareProductHeader
                         product={item.product}
+                        schema={schemas[item.product.category?.slug ?? ""] ?? null}
                         onRemove={() => onRemoveItem(slug)}
                       />
                     ) : (

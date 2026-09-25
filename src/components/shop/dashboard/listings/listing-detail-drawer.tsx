@@ -20,10 +20,13 @@ import { ShopProduct } from "@/lib/types";
 import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
 import { resolveProductImages } from "@/lib/product-images";
 import { Pill } from "@/components/tinsae/pill";
+import { useCategorySchemas } from "@/hooks/use-category-schemas";
+import { formatSpecs } from "@/lib/specs/display";
 import { useModal } from "@/hooks/use-modal";
 import { cn } from "@/lib/utils";
 import {
   confirmFreshness,
+  getListingImages,
   markSold,
   pauseProduct,
   resumeProduct,
@@ -73,13 +76,9 @@ function ListingDetailDrawerInner({
     const initialImages = resolveProductImages(product.images);
     if (initialImages.length === 0 && product.slug && shopSlug) {
       let active = true;
-      fetch(
-        `/api/shop/${encodeURIComponent(shopSlug)}/products/${encodeURIComponent(product.slug)}/images`,
-      )
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
-          if (!active || !data) return;
-          const items = Array.isArray(data) ? data : data.results;
+      getListingImages(shopSlug, product.slug)
+        .then((items) => {
+          if (!active) return;
           const resolved = resolveProductImages(items);
           if (resolved.length > 0) {
             setFetchedImages(resolved);
@@ -160,15 +159,9 @@ function ListingDetailDrawerInner({
     }
   };
 
-  const specsList = product.specs
-    ? Object.entries(product.specs).filter(
-        ([key, val]) =>
-          val !== null &&
-          val !== undefined &&
-          val !== "" &&
-          key !== "variant",
-      )
-    : [];
+  // Same labels and units buyers see: "1 TB", "Gaming", not 1024 / gaming.
+  const { schemas } = useCategorySchemas([product.category]);
+  const specsList = formatSpecs(schemas[product.category] ?? null, product.specs);
 
   const dotColor =
     fresh.tone === "fresh"
@@ -411,16 +404,16 @@ function ListingDetailDrawerInner({
                 Specifications
               </h3>
               <div className="grid grid-cols-2 gap-2">
-                {specsList.map(([key, val]) => (
+                {specsList.map((spec) => (
                   <div
-                    key={key}
+                    key={spec.key}
                     className="p-3 rounded-xl border border-tn-hair2 bg-tn-paper/40 flex flex-col"
                   >
-                    <span className="text-[11px] font-bold text-tn-mute capitalize">
-                      {key.replace(/_/g, " ")}
+                    <span className="text-[11px] font-bold text-tn-mute">
+                      {spec.label}
                     </span>
                     <span className="text-xs font-bold text-tn-ink mt-0.5">
-                      {String(val)}
+                      {spec.value}
                     </span>
                   </div>
                 ))}

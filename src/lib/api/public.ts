@@ -11,6 +11,7 @@
 import type { Category, Paginated, Product, Shop, ShopMetrics } from "../types";
 import { API_URL } from "../config";
 import { normalizeImageUrl } from "../format";
+import { fromApiSchema, type ApiCategorySchema, type CategorySchema } from "../specs/schema";
 
 /** Catalog routes live under /api/v1/catalog/ (config/urls.py). */
 const CATALOG = `${API_URL}/api/v1/catalog`;
@@ -197,6 +198,25 @@ export async function getCategories(init?: RequestInit): Promise<Paginated<Categ
     throw new Error(`Could not load categories (${res.status})`);
   }
   return res.json();
+}
+
+/**
+ * The spec schema a category's listings follow (catalog/specs.py), or null when
+ * the category has no product type yet -- the form then shows no spec fields.
+ */
+export async function getCategorySchema(
+  slug: string,
+  init?: RequestInit,
+): Promise<CategorySchema | null> {
+  const res = await fetch(
+    `${CATALOG}/categories/${encodeURIComponent(slug)}/schema/`,
+    readInit(REVALIDATE.categories, init),
+  );
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    throw new Error(`Could not load the spec schema (${res.status})`);
+  }
+  return fromApiSchema((await res.json()) as ApiCategorySchema);
 }
 
 export type ShopQuery = {

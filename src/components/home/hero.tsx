@@ -5,16 +5,14 @@ import { RotatingEyebrow } from "./rotating-eyebrow";
 import { OrbitRing } from "./orbit-ring";
 import { DashboardMock } from "./dashboard-mock";
 import { TrustStrip } from "./trust-strip";
-import { NAV_CATEGORIES } from "@/lib/nav-categories";
+import type { NavCategory } from "@/lib/nav-categories";
 
 import { hasShop } from "@/lib/auth/roles";
 import type { AuthUser } from "@/lib/auth/types";
 import type { ShopMetrics } from "@/lib/types";
 import { formatCount } from "@/lib/format";
 
-const POPULAR = NAV_CATEGORIES.filter((c) =>
-  ["phones", "laptops", "audio", "cameras"].includes(c.slug),
-);
+const POPULAR_SLUGS = ["phones", "laptops", "audio", "cameras"];
 
 // PLACEHOLDER: decorative shop avatars. Replace with real verified shops.
 const SHOP_AVATARS = [
@@ -25,7 +23,16 @@ const SHOP_AVATARS = [
   { initial: "G", color: "#5A4A2E" },
 ];
 
-export function Hero({ user, stats }: { user?: AuthUser | null; stats?: ShopMetrics | null }) {
+export function Hero({
+  user,
+  stats,
+  categories,
+}: {
+  user?: AuthUser | null;
+  stats?: ShopMetrics | null;
+  categories: NavCategory[];
+}) {
+  const popular = categories.filter((c) => POPULAR_SLUGS.includes(c.slug));
   const isOwner = Boolean(user && hasShop(user));
 
   return (
@@ -69,7 +76,7 @@ export function Hero({ user, stats }: { user?: AuthUser | null; stats?: ShopMetr
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <span className="text-tn-mute text-[12.5px] font-bold">Popular:</span>
-            {POPULAR.map((c) => (
+            {popular.map((c) => (
               <Link
                 key={c.slug}
                 href={`/products?category=${c.slug}`}

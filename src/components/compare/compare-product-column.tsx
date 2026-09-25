@@ -7,18 +7,23 @@ import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placehold
 import { extractBrand } from "@/lib/compare-helpers";
 import { resolvePrimaryProductImage } from "@/lib/product-images";
 import type { Product } from "@/lib/types";
+import { formatSpecs } from "@/lib/specs/display";
+import type { CategorySchema } from "@/lib/specs/schema";
 
 export function CompareProductHeader({
   product,
+  schema,
   onRemove,
 }: {
   product: Product;
+  schema: CategorySchema | null;
   onRemove: () => void;
 }) {
   const brand = extractBrand(product);
   const image = resolvePrimaryProductImage(product.images?.[0]?.url);
-  const storage = typeof product.specs?.storage === "string" ? product.specs.storage : "";
-  const color = typeof product.specs?.color === "string" ? product.specs.color : "";
+  const specs = formatSpecs(schema, product.specs);
+  const storage = specs.find((s) => s.key === "storage")?.value ?? "";
+  const color = specs.find((s) => s.key === "color")?.value ?? "";
   const subtitle = [storage, color].filter(Boolean).join(" · ") || (product.category?.name ?? "Electronics");
 
   return (

@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Shirt, Sofa, Wrench } from "lucide-react";
-import { Icon, type IconName } from "@/components/tinsae/icon";
-import { ProdPlaceholder, type ProductKind } from "@/components/tinsae/prod-placeholder";
+import { Icon } from "@/components/tinsae/icon";
+import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
 import { ProductCard } from "@/components/products/product-card";
 import { getProducts, getPublicStats } from "@/lib/api/public";
 import { formatCount, formatETB } from "@/lib/format";
 import type { Product } from "@/lib/types";
+import { getNavCategories } from "@/lib/nav-categories";
 
 export const metadata: Metadata = {
   title: "Everything on Tinsae — All Categories",
@@ -14,70 +15,9 @@ export const metadata: Metadata = {
     "Every verified category in Addis Ababa, in one marketplace. Electronics is live now — more verticals are on the way.",
 };
 
-type LiveCategoryConfig = {
-  id: string;
-  slug: string;
-  label: string;
-  subtitle: string;
-  icon: IconName;
-  placeholderKind: ProductKind;
-};
-
-const LIVE_CATEGORIES: LiveCategoryConfig[] = [
-  {
-    id: "phone",
-    slug: "phones",
-    label: "Phones",
-    subtitle: "iPhone · Samsung · Tecno",
-    icon: "phone",
-    placeholderKind: "phone",
-  },
-  {
-    id: "laptop",
-    slug: "laptops",
-    label: "Laptops",
-    subtitle: "MacBook · Dell · HP",
-    icon: "laptop",
-    placeholderKind: "laptop",
-  },
-  {
-    id: "audio",
-    slug: "audio",
-    label: "Audio",
-    subtitle: "AirPods · JBL · Sony",
-    icon: "audio",
-    placeholderKind: "audio",
-  },
-  {
-    id: "tablet",
-    slug: "tablets",
-    label: "Tablets",
-    subtitle: "iPad · Galaxy Tab",
-    icon: "tablet",
-    placeholderKind: "tablet",
-  },
-  {
-    id: "accessories",
-    slug: "accessories",
-    label: "Accessories",
-    subtitle: "Chargers · Cases · Cables",
-    icon: "plug",
-    placeholderKind: "phone",
-  },
-  {
-    id: "camera",
-    slug: "cameras",
-    label: "Cameras",
-    subtitle: "Canon · Sony · GoPro",
-    icon: "camera",
-    placeholderKind: "camera",
-  },
-];
-
 type RoadmapCategory = {
   label: string;
   sub: string;
-  eta: string;
   icon: React.ReactNode;
 };
 
@@ -85,41 +25,37 @@ const ROADMAP_CATEGORIES: RoadmapCategory[] = [
   {
     label: "Vehicles",
     sub: "Cars · Bikes · Parts",
-    eta: "Q3 2026",
     icon: <Icon name="car" size={21} className="text-tn-mute" />,
   },
   {
     label: "Property",
     sub: "Rent · Sale · Land",
-    eta: "Q3 2026",
     icon: <Icon name="building" size={21} className="text-tn-mute" />,
   },
   {
     label: "Fashion",
     sub: "Clothing · Shoes · Bags",
-    eta: "Q4 2026",
     icon: <Shirt className="size-5 text-tn-mute" strokeWidth={1.6} />,
   },
   {
     label: "Home & Furniture",
     sub: "Furniture · Appliances",
-    eta: "Q4 2026",
     icon: <Sofa className="size-5 text-tn-mute" strokeWidth={1.6} />,
   },
   {
     label: "Services",
     sub: "Repairs · Installation",
-    eta: "2027",
     icon: <Wrench className="size-5 text-tn-mute" strokeWidth={1.6} />,
   },
 ];
 
 export default async function CategoriesPage() {
+  const liveCategories = await getNavCategories();
   const [stats, trendingRes, minPrices] = await Promise.all([
     getPublicStats().catch(() => null),
     getProducts({ pageSize: 5, ordering: "-created_at" }).catch(() => null),
     Promise.all(
-      LIVE_CATEGORIES.map(async (c) => {
+      liveCategories.map(async (c) => {
         try {
           const res = await getProducts({
             category: c.slug,
@@ -173,7 +109,7 @@ export default async function CategoriesPage() {
           {/* Stats Bar */}
           <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 font-tn-mono text-sm text-tn-mute">
             <span>
-              <strong className="font-bold text-tn-ink">{LIVE_CATEGORIES.length}</strong> categories live
+              <strong className="font-bold text-tn-ink">{liveCategories.length}</strong> categories live
             </span>
             {verifiedShopsCount !== null && (
               <>
@@ -217,7 +153,7 @@ export default async function CategoriesPage() {
         </div>
 
         <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {LIVE_CATEGORIES.map((cat) => {
+          {liveCategories.map((cat) => {
             const count = stats?.category_product_count?.[cat.slug] ?? null;
             const minPrice = minPriceMap.get(cat.slug) ?? null;
 
@@ -229,7 +165,7 @@ export default async function CategoriesPage() {
               >
                 {/* Subtle Ghost Product Silhouette */}
                 <div className="pointer-events-none select-none absolute -right-3 -top-2 size-[120px] opacity-[0.05] -rotate-[8deg] flex items-center justify-center">
-                  <ProdPlaceholder kind={cat.placeholderKind} />
+                  <ProdPlaceholder kind={kindForSlug(cat.slug)} />
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -332,14 +268,9 @@ export default async function CategoriesPage() {
                 key={cat.label}
                 className="flex flex-col gap-3 rounded-2xl border border-dashed border-tn-hair bg-white p-5 transition-shadow"
               >
-                <div className="flex items-center justify-between">
-                  <span className="inline-flex size-11 items-center justify-center rounded-[13px] bg-[#F7F6F2]">
-                    {cat.icon}
-                  </span>
-                  <span className="font-tn-mono text-[10.5px] font-bold tracking-[0.06em] text-tn-mute">
-                    {cat.eta}
-                  </span>
-                </div>
+                <span className="inline-flex size-11 items-center justify-center rounded-[13px] bg-[#F7F6F2]">
+                  {cat.icon}
+                </span>
 
                 <div className="mt-1">
                   <h3 className="text-base font-extrabold tracking-[-0.02em] text-tn-ink2">
