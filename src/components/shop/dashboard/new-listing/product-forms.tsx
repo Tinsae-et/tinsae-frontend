@@ -16,14 +16,13 @@ import {
 import { Icon, IconName } from "@/components/tinsae/icon";
 import { Category, NewProduct, ShopProduct, ShopProductImage } from "@/lib/types";
 import {
-  ApiError,
   createListing,
-  getCategories,
   updateListing,
   updateListingImage,
   uploadListingImage,
   deleteListingImage,
-} from "@/lib/api";
+} from "@/lib/api/client";
+import { ApiError, getCategories } from "@/lib/api/public";
 import { BeforePublication, DailyStockCheckIn, ProductPreview } from "./buyer-preview";
 import { normalizeImageUrl } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -213,6 +212,13 @@ export function Form({
   const [serverError, setServerError] = useState<string | null>(null);
 
   const coverInputRef = useRef<HTMLInputElement>(null);
+
+  // What a failed save already stored, so a retry picks up where it stopped.
+  // Creating the product and uploading its photos are separate requests: if
+  // photo 2 of 4 failed, the product and photo 1 exist, and resubmitting used
+  // to create a duplicate listing (and upload photo 1 twice).
+  const createdSlugRef = useRef<string | null>(null);
+  const uploadedIdsRef = useRef(new Map<File, number>());
   const extraInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Dirty state tracking for unsaved changes warning
@@ -448,13 +454,43 @@ export function Form({
       };
 
       let savedProduct: ShopProduct;
-      if (action === "new") {
+      if (action === "new" && !createdSlugRef.current) {
         savedProduct = await createListing(payload, shopSlug);
+        createdSlugRef.current = savedProduct.slug;
       } else {
-        savedProduct = await updateListing(payload, shopSlug);
+        savedProduct = await updateListing(
+          { ...payload, slug: createdSlugRef.current ?? payload.slug },
+          shopSlug,
+        );
       }
 
       const productSlug = savedProduct.slug;
+
+      /**
+       * Uploads a new photo once, or re-orders one already stored. A File
+       * uploaded by an earlier, partly failed attempt counts as stored.
+       */
+      const savePhoto = async (photo: ShopProductImage, is_primary: boolean, display_order: number) => {
+        const file = photo.image instanceof File ? photo.image : null;
+        const storedId = file ? uploadedIdsRef.current.get(file) : photo.id;
+        if (file && storedId === undefined) {
+          const saved = await uploadListingImage(productSlug, shopSlug, {
+            ...photo,
+            is_primary,
+            display_order,
+          });
+          uploadedIdsRef.current.set(file, saved.id);
+        } else if (storedId !== undefined) {
+          // A string `image` keeps imageForm from re-sending the file.
+          await updateListingImage(productSlug, shopSlug, {
+            ...photo,
+            id: storedId,
+            image: "",
+            is_primary,
+            display_order,
+          }).catch((e) => console.warn("Failed to update image order:", e));
+        }
+      };
 
       // Handle image deletions
       if (deletedImageIds.length > 0) {
@@ -468,20 +504,8 @@ export function Form({
 
       // Handle cover photo
       if (coverPhoto) {
-        if (coverPhoto.image instanceof File) {
-          setUploadProgress("Uploading cover photo...");
-          await uploadListingImage(
-            productSlug,
-            shopSlug,
-            { ...coverPhoto, is_primary: true, display_order: 0 }
-          );
-        } else if (coverPhoto.id) {
-          await updateListingImage(
-            productSlug,
-            shopSlug,
-            { ...coverPhoto, is_primary: true, display_order: 0 }
-          ).catch((e) => console.warn("Failed to update cover display order:", e));
-        }
+        setUploadProgress("Uploading cover photo...");
+        await savePhoto(coverPhoto, true, 0);
       }
 
       // Handle extra photos
@@ -492,20 +516,8 @@ export function Form({
       let count = 0;
       for (const { photo, order } of activeExtra) {
         count++;
-        if (photo.image instanceof File) {
-          setUploadProgress(`Uploading photo ${count} of ${activeExtra.length}...`);
-          await uploadListingImage(
-            productSlug,
-            shopSlug,
-            { ...photo, is_primary: false, display_order: order }
-          );
-        } else if (photo.id) {
-          await updateListingImage(
-            productSlug,
-            shopSlug,
-            { ...photo, is_primary: false, display_order: order }
-          ).catch((e) => console.warn("Failed to update extra image order:", e));
-        }
+        setUploadProgress(`Uploading photo ${count} of ${activeExtra.length}...`);
+        await savePhoto(photo, false, order);
       }
 
       setUploadProgress("Listing saved successfully!");

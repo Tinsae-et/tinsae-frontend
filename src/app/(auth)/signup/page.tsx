@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
 import { AuthShell } from "@/components/auth/auth-shell";
 import { RegisterForm } from "@/components/auth/register-form";
-import { safeNext } from "@/lib/auth/redirects";
+import { homeFor, safeNext } from "@/lib/auth/redirects";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
   title: "Create your account — Tinsae",
@@ -15,6 +17,12 @@ export default async function SignUpPage({
   searchParams: Promise<{ next?: string }>;
 }) {
   const { next } = await searchParams;
+
+  // Already signed in? Only when /me/ confirms it — cookie presence alone
+  // proves nothing, and trusting it caused a redirect loop. A failed /me/
+  // returns null, so this page renders instead of bouncing.
+  const user = await getCurrentUser();
+  if (user) redirect(safeNext(next) ?? homeFor(user));
   const to = safeNext(next);
 
   return (

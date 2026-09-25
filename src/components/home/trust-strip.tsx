@@ -1,4 +1,6 @@
 // Design block 4 — the "Trusted by" wordmark strip under the dashboard mock.
+// PLACEHOLDER: shop names in the trust strip. Use real partner shops (with
+// their consent) or getShops({ verifiedOnly: true }) before launch.
 const SHOPS = ["Almeda", "Mosaic Tech", "Kuriftu", "Axum Digital", "Gada", "Friendship Mobile"];
 
 export function TrustStrip() {

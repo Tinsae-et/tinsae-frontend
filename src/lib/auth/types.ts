@@ -216,7 +216,12 @@ export type AuthDriver = {
    * object the backend must verify against the bot token.
    */
   telegram(payload: Record<string, string>, mode: AuthMode, role?: Role): Promise<Session>;
-  refresh(refreshToken: string): Promise<RefreshResult>;
+  /**
+   * `forwardedFor` is the browser's address, for callers outside a request
+   * scope (the proxy), so Django's per-IP refresh throttle counts the user and
+   * not this server.
+   */
+  refresh(refreshToken: string, forwardedFor?: string): Promise<RefreshResult>;
   /**
    * Blacklists one refresh token — the session this client is holding.
    *

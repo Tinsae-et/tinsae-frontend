@@ -20,6 +20,11 @@ const ethiopic = Noto_Sans_Ethiopic({
   variable: "--font-ethiopic",
   subsets: ["ethiopic"],
   weight: ["400", "600", "700"],
+  // Only the wordmark uses it, so it should not compete with the page's
+  // hero image and body font for bandwidth on slow connections. It still
+  // loads when the wordmark renders; `display: swap` (the default) avoids
+  // invisible text meanwhile.
+  preload: false,
 });
 
 /** Spread onto the <html> className of every root layout. */

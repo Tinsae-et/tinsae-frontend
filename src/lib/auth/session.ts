@@ -12,11 +12,12 @@
 // the middleware.
 import { cache } from "react";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import type { NextResponse } from "next/server";
 
 import { authDriver } from "./driver";
 import { ACCESS_TTL_SECONDS, REFRESH_TTL_SECONDS } from "./tokens";
-import type { AuthTokens, AuthUser } from "./types";
+import { AuthApiError, type AuthTokens, type AuthUser } from "./types";
 
 /**
  * Cookies are Secure — and therefore `__Host-` prefixed — wherever the app is
@@ -92,6 +93,32 @@ export async function readSession(): Promise<{
     access: jar.get(ACCESS_COOKIE)?.value,
     refresh: jar.get(REFRESH_COOKIE)?.value,
   };
+}
+
+/**
+ * The signed-in user for a protected Server Component, or a redirect to sign in.
+ *
+ * Only a *rejected* session (401/403 from /me/) sends the user to /signin.
+ * Anything else — Django down, a timeout, a 500 — is rethrown to the error
+ * boundary. Treating every failure as "signed out" used to loop: /signin saw
+ * the still-present cookies and bounced back to the dashboard, which failed
+ * /me/ again, until the browser gave up with too many redirects.
+ */
+export async function requireSession(
+  returnTo: string,
+): Promise<{ access: string; user: AuthUser }> {
+  const signin = `/signin?next=${encodeURIComponent(returnTo)}`;
+  const { access } = await readSession();
+  if (!access) redirect(signin);
+
+  try {
+    return { access, user: await authDriver.me(access) };
+  } catch (error) {
+    if (error instanceof AuthApiError && (error.status === 401 || error.status === 403)) {
+      redirect(signin);
+    }
+    throw error;
+  }
 }
 
 /**

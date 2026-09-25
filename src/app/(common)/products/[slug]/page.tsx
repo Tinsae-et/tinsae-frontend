@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProduct } from "@/lib/api";
+import { getProduct } from "@/lib/api/public";
+import { SITE_URL } from "@/lib/config";
+import { JsonLd } from "@/components/json-ld";
 import { formatETB, freshness, type FreshnessTone } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/lib/types";
@@ -10,11 +13,10 @@ import { ProductGallery } from "@/components/products/product-gallery";
 import { SimilarProductsInfinite } from "@/components/products/similar-products-infinite";
 import { getInitialSuggestions } from "@/lib/suggestions";
 import { ProductDetailActions } from "@/components/products/product-detail-actions";
+import { ProductCardSkeleton } from "@/components/products/product-card";
 import { Pill } from "@/components/tinsae/pill";
 import { Icon } from "@/components/tinsae/icon";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
-
-export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -27,11 +29,56 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!product || product.slug !== slug) {
     return { title: "Listing not found — Tinsae" };
   }
+  const description = truncate(
+    product.description ??
+      `${product.title} at ${product.shop_name}, confirmed in stock via Tinsae.`,
+    160,
+  );
+  const url = `/products/${product.slug}`;
+  const image = product.images[0]?.url;
   return {
     title: `${product.title} — Tinsae`,
-    description:
-      product.description ??
-      `${product.title} at ${product.shop_name}, confirmed in stock via Tinsae.`,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title: product.title,
+      description,
+      url,
+      type: "website",
+      ...(image ? { images: [{ url: image, alt: product.title }] } : {}),
+    },
+    twitter: { card: image ? "summary_large_image" : "summary", title: product.title, description },
+  };
+}
+
+function truncate(text: string, max: number): string {
+  return text.length <= max ? text : `${text.slice(0, max - 1).trimEnd()}…`;
+}
+
+/** schema.org Product + Offer, so search results can show price and seller. */
+function productJsonLd(product: Product): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.title,
+    ...(product.description ? { description: product.description } : {}),
+    // Absolute: unlike Open Graph (resolved via metadataBase), JSON-LD URLs
+    // are used as-is, and Django serves media paths relative to this site.
+    ...(product.images.length
+      ? { image: product.images.map((i) => new URL(i.url, SITE_URL).toString()) }
+      : {}),
+    ...(product.category ? { category: product.category.name } : {}),
+    offers: {
+      "@type": "Offer",
+      price: product.price,
+      priceCurrency: product.currency || "ETB",
+      url: `${SITE_URL}/products/${product.slug}`,
+      // Only a recent stock confirmation justifies claiming availability.
+      ...(product.confirmation_status === "fresh"
+        ? { availability: "https://schema.org/InStock" }
+        : {}),
+      seller: { "@type": "Organization", name: product.shop_name },
+    },
   };
 }
 
@@ -403,7 +450,14 @@ function ShopComparison({ product, now }: { product: Product; now: number }) {
               <span className="font-tn-mono text-tn-red text-[19px] font-semibold tracking-[-0.02em]">
                 {formatETB(product.price)}
               </span>
-              <Pill kind="solid" size="sm" icon="tg">
+              {/* The shop page carries the real contact details (Telegram or
+                  phone); this button used to have no href at all. */}
+              <Pill
+                kind="solid"
+                size="sm"
+                icon="tg"
+                href={product.shop_slug ? `/shops/${product.shop_slug}` : undefined}
+              >
                 Contact
               </Pill>
             </div>
@@ -417,7 +471,16 @@ function ShopComparison({ product, now }: { product: Product; now: number }) {
             className="mt-0.5 shrink-0 text-tn-green"
           />
           <p>
-            All shops are <b className="text-tn-ink">verified by Tinsae</b>.
+            {product.shop_verified ? (
+              <>
+                This shop is <b className="text-tn-ink">verified by Tinsae</b>.
+              </>
+            ) : (
+              <>
+                This shop is <b className="text-tn-ink">not yet verified</b> by
+                Tinsae.
+              </>
+            )}{" "}
             Stock is reconfirmed by the shop via Telegram — check the
             confirmation date above. Tinsae does not handle payment; visit the
             shop to inspect and complete your purchase.
@@ -439,15 +502,13 @@ export default async function ProductDetailPage({ params }: Props) {
   }
   if (product.slug !== slug) notFound();
 
-  // Upgraded suggestion engine: tiered recommendations (brand affinity, price proximity, category peers)
-  const initialSuggestions = await getInitialSuggestions(product, 8);
-
   // Server component: freshness is relative to request time, rendered once.
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
 
   return (
     <main className="text-tn-ink mx-auto max-w-[1480px] px-6 pt-6 sm:px-8 lg:px-12 xl:px-16">
+      <JsonLd data={productJsonLd(product)} />
       {/* breadcrumb */}
       <nav
         aria-label="Breadcrumb"
@@ -468,8 +529,31 @@ export default async function ProductDetailPage({ params }: Props) {
         <ShopComparison product={product} now={now} />
       </div>
 
-      {/* Similar & infinite scrolling suggestion feed */}
-      <SimilarProductsInfinite key={product.slug} product={product} initialProducts={initialSuggestions} />
+      {/* Similar & infinite scrolling suggestion feed. Streamed: the tiered
+          lookups take up to four Django round trips, and the listing itself
+          should not wait for any of them. */}
+      <Suspense fallback={<SimilarSkeleton />}>
+        <SimilarSection key={product.slug} product={product} />
+      </Suspense>
     </main>
+  );
+}
+
+/** Tiered recommendations (brand affinity, price proximity, category peers). */
+async function SimilarSection({ product }: { product: Product }) {
+  const initialSuggestions = await getInitialSuggestions(product, 8);
+  return <SimilarProductsInfinite product={product} initialProducts={initialSuggestions} />;
+}
+
+function SimilarSkeleton() {
+  return (
+    <section className="mt-14 border-t border-tn-hair pt-10" aria-busy="true" aria-label="Loading similar listings">
+      <div className="bg-tn-hair2 h-8 w-64 max-w-full animate-pulse rounded" />
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <ProductCardSkeleton key={i} />
+        ))}
+      </div>
+    </section>
   );
 }
