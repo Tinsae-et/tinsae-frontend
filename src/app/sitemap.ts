@@ -25,6 +25,7 @@ const STATIC_ROUTES = [
   "/contact",
   "/help",
   "/terms-and-privacy",
+  "/returns",
 ];
 
 async function collect<T>(

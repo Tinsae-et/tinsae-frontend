@@ -34,31 +34,47 @@ const protections: {
   },
 ];
 
-const warranties = [
-  [
-    "Manufacturer warranty",
-    "12-24 months",
-    "The brand",
-    "Honoured at an authorised service centre, not the shop. Keep the box and the receipt - you will need both.",
-  ],
-  [
-    "Tinsae-verified shop warranty",
-    "6-12 months",
-    "The shop",
-    "The shop repairs or replaces it themselves. Stated on the listing and enforceable against their badge.",
-  ],
-  [
-    "Shop warranty",
-    "1-6 months",
-    "The shop",
-    "Common on open-box and refurbished stock. Ask exactly what it covers before you pay - warranty can mean repair only.",
-  ],
-  [
-    "No warranty",
-    "-",
-    "Nobody",
-    "Used and clearance items. Legal and normal, but inspect twice as carefully - there is no recourse after you walk out.",
-  ],
+const warrantyTones = {
+  green: "bg-tn-green-soft text-[#157049]",
+  amber: "bg-[#FFF5E7] text-[#8a5512]",
+  neutral: "bg-tn-paper text-tn-mute",
+};
+
+const warranties: {
+  label: string;
+  length: string;
+  who: string;
+  tone: keyof typeof warrantyTones;
+  body: string;
+}[] = [
+  {
+    label: "Manufacturer warranty",
+    length: "12–24 months",
+    who: "The brand",
+    tone: "green",
+    body: "Honoured at an authorised service centre, not the shop. Keep the box and the receipt — you will need both.",
+  },
+  {
+    label: "Tinsae-verified shop warranty",
+    length: "6–12 months",
+    who: "The shop",
+    tone: "green",
+    body: "The shop repairs or replaces it themselves. Stated on the listing and enforceable against their badge.",
+  },
+  {
+    label: "Shop warranty",
+    length: "1–6 months",
+    who: "The shop",
+    tone: "amber",
+    body: "Common on open-box and refurbished stock. Ask exactly what it covers before you pay — warranty can mean repair only.",
+  },
+  {
+    label: "No warranty",
+    length: "—",
+    who: "Nobody",
+    tone: "neutral",
+    body: "Used and clearance items. Legal and normal, but inspect twice as carefully — there is no recourse after you walk out.",
+  },
 ];
 
 const steps: [IconName, string, string, string][] = [
@@ -66,7 +82,7 @@ const steps: [IconName, string, string, string][] = [
     "building",
     "01",
     "Go back to the shop",
-    "Within their stated window, with the item, the box and proof of purchase. Most problems end here - shops with a badge to protect generally fix things.",
+    "Within their stated window, with the item, the box and proof of purchase. Most problems end here — shops with a badge to protect generally fix things.",
   ],
   [
     "tg",
@@ -83,7 +99,7 @@ const steps: [IconName, string, string, string][] = [
   [
     "check",
     "04",
-    "We mediate - and act",
+    "We mediate — and act",
     "We contact the shop with the record of what was advertised. If they refuse terms they published, the badge comes off and we say why.",
   ],
 ];
@@ -91,27 +107,27 @@ const steps: [IconName, string, string, string][] = [
 const faqs = [
   [
     "Does Tinsae have a return policy?",
-    "No - and no marketplace that never takes your money honestly can. Each shop sets its own return window and warranty, states it on the listing, and honours it directly. Our job is to make those terms visible before you buy and to hold shops to them afterwards.",
+    "No — and no marketplace that never takes your money honestly can. Each shop sets its own return window and warranty, states it on the listing, and honours it directly. Our job is to make those terms visible before you buy and to hold shops to them afterwards.",
   ],
   [
     "A shop is refusing the warranty it advertised. What now?",
-    "Report it - one tap from the listing, or message @TinsaeTrust. We have the listing as it was published and the chat where you agreed the sale. A shop that refuses terms it advertised loses its verified badge, and we tell buyers why.",
+    "Report it — one tap from the listing, or message @TinsaeTrust. We have the listing as it was published and the chat where you agreed the sale. A shop that refuses terms it advertised loses its verified badge, and we tell buyers why.",
   ],
   [
     "I paid a deposit and the shop went quiet.",
-    "We are very sorry - and this is the case we can help with least, because the money never passed through us. Never pay before you arrive and inspect. Report the shop anyway: it will be removed, which protects the next person.",
+    "We are very sorry — and this is the case we can help with least, because the money never passed through us. Never pay before you arrive and inspect. Report the shop anyway: it will be removed, which protects the next person.",
   ],
   [
     "Can I return something just because I changed my mind?",
     "Only if that shop offers it, and most do not. Change-of-mind returns are rare in Addis electronics retail. Because you inspect and test in person before paying, there is far less need for one than with an online order.",
   ],
   [
-    "What about a manufacturer warranty - do I go to the shop?",
+    "What about a manufacturer warranty — do I go to the shop?",
     "Usually to an authorised service centre for the brand, not the shop. Keep the box, the receipt and any warranty card. Ask the shop which centre to use and note it down before you leave.",
   ],
   [
     "Is a refurbished item worth the risk?",
-    "Often, if the warranty is real. Check who honours it and for how long, and test more carefully than you would a sealed item. Refurbished stock on Tinsae must be labelled as such - a shop mislabelling it is a badge issue.",
+    "Often, if the warranty is real. Check who honours it and for how long, and test more carefully than you would a sealed item. Refurbished stock on Tinsae must be labelled as such — a shop mislabelling it is a badge issue.",
   ],
 ];
 
@@ -131,7 +147,7 @@ function ReturnsHero() {
           </h1>
           <p className="text-tn-mute mt-6 max-w-[500px] text-base leading-[1.55] font-medium sm:text-[18.5px]">
             Tinsae never handles your money, so we cannot refund it. What we can
-            do - and do - is make every shop state its terms before you buy, and
+            do — and do — is make every shop state its terms before you buy, and
             take the badge off anyone who breaks them.
           </p>
         </div>
@@ -228,7 +244,7 @@ function WarrantySection() {
           <span>Who honours it</span>
           <span>What to know</span>
         </div>
-        {warranties.map(([label, length, who, body]) => (
+        {warranties.map(({ label, length, who, tone, body }) => (
           <div
             key={label}
             className="border-tn-hair2 grid gap-2 border-t px-5 py-4 first:border-t-0 md:grid-cols-[1.5fr_140px_120px_2fr] md:items-center md:gap-[18px] md:px-[22px] md:py-[18px]"
@@ -240,7 +256,7 @@ function WarrantySection() {
               {length}
             </span>
             <span
-              className={`w-fit rounded-full px-2.5 py-1 text-[11px] font-bold ${who === "The shop" ? "bg-tn-green-soft text-[#157049]" : who === "The brand" ? "bg-tn-green-soft text-[#157049]" : "bg-tn-paper text-tn-mute"}`}
+              className={`w-fit rounded-full px-2.5 py-1 text-[11px] font-bold ${warrantyTones[tone]}`}
             >
               {who}
             </span>
@@ -316,7 +332,7 @@ function BoundarySection() {
     "Remove the verified badge from a shop that breaks its terms",
   ];
   const cannot = [
-    "Refund you - we never received your money",
+    "Refund you — we never received your money",
     "Force a shop to take an item back",
     "Extend or underwrite any shop's warranty",
     "Act as an escrow, guarantor or insurer",
@@ -442,7 +458,7 @@ export function ReturnsPage() {
               Inspect it. Test it. Then pay.
             </h2>
             <p className="mx-auto mt-[18px] max-w-[520px] text-base leading-[1.5] text-white/90 sm:text-lg">
-              That single habit is worth more than any policy page - including
+              That single habit is worth more than any policy page — including
               this one.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
