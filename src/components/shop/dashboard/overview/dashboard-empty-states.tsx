@@ -11,7 +11,7 @@ export function DashboardNoShop() {
         Set up your shop first
       </h1>
       <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-tn-mute">
-        Create your shop profile before adding listings or connecting Telegram.
+        Create your shop profile before adding products or connecting Telegram.
       </p>
       <Link
         href="/shop/onboarding"

@@ -287,7 +287,7 @@ export function useShopProducts(query: ShopProductQuery, slug: string) {
         if (signal?.aborted || (err as Error)?.name === "AbortError") return;
         if (!currentCached) {
           setError(
-            "Couldn't load listings. Check your connection and try again.",
+            "Couldn't load products. Check your connection and try again.",
           );
         }
       } finally {
@@ -387,7 +387,7 @@ export function usePublicShopProducts(
       } catch {
         if (signal?.aborted) return;
         setError(
-          "Couldn't load listings. Check your connection and try again.",
+          "Couldn't load products. Check your connection and try again.",
         );
       } finally {
         if (!signal?.aborted) {

@@ -648,6 +648,7 @@ export default function ListingsTable({
   initialTab?: TabKey;
 }) {
   const [selected, setSelected] = useState<string[]>([]);
+  const [prevInitialTab, setPrevInitialTab] = useState<TabKey>(initialTab);
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [debouncedQuery, setDebouncedQuery] = useState<string>("");
@@ -672,6 +673,13 @@ export default function ListingsTable({
     drafts: 0,
     sold: 0,
   });
+
+  // Keep active tab in sync if initialTab prop updates (e.g. from navigation)
+  if (initialTab !== prevInitialTab) {
+    setPrevInitialTab(initialTab);
+    setActiveTab(initialTab);
+    setPage(1);
+  }
 
   // Debounce search input
   useEffect(() => {
@@ -844,12 +852,12 @@ export default function ListingsTable({
 
       setSelected([]);
       setGlobalSuccess(
-        `Successfully confirmed ${res.confirmed.length} listings.`,
+        `Successfully confirmed ${res.confirmed.length} products.`,
       );
       refetch();
       recount();
     } catch {
-      setGlobalError("Failed to confirm selected listings. Please try again.");
+      setGlobalError("Failed to confirm selected products. Please try again.");
     } finally {
       setBulkInFlight(false);
     }
@@ -1018,7 +1026,7 @@ export default function ListingsTable({
         <div className="py-16 px-5 text-center bg-white rounded-[18px] border border-tn-hair">
           <AlertCircle className="size-10 text-tn-red mx-auto mb-3" />
           <h2 className="text-lg font-bold text-tn-ink">
-            Couldn&apos;t load listings
+            Couldn&apos;t load products
           </h2>
           <p className="text-sm text-tn-mute mt-1 mb-4">{error}</p>
           <button

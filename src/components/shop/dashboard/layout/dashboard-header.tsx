@@ -6,6 +6,7 @@ import {
   NewListingHeader,
   OverviewHeader,
   ProfileHeader,
+  TelegramHeader,
   VerificationHeader,
 } from "./headers";
 
@@ -33,6 +34,9 @@ export default function DashboardHeader({
       )}
       {pathname === "/shop/dashboard/shop-profile" && (
         <ProfileHeader setShowSidebar={setShowSidebar} shopSlug={shopSlug} />
+      )}
+      {pathname === "/shop/dashboard/telegram" && (
+        <TelegramHeader setShowSidebar={setShowSidebar} />
       )}
       {pathname === "/shop/dashboard/get-verified" && (
         <VerificationHeader setShowSidebar={setShowSidebar} />

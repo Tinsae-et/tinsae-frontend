@@ -22,7 +22,9 @@ type NavLinkItem = {
 const NAVLINKS: NavLinkItem[] = [
   { to: "/shop/dashboard/overview", text: "Overview", icon: "home" },
   { to: "/shop/dashboard/listings", text: "Listings", icon: "box" },
-  { to: "/shop/dashboard/shop-profile", text: "Shop profile", icon: "building" },
+  { to: "/shop/dashboard/listings/new", text: "Add product", icon: "plus" },
+  { to: "/shop/dashboard/shop-profile", text: "Shop settings", icon: "building" },
+  { to: "/shop/dashboard/telegram", text: "Telegram setup", icon: "tg" },
   { to: "/shop/dashboard/get-verified", text: "Get verified", icon: "shield" },
 ];
 
@@ -34,9 +36,17 @@ function Links({ links }: { links: NavLinkItem[] }) {
       {links.map((l) => {
         const isActive =
           pathname === l.to ||
-          pathname.startsWith(l.to + "/") ||
           (l.to === "/shop/dashboard/overview" &&
-            (pathname === "/shop/dashboard" || pathname === "/shop/dashboard/"));
+            (pathname === "/shop/dashboard" || pathname === "/shop/dashboard/")) ||
+          (l.to === "/shop/dashboard/listings/new" &&
+            (pathname === "/shop/dashboard/listings/new" ||
+              pathname.startsWith("/shop/dashboard/listings/edit"))) ||
+          (l.to === "/shop/dashboard/listings" &&
+            pathname === "/shop/dashboard/listings") ||
+          (l.to !== "/shop/dashboard/overview" &&
+            l.to !== "/shop/dashboard/listings" &&
+            l.to !== "/shop/dashboard/listings/new" &&
+            pathname.startsWith(l.to + "/"));
 
         return (
           <Link

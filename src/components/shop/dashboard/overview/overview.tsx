@@ -50,24 +50,39 @@ type KpiItem = {
  * line over data we do not have is the most confident-looking part of the lie.
  */
 function buildKpis(products: ShopProduct[]): KpiItem[] {
+  const total = products.length;
   const active = products.filter((p) => p.is_available);
   const confirmed = active.filter(
     (p) =>
       freshness(p.last_confirmed_at, p.confirmation_status).tone === "fresh",
   ).length;
+  const needsConfirm = active.filter(
+    (p) =>
+      freshness(p.last_confirmed_at, p.confirmation_status).tone !== "fresh",
+  ).length;
 
   return [
     {
-      label: "Active listings",
-      value: String(active.length),
+      label: "Total products",
+      value: String(total),
       sub:
-        active.length > 0
-          ? `${confirmed} confirmed recently`
-          : "Add your first listing to get started",
+        total > 0
+          ? `${active.length} active in store`
+          : "Add your first product to get started",
+    },
+    {
+      label: "Fresh products",
+      value: String(confirmed),
+      sub: confirmed > 0 ? "Visible to buyers" : "None fresh yet",
+    },
+    {
+      label: "Need confirming",
+      value: String(needsConfirm),
+      sub: needsConfirm > 0 ? "Requires attention today" : "All up to date",
+      up: needsConfirm === 0,
+      delta: needsConfirm > 0 ? `${needsConfirm} pending` : "All clear",
     },
     { label: "Views today", value: null, sub: "Not tracked yet" },
-    { label: "Inquiries today", value: null, sub: "Not tracked yet" },
-    { label: "Response rate", value: null, sub: "Not tracked yet" },
   ];
 }
 
@@ -697,14 +712,14 @@ function Numbers({
               <>
                 <span className="text-tn-ink font-bold">
                   {needsReconfirming}{" "}
-                  {needsReconfirming === 1 ? "listing" : "listings"}
+                  {needsReconfirming === 1 ? "product" : "products"}
                 </span>{" "}
-                need re-confirmation today.
+                need confirmation today.
               </>
             ) : products.length > 0 ? (
-              "Every listing is confirmed. Nothing needs your attention today."
+              "Every product is confirmed. Nothing needs your attention today."
             ) : (
-              "Add your first listing to start showing up in buyer searches."
+              "Add your first product to start showing up in buyer searches."
             )}
           </p>
         </div>
@@ -784,24 +799,32 @@ export default function Overview({
 
   return (
     <div className="flex flex-col gap-6">
-      <Numbers shopName={shopName} products={products} />
       {needsReconfirming.length > 0 && (
-        <section className="rounded-[20px] border border-[#FBD9C7] bg-tn-red-soft px-5 py-5 sm:px-6">
+        <section
+          className="rounded-[20px] border border-[#FBD9C7] bg-tn-red-soft px-5 py-5 sm:px-6 shadow-sm"
+          aria-label="Action required"
+        >
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-tn-red">
-                Needs your attention
-              </p>
-              <h2 className="mt-1 text-xl font-extrabold tracking-[-0.02em] text-tn-ink">
-                {needsReconfirming.length}{" "}
-                {needsReconfirming.length === 1
-                  ? "listing needs"
-                  : "listings need"}{" "}
-                confirmation
-              </h2>
-              <p className="mt-1 text-sm font-medium text-tn-ink2">
-                Confirm your stock so buyers see accurate availability.
-              </p>
+            <div className="flex items-start gap-3.5">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-tn-red text-white shadow-sm mt-0.5">
+                <Icon name="pulse" size={20} />
+              </span>
+              <div>
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.08em] text-tn-red">
+                  Needs your attention
+                </p>
+                <h2 className="mt-0.5 text-xl font-extrabold tracking-[-0.02em] text-tn-ink">
+                  {needsReconfirming.length}{" "}
+                  {needsReconfirming.length === 1
+                    ? "product needs"
+                    : "products need"}{" "}
+                  confirmation
+                </h2>
+                <p className="mt-1 text-sm font-medium text-tn-ink2">
+                  Confirm your stock today so buyers see accurate availability in
+                  search. Unconfirmed products become hidden.
+                </p>
+              </div>
             </div>
             <Pill
               kind="solid"
@@ -809,11 +832,12 @@ export default function Overview({
               icon="check"
               href={`${basePath}/listings?tab=needs-attention`}
             >
-              Review listings
+              Review products
             </Pill>
           </div>
         </section>
       )}
+      <Numbers shopName={shopName} products={products} />
       <div className="grid md:grid-cols-2 gap-4">
         <DailyStockCheckIn products={products} />
         <RecentActivities />

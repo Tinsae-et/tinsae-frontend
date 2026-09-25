@@ -42,7 +42,7 @@ export function GuidedFirstRun({
             kind="outline"
             size="md"
             icon="tg"
-            href="https://t.me/TinsaeStockBot"
+            href={`${basePath}/telegram`}
             className="text-tn-telegram hover:text-tn-telegram"
           >
             Connect Telegram

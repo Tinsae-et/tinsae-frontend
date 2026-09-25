@@ -12,7 +12,7 @@ export default function TelegramSetup({ shop }: { shop: AuthShop }) {
         Connect your Telegram bot
       </h1>
       <p className="mt-2 max-w-xl text-sm leading-relaxed text-tn-mute">
-        Confirm stock from Telegram each day so your listings stay fresh for
+        Confirm stock from Telegram each day so your products stay fresh for
         buyers.
       </p>
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -43,7 +43,7 @@ export default function TelegramSetup({ shop }: { shop: AuthShop }) {
         Open @TinsaeStockBot
       </a>
       <Link
-        href="/dashboard"
+        href="/shop/dashboard/overview"
         className="ml-3 inline-flex h-12 items-center justify-center rounded-full border-[1.5px] border-tn-hair px-5 text-[15px] font-bold text-tn-ink transition hover:border-tn-ink"
       >
         Back to overview
