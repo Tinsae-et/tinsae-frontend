@@ -13,6 +13,7 @@
 // is the only file that changes.
 import { headers } from "next/headers";
 
+import { SERVER_API_URL } from "@/lib/config";
 import {
   AuthApiError,
   type AuthDriver,
@@ -32,12 +33,7 @@ import {
 // Server-side only: every auth call goes out from a route handler or the proxy,
 // never the browser, so the internal host is the right default and CORS never
 // enters into it.
-const API_URL =
-  process.env.API_INTERNAL_URL ??
-  process.env.NEXT_PUBLIC_API_URL ??
-  "http://localhost:8000";
-
-const AUTH = `${API_URL}/api/v1/auth`;
+const AUTH = `${SERVER_API_URL}/api/v1/auth`;
 
 /**
  * Ceiling on a single call to Django.
@@ -63,8 +59,10 @@ async function getForwardedHeaders(): Promise<Record<string, string>> {
   return {};
 }
 
-async function post<T>(path: string, body: unknown): Promise<T> {
-  const forwarded = await getForwardedHeaders();
+async function post<T>(path: string, body: unknown, forwardedFor?: string): Promise<T> {
+  const forwarded = forwardedFor
+    ? { "X-Forwarded-For": forwardedFor }
+    : await getForwardedHeaders();
   const res = await fetch(`${AUTH}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...forwarded },
@@ -144,11 +142,11 @@ export const httpDriver: AuthDriver = {
     return post<Session>("/telegram/", { ...payload, mode, role });
   },
 
-  refresh(refreshToken: string): Promise<RefreshResult> {
+  refresh(refreshToken: string, forwardedFor?: string): Promise<RefreshResult> {
     // The response carries a *new* refresh token as well as the access token:
     // ROTATE_REFRESH_TOKENS is on, and BLACKLIST_AFTER_ROTATION blacklists the
     // one we just spent. Whoever calls this has to store both.
-    return post<RefreshResult>("/token/refresh/", { refresh: refreshToken });
+    return post<RefreshResult>("/token/refresh/", { refresh: refreshToken }, forwardedFor);
   },
 
   async logout(accessToken: string, refreshToken: string): Promise<void> {
@@ -205,7 +203,7 @@ export const httpDriver: AuthDriver = {
 
   async createShop(accessToken: string, input: { name: string; city: string; phone: string; description?: string; telegram_chat_id?: string }) {
     const forwarded = await getForwardedHeaders();
-    const res = await fetch(`${API_URL}/api/v1/shops/`, {
+    const res = await fetch(`${SERVER_API_URL}/api/v1/shops/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

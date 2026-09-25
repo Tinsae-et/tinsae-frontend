@@ -98,6 +98,8 @@ export const TEAM = [
   },
 ];
 
+// PLACEHOLDER: marketing figures. Replace with getPublicStats() values (or
+// confirmed numbers) before launch.
 export const ABOUT_STATS = [
   ["412", "verified shops in Bole"],
   ["8,920", "listings live today"],

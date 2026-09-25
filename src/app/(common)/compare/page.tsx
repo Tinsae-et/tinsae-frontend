@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getProduct } from "@/lib/api";
+import { getProduct } from "@/lib/api/public";
 import { ComparePageClient } from "@/components/compare/compare-page-client";
 import type { CompareItem } from "@/lib/compare-helpers";
 

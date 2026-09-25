@@ -3,6 +3,8 @@ import { Icon } from "@/components/tinsae/icon";
 import { getInitials } from "@/lib/shops-data";
 import type { Shop } from "@/lib/types";
 
+// PLACEHOLDER: the API has no opening hours yet; these are the same for every
+// shop. Hide until Shop serves real hours.
 const HOURS = [
   { day: "Mon – Fri", time: "9:00 – 19:30" },
   { day: "Saturday", time: "9:00 – 18:00" },

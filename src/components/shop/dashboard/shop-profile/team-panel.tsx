@@ -22,6 +22,7 @@ export default function TeamPanel({ shop }: Props) {
   const shopName = shop?.name || "Almeda Electronics";
   const ownerName = shopName.split(" ")[0] + " Owner";
 
+  // PLACEHOLDER: team members are not stored by the API yet.
   const [members] = useState<TeamMember[]>([
     {
       id: "1",

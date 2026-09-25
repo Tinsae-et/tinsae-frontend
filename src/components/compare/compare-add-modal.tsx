@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useModal } from "@/hooks/use-modal";
 import Image from "next/image";
 import { Icon } from "@/components/tinsae/icon";
 import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
 import { formatETB, normalizeImageUrl } from "@/lib/format";
-import { getProducts } from "@/lib/api";
+import { getProducts } from "@/lib/api/public";
 import type { Product } from "@/lib/types";
 import { useCompare } from "@/hooks/use-compare";
 import { useDebouncedValue } from "@/hooks/use-debounce";
@@ -63,15 +64,8 @@ export function CompareAddModal({
     };
   }, [isOpen, debouncedSearch, category]);
 
-  // Close on Escape
-  useEffect(() => {
-    if (!isOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [isOpen, onClose]);
+  // Escape, focus trap and focus restore.
+  const dialogRef = useModal<HTMLDivElement>(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -86,6 +80,7 @@ export function CompareAddModal({
 
       {/* Modal Card */}
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"

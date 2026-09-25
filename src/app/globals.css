@@ -55,7 +55,7 @@
 @theme {
   --color-tn-ink: #0b0b0b;
   --color-tn-ink2: #3a3a38;
-  --color-tn-mute: #76746e;
+  --color-tn-mute: #6b6963; /* 5.5:1 on white, 5.1:1 on tn-paper (WCAG AA) */
   --color-tn-paper: #f7f6f2;
   --color-tn-hair: #eceae3;
   --color-tn-hair2: #f2f0ea;

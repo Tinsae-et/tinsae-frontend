@@ -11,6 +11,8 @@ type CategoryItem = {
   initialSelected: boolean;
 };
 
+// PLACEHOLDER: shop categories are not saved to the API yet; selections here
+// are local only.
 const CATEGORIES: CategoryItem[] = [
   { id: "phones", label: "Phones", icon: "phone", initialSelected: true },
   { id: "laptops", label: "Laptops", icon: "laptop", initialSelected: true },

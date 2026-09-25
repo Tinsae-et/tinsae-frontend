@@ -2,10 +2,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { ShopOnboarding } from "@/components/shop/shop-onboarding";
-import { authDriver } from "@/lib/auth/driver";
 import { hasShop } from "@/lib/auth/roles";
-import { readSession } from "@/lib/auth/session";
-import type { AuthUser } from "@/lib/auth/types";
+import { requireSession } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "List your shop — Tinsae" };
 
@@ -23,17 +21,7 @@ export const metadata: Metadata = { title: "List your shop — Tinsae" };
  * perform_create sets owner=request.user.
  */
 export default async function ShopOnboardingPage() {
-  const { access } = await readSession();
-  if (!access) redirect("/signin?next=/shop/onboarding");
-
-  // Only the fetch goes in the try: redirect() works by throwing, so catching
-  // around it would swallow the redirect and send everyone to /signin.
-  let user: AuthUser;
-  try {
-    user = await authDriver.me(access);
-  } catch {
-    redirect("/signin?next=/shop/onboarding");
-  }
+  const { user } = await requireSession("/shop/onboarding");
 
   if (hasShop(user)) redirect("/shop/dashboard/overview");
 

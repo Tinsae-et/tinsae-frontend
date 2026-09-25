@@ -10,6 +10,7 @@ type Props = {
   slug: string;
 };
 
+// PLACEHOLDER: opening hours are not saved to the API yet.
 const DEFAULT_DAYS = [
   { day: "Monday", open: true, from: "8:30 AM", to: "7:30 PM" },
   { day: "Tuesday", open: true, from: "8:30 AM", to: "7:30 PM" },

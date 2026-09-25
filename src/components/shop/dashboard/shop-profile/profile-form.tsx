@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Icon } from "@/components/tinsae/icon";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { Pill } from "@/components/tinsae/pill";
-import { updateShopProfile } from "@/lib/api";
+import { updateShopProfile } from "@/lib/api/client";
 import type { Shop } from "@/lib/types";
 
 function getInitials(name: string): string {
@@ -21,17 +21,17 @@ function getInitials(name: string): string {
 type Props = {
   shop: Shop | null;
   slug: string;
-  access: string;
   onShopUpdated?: (shop: Shop) => void;
 };
 
 export default function ProfileForm({
   shop,
   slug,
-  access,
   onShopUpdated,
 }: Props) {
   const [name, setName] = useState<string>(shop?.name ?? "");
+  // PLACEHOLDER: the Telegram handle is derived from the shop name and the logo
+  // is preview-only; neither is saved. Wire both to the API or hide them.
   const [telegramHandle, setTelegramHandle] = useState<string>(
     shop?.name ? `@${shop.name.replace(/\s+/g, "")}` : "@MyElectronics"
   );
@@ -99,7 +99,6 @@ export default function ProfileForm({
           name: trimmedName,
           description: description.trim(),
         },
-        access
       );
 
       if (onShopUpdated) {

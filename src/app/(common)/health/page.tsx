@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getHealth } from "@/lib/api";
+import { getHealth } from "@/lib/api/public";
 
 type Health = { status: string; database: string };
 

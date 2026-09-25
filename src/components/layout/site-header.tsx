@@ -9,6 +9,7 @@ import { Icon, type IconName } from "@/components/tinsae/icon";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { NAV_CATEGORIES, LIVE_CATEGORIES, UPCOMING_CATEGORIES } from "@/lib/nav-categories";
 import { useCompare } from "@/hooks/use-compare";
+import { useModal } from "@/hooks/use-modal";
 import { hasShop } from "@/lib/auth/roles";
 import type { AuthUser } from "@/lib/auth/types";
 import { cn } from "@/lib/utils";
@@ -749,13 +750,8 @@ export function SiteHeader({
     };
   }, [accountMenuOpen]);
 
-  // Don't let the page scroll behind an open drawer.
-  useEffect(() => {
-    document.body.style.overflow = drawerOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [drawerOpen]);
+  // Scroll lock, Escape, focus trap and focus restore for the mobile drawer.
+  const drawerRef = useModal<HTMLDivElement>(drawerOpen, () => setDrawerOpen(false));
 
   return (
     <header
@@ -1031,7 +1027,12 @@ export function SiteHeader({
               onClick={() => setDrawerOpen(false)}
               aria-hidden
             />
-            <div className="animate-[tnRise_0.5s_ease_both] absolute inset-y-0 right-0 z-[2] flex w-[min(360px,86vw)] flex-col bg-white shadow-[-20px_0_60px_rgba(11,11,11,0.2)]">
+            <div
+              ref={drawerRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Menu"
+              className="animate-[tnRise_0.5s_ease_both] absolute inset-y-0 right-0 z-[2] flex w-[min(360px,86vw)] flex-col bg-white shadow-[-20px_0_60px_rgba(11,11,11,0.2)]">
               <div className="border-tn-hair flex h-16 items-center justify-between border-b px-5">
                 {/* <Logo /> */}
                 <button
