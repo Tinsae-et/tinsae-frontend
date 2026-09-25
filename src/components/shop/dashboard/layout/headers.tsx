@@ -218,3 +218,40 @@ export function VerificationHeader({
     </div>
   );
 }
+
+export function TelegramHeader({
+  setShowSidebar,
+}: {
+  setShowSidebar?: (val: boolean) => void;
+}) {
+  return (
+    <div className="w-full flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        {setShowSidebar && (
+          <button
+            type="button"
+            onClick={() => setShowSidebar(true)}
+            className="lg:hidden p-1 text-tn-ink hover:text-tn-red cursor-pointer"
+            aria-label="Open sidebar"
+          >
+            <Icon name="menu" size={22} />
+          </button>
+        )}
+        <div className="flex flex-col">
+          <span className="text-[11px] font-bold uppercase tracking-[0.05em] text-tn-mute leading-none">
+            TELEGRAM
+          </span>
+          <h1 className="text-[19px] font-extrabold tracking-[-0.025em] text-tn-ink leading-tight mt-0.5">
+            Telegram setup
+          </h1>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2.5">
+        <Pill kind="outline" size="sm" icon="check" href="/shop/dashboard/overview">
+          Back to overview
+        </Pill>
+      </div>
+    </div>
+  );
+}

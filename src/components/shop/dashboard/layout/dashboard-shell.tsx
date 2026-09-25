@@ -58,3 +58,5 @@ export function DashboardShell({
     </div>
   );
 }
+
+export default DashboardShell;

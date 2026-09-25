@@ -6,8 +6,10 @@ import {
   NewListingHeader,
   OverviewHeader,
   ProfileHeader,
+  TelegramHeader,
   VerificationHeader,
 } from "./headers";
+
 
 export default function DashboardHeader({
   setShowSidebar,
@@ -24,18 +26,21 @@ export default function DashboardHeader({
         <OverviewHeader setShowSidebar={setShowSidebar} />
       )}
       {pathname === "/shop/dashboard/listings" && (
-        <ListingHeader setShowSidebar={setShowSidebar}/>
+        <ListingHeader setShowSidebar={setShowSidebar} />
       )}
       {(pathname === "/shop/dashboard/listings/new" ||
         pathname === "/shop/dashboard/listings/edit") && (
-        <NewListingHeader setShowSidebar={setShowSidebar}/>
+        <NewListingHeader setShowSidebar={setShowSidebar} />
       )}
       {pathname === "/shop/dashboard/shop-profile" && (
         <ProfileHeader setShowSidebar={setShowSidebar} shopSlug={shopSlug} />
       )}
-      {
-        pathname ==="/shop/dashboard/get-verified" && <VerificationHeader setShowSidebar={setShowSidebar}/>
-      }
+      {pathname === "/shop/dashboard/telegram" && (
+        <TelegramHeader setShowSidebar={setShowSidebar} />
+      )}
+      {pathname === "/shop/dashboard/get-verified" && (
+        <VerificationHeader setShowSidebar={setShowSidebar} />
+      )}
     </header>
   );
 }
