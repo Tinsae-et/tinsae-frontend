@@ -16,6 +16,7 @@ const POPULAR = NAV_CATEGORIES.filter((c) =>
   ["phones", "laptops", "audio", "cameras"].includes(c.slug),
 );
 
+// PLACEHOLDER: decorative shop avatars. Replace with real verified shops.
 const SHOP_AVATARS = [
   { initial: "A", color: "#0F2A4D" },
   { initial: "M", color: "#3B5742" },

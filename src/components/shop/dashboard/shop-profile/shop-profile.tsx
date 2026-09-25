@@ -10,7 +10,7 @@ import TeamPanel from "./team-panel";
 import { Icon, IconName } from "@/components/tinsae/icon";
 import { cn } from "@/lib/utils";
 import type { Shop } from "@/lib/types";
-import { getShop } from "@/lib/api";
+import { getShop } from "@/lib/api/public";
 
 type SectionId = "profile" | "location" | "photos" | "categories" | "team";
 
@@ -31,11 +31,9 @@ const NAV_ITEMS: NavItem[] = [
 export default function ShopProfile({
   initialShop,
   slug,
-  access,
 }: {
   initialShop?: Shop | null;
   slug: string;
-  access: string;
 }) {
   const [shop, setShop] = useState<Shop | null>(initialShop ?? null);
   const [activeSection, setActiveSection] = useState<SectionId>("profile");
@@ -97,7 +95,6 @@ export default function ShopProfile({
               }
               shop={shop}
               slug={slug}
-              access={access}
               onShopUpdated={setShop}
             />
             <ContactForm
@@ -106,7 +103,6 @@ export default function ShopProfile({
               }
               shop={shop}
               slug={slug}
-              access={access}
               onShopUpdated={setShop}
             />
           </div>

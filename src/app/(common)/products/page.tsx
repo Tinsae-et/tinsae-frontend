@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getCategories, getProducts } from "@/lib/api";
+import { getCategories, getProducts } from "@/lib/api/public";
 import { ProductsBrowser } from "@/components/products/products-browser";
 import { ProductCardSkeleton } from "@/components/products/product-card";
 import { PRODUCTS_PAGE_SIZE } from "@/components/products/product-grid";
@@ -10,8 +10,6 @@ export const metadata = {
   title: "Browse listings — Tinsae",
   description: "Electronics from verified shops across Bole, Addis Ababa.",
 };
-
-export const dynamic = "force-dynamic";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 

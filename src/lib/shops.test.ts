@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { getInitials, getShopColor, mapShopToDirectoryShop } from "./shops-data";
-import { getPublicShopProducts, getShops } from "./api";
+import { getPublicShopProducts, getShops } from "./api/public";
 
 describe("Shop utilities & API", () => {
   it("computes initials correctly", () => {

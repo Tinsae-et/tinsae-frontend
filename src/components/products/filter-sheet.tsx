@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Product } from "@/lib/types";
 import { DEFAULT_FILTERS, type SearchFilters } from "@/lib/filters";
 import { FilterControls, type CategoryOption } from "./filter-controls";
+import { useModal } from "@/hooks/use-modal";
 
 // Mobile / tablet filter sheet (handoff: a drawer/sheet; we use a bottom sheet).
 // Controls edit a local draft; "Show N results" applies the draft to the URL
@@ -29,6 +30,7 @@ export function FilterSheet({
 }) {
   const [draft, setDraft] = useState<SearchFilters>(filters);
   const [prevOpen, setPrevOpen] = useState(open);
+  const dialogRef = useModal<HTMLDivElement>(open, onClose);
 
   // Refresh the draft from the URL each time the sheet opens.
   if (prevOpen !== open) {
@@ -42,6 +44,7 @@ export function FilterSheet({
     <div className="fixed inset-0 z-50 lg:hidden">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onClose} aria-hidden />
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="Filters"

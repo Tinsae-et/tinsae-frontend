@@ -3,20 +3,18 @@
 import React, { useState } from "react";
 import { Pill } from "@/components/tinsae/pill";
 import { Icon } from "@/components/tinsae/icon";
-import { updateShopProfile } from "@/lib/api";
+import { updateShopProfile } from "@/lib/api/client";
 import type { Shop } from "@/lib/types";
 
 type Props = {
   shop: Shop | null;
   slug: string;
-  access: string;
   onShopUpdated?: (shop: Shop) => void;
 };
 
 export default function ContactForm({
   shop,
   slug,
-  access,
   onShopUpdated,
 }: Props) {
   const [phone, setPhone] = useState<string>(shop?.phone ?? "");
@@ -47,7 +45,6 @@ export default function ContactForm({
       const updated = await updateShopProfile(
         slug,
         { phone: cleanPhone },
-        access
       );
 
       if (onShopUpdated) {

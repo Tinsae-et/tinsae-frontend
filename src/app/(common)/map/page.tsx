@@ -6,7 +6,10 @@ import { Icon } from "@/components/tinsae/icon";
 import { Pill } from "@/components/tinsae/pill";
 import { SegToggle } from "@/components/shops/seg-toggle";
 import ShopItem, { ShopMapPopUp } from "@/components/home/shopmap";
-import { SHOPS_RICH, getInitials, type DirectoryShop } from "@/lib/shops-data";
+import { getInitials, type DirectoryShop } from "@/lib/shops-data";
+// PLACEHOLDER: the whole map runs on demo shops and hand-placed pins until the
+// API serves shop coordinates. Swap SHOPS_RICH for getShops() + real lat/lng.
+import { SHOPS_RICH } from "@/lib/demo/shops";
 
 const CATEGORIES = ["All", "Phones", "Laptops", "Audio", "Cameras"];
 const HOODS = ["All areas", "Atlas", "Friendship", "Olympia", "Japan", "Medhanialem"];

@@ -1,4 +1,4 @@
-import { getProducts, getPublicStats, getShops } from "@/lib/api";
+import { getProducts, getPublicStats, getShops } from "@/lib/api/public";
 import type { Product } from "@/lib/types";
 import { mapShopToDirectoryShop } from "@/lib/shops-data";
 import { Hero } from "@/components/home/hero";

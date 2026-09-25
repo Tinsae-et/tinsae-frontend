@@ -9,6 +9,8 @@ import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { cn } from "@/lib/utils";
 
 import { LogoutButton } from "@/components/auth/logout-button";
+import type { AuthShop } from "@/lib/auth/types";
+import { getInitials } from "@/lib/shops-data";
 
 type NavLinkItem = {
   to: string;
@@ -20,11 +22,8 @@ type NavLinkItem = {
 const NAVLINKS: NavLinkItem[] = [
   { to: "/shop/dashboard/overview", text: "Overview", icon: "home" },
   { to: "/shop/dashboard/listings", text: "Listings", icon: "box" },
-  { to: "/shop/dashboard/inquiries", text: "Inquiries", icon: "msg", count: 7 },
-  { to: "/shop/dashboard/analytics", text: "Analytics", icon: "pulse" },
   { to: "/shop/dashboard/shop-profile", text: "Shop profile", icon: "building" },
   { to: "/shop/dashboard/get-verified", text: "Get verified", icon: "shield" },
-  { to: "/shop/dashboard/telegram-bot", text: "Telegram bot", icon: "tg" },
 ];
 
 function Links({ links }: { links: NavLinkItem[] }) {
@@ -76,7 +75,7 @@ function Links({ links }: { links: NavLinkItem[] }) {
   );
 }
 
-function SideBar({ showSidebar }: { showSidebar: boolean }) {
+function SideBar({ showSidebar, shop }: { showSidebar: boolean; shop: AuthShop }) {
   return (
     <aside
       className={cn(
@@ -109,23 +108,25 @@ function SideBar({ showSidebar }: { showSidebar: boolean }) {
             </span>
           </div>
 
-          {/* Shop Switcher */}
-          <div className="flex items-center gap-2.5 bg-tn-paper border border-tn-hair2 rounded-[14px] p-[11px_12px] mt-4 cursor-pointer">
+          {/* The signed-in merchant's shop. This used to be a hard-coded demo
+              shop, so every merchant saw "Almeda Electronics" here. */}
+          <div className="flex items-center gap-2.5 bg-tn-paper border border-tn-hair2 rounded-[14px] p-[11px_12px] mt-4">
             <div className="size-[34px] rounded-[9px] bg-tn-ink text-white font-bold text-sm flex items-center justify-center shrink-0">
-              AE
+              {getInitials(shop.name)}
             </div>
             <div className="flex-1 min-w-0 flex flex-col justify-center">
               <div className="flex items-center gap-1.5">
                 <span className="font-extrabold text-[13px] text-tn-ink truncate">
-                  Almeda Electronics
+                  {shop.name}
                 </span>
-                <VerifiedBadge size={11} />
+                {shop.is_verified && <VerifiedBadge size={11} />}
               </div>
-              <span className="font-tn-mono text-[10.5px] text-tn-mute mt-0.5">
-                Bole · Atlas
-              </span>
+              {shop.city && (
+                <span className="font-tn-mono text-[10.5px] text-tn-mute mt-0.5 truncate">
+                  {shop.city}
+                </span>
+              )}
             </div>
-            <Icon name="chevd" size={14} className="text-tn-mute shrink-0" />
           </div>
         </div>
 
@@ -138,6 +139,8 @@ function SideBar({ showSidebar }: { showSidebar: boolean }) {
         </div>
       </div>
 
+      {/* PLACEHOLDER: bot status is not reported by the API yet; this card is
+          the same for every shop. */}
       {/* Bot status card */}
       <div className="p-3.5 mt-auto">
         <div className="bg-tn-green-soft rounded-[14px] px-[14px] py-[13px] flex flex-col gap-1">

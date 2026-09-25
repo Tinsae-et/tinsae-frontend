@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getProducts } from "@/lib/api";
+import { getProducts } from "@/lib/api/public";
 import { NAV_CATEGORIES } from "@/lib/nav-categories";
 
 export async function GET(request: NextRequest) {
