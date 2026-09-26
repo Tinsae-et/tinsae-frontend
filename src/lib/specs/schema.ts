@@ -34,7 +34,31 @@ export type SpecField = {
    * Enum: chips for 5 or fewer options, otherwise a select, unless set.
    * Number: "size" adds a GB / TB switch to a value stored in GB.
    */
-  control?: "chips" | "select" | "size";
+  control?: "chips" | "select" | "size" | "weight";
+  /**
+   * Where the field sits: key specs, the collapsible spec sheet ("details")
+   * or facts about this unit ("item"). Defaults to "key".
+   */
+  section?: SpecSection;
+  /** Not required, but counted by the completeness meter and shown first. */
+  recommended?: boolean;
+};
+
+export type SpecSection = "key" | "details" | "item";
+
+/**
+ * Number inputs with a unit switch, stored in the first unit: storage in GB
+ * (1 TB = 1024), weight in grams (1 kg = 1000).
+ */
+export const UNIT_SWITCHES: Record<"size" | "weight", { label: string; factor: number }[]> = {
+  size: [
+    { label: "GB", factor: 1 },
+    { label: "TB", factor: 1024 },
+  ],
+  weight: [
+    { label: "g", factor: 1 },
+    { label: "kg", factor: 1000 },
+  ],
 };
 
 export type CategorySchema = {
@@ -60,7 +84,9 @@ export type ApiCategorySchema = {
     required: boolean;
     required_if: SpecCondition | null;
     show_if: SpecCondition | null;
-    control: "chips" | "select" | "size" | null;
+    control: "chips" | "select" | "size" | "weight" | null;
+    section: SpecSection;
+    recommended: boolean;
     options: SpecOption[] | null;
   }[];
 };
@@ -83,6 +109,8 @@ export function fromApiSchema(raw: ApiCategorySchema): CategorySchema {
       requiredIf: f.required_if ?? undefined,
       showIf: f.show_if ?? undefined,
       control: f.control ?? undefined,
+      section: f.section,
+      recommended: f.recommended,
     })),
   };
 }
@@ -137,10 +165,13 @@ export function isRequired(field: SpecField, values: SpecValues): boolean {
   return field.requiredIf ? matches(field.requiredIf, values) : false;
 }
 
-export function controlFor(field: SpecField): "chips" | "select" | "size" | "input" {
-  if (field.type === "number" && field.control === "size") return "size";
+export function controlFor(field: SpecField): "chips" | "select" | "unit" | "input" {
+  if (field.type === "number" && (field.control === "size" || field.control === "weight")) {
+    return "unit";
+  }
   if (field.type !== "enum") return "input";
-  return field.control ?? ((field.options?.length ?? 0) <= 5 ? "chips" : "select");
+  if (field.control === "chips" || field.control === "select") return field.control;
+  return (field.options?.length ?? 0) <= 5 ? "chips" : "select";
 }
 
 /** Field errors keyed by spec key; empty when the specs are complete and valid. */

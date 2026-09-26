@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCategorySchema, getProduct } from "@/lib/api/public";
-import { formatSpecs, type SpecRow } from "@/lib/specs/display";
+import { formatSpecSections, type SpecRow, type SpecSections } from "@/lib/specs/display";
 import { parseSizeGb } from "@/lib/specs/schema";
 import { SITE_URL } from "@/lib/config";
 import { JsonLd } from "@/components/json-ld";
@@ -214,6 +214,46 @@ const HERO_BADGE: Record<FreshnessTone, string> = {
   unconfirmed: "bg-tn-paper text-tn-mute",
 };
 
+/** A labelled grid of spec tiles; renders nothing without rows. */
+function SpecBlock({ title, rows }: { title: string; rows: SpecRow[] }) {
+  if (rows.length === 0) return null;
+  return (
+    <div className="mt-[22px]">
+      <h2 className="mb-3 text-[14px] font-extrabold tracking-[-0.01em] text-tn-ink">{title}</h2>
+      <div className="grid grid-cols-2 gap-[12px_16px] sm:grid-cols-3">
+        {rows.map((spec) => (
+          <div key={spec.key} className="rounded-xl bg-tn-paper px-3.5 py-3">
+            <div className="text-tn-mute text-[10.5px] font-bold tracking-[0.05em] uppercase">
+              {spec.label}
+            </div>
+            <div className="text-tn-ink mt-1 text-sm font-bold">{spec.value}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** The rest of the spec sheet, as a plain two-column list under the hero. */
+function MoreSpecs({ rows }: { rows: SpecRow[] }) {
+  if (rows.length === 0) return null;
+  return (
+    <section className="pt-10">
+      <h2 className="mb-3 text-[18px] font-extrabold tracking-[-0.02em] text-tn-ink">
+        More specifications
+      </h2>
+      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 border-t border-tn-hair2">
+        {rows.map((spec) => (
+          <div key={spec.key} className="flex justify-between gap-4 border-b border-tn-hair2 py-2.5 text-sm">
+            <dt className="text-tn-mute font-semibold">{spec.label}</dt>
+            <dd className="text-tn-ink font-bold text-right">{spec.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
+
 function ShopComparison({
   product,
   now,
@@ -221,7 +261,7 @@ function ShopComparison({
 }: {
   product: Product;
   now: number;
-  specs: SpecRow[];
+  specs: SpecSections;
 }) {
   const f = freshness(
     product.last_confirmed_at,
@@ -314,26 +354,9 @@ function ShopComparison({
             <FreshnessBar hours={hours} responded={responded} tone={tone} />
           </div>
 
-          {/* key specifications */}
-          {specs.length > 0 && (
-            <div className="mt-[22px]">
-              <h2 className="mb-3 text-[14px] font-extrabold tracking-[-0.01em] text-tn-ink">
-                Key specifications
-              </h2>
-              <div className="grid grid-cols-2 gap-[12px_16px] sm:grid-cols-3">
-                {specs.map((spec) => (
-                  <div key={spec.key} className="rounded-xl bg-tn-paper px-3.5 py-3">
-                    <div className="text-tn-mute text-[10.5px] font-bold tracking-[0.05em] uppercase">
-                      {spec.label}
-                    </div>
-                    <div className="text-tn-ink mt-1 text-sm font-bold">
-                      {spec.value}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* key specifications, then facts about this unit */}
+          <SpecBlock title="Key specifications" rows={specs.key} />
+          <SpecBlock title="This item" rows={specs.item} />
         </div>
       </div>
 
@@ -465,7 +488,7 @@ export default async function ProductDetailPage({ params }: Props) {
   const schema = product.category?.slug
     ? await getCategorySchema(product.category.slug).catch(() => null)
     : null;
-  const specRows = formatSpecs(schema, product.specs);
+  const specSections = formatSpecSections(schema, product.specs);
 
   // Server component: freshness is relative to request time, rendered once.
   // eslint-disable-next-line react-hooks/purity
@@ -491,7 +514,8 @@ export default async function ProductDetailPage({ params }: Props) {
       </nav>
 
       <div className="pt-5">
-        <ShopComparison product={product} now={now} specs={specRows} />
+        <ShopComparison product={product} now={now} specs={specSections} />
+        <MoreSpecs rows={specSections.more} />
       </div>
 
       {/* Similar & infinite scrolling suggestion feed. Streamed: the tiered

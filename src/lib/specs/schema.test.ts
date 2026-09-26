@@ -179,6 +179,8 @@ describe("fromApiSchema", () => {
           required_if: { condition: ["used"] },
           show_if: { condition: ["used"] },
           control: null,
+          section: "item",
+          recommended: false,
           options: null,
         },
       ],
@@ -198,6 +200,8 @@ describe("fromApiSchema", () => {
       requiredIf: { condition: ["used"] },
       showIf: { condition: ["used"] },
       control: undefined,
+      section: "item",
+      recommended: false,
     });
   });
 });
