@@ -1,4 +1,7 @@
+"use client";
+
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { deleteProduct } from "@/lib/api/client";
 import { ShopProduct } from "@/lib/types";
 import { AlertTriangle, Loader2, X } from "lucide-react";
@@ -38,9 +41,16 @@ export default function DeleteListing({
     }
   };
 
-  return (
+  // Portalled to <body>: callers render this inside a table row, where a
+  // <div> is invalid HTML (and a hydration error). React events still bubble
+  // to the row, whose click opens the listing drawer, so the backdrop stops
+  // them like the dialog does.
+  return createPortal(
     <div
-      onClick={() => !isDeleting && setDeleteItem(false)}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (!isDeleting) setDeleteItem(false);
+      }}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-150"
     >
       <div
@@ -106,6 +116,7 @@ export default function DeleteListing({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
