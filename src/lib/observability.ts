@@ -22,6 +22,13 @@ export type TelemetryEvent =
       path?: string;
     };
 
+/**
+ * The Web Vitals we collect. Next.js also reports FID (retired in favour of
+ * INP) and its own Next.js-* timings; sending those only earned a 400 from
+ * /api/telemetry, so the reporter and the route both read this one list.
+ */
+export const REPORTED_VITALS: ReadonlySet<string> = new Set(["LCP", "INP", "CLS", "FCP", "TTFB"]);
+
 /** Emits one structured log line (server) or beacons it to the server (browser). */
 export function emit(event: TelemetryEvent): void {
   if (typeof window === "undefined") {

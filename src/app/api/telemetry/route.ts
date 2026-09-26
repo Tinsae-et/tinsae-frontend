@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { rejectCrossOrigin } from "@/lib/auth/route-helpers";
-import { emit, type TelemetryEvent } from "@/lib/observability";
+import { REPORTED_VITALS, emit, type TelemetryEvent } from "@/lib/observability";
 
 /** Larger bodies are not telemetry. */
 const MAX_BYTES = 4_096;
-
-const VITALS = new Set(["LCP", "INP", "CLS", "FCP", "TTFB"]);
 
 /**
  * Receives browser errors and Web Vitals (lib/observability) and writes them
@@ -44,7 +42,7 @@ export async function POST(request: Request) {
   } else if (
     raw.type === "vital" &&
     typeof raw.name === "string" &&
-    VITALS.has(raw.name) &&
+    REPORTED_VITALS.has(raw.name) &&
     typeof raw.value === "number" &&
     Number.isFinite(raw.value)
   ) {
