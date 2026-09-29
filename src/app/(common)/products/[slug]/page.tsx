@@ -13,7 +13,7 @@ import type { Product } from "@/lib/types";
 import { kindForSlug } from "@/components/tinsae/prod-placeholder";
 import { ProductGallery } from "@/components/products/product-gallery";
 import { SimilarProductsInfinite } from "@/components/products/similar-products-infinite";
-import { getInitialSuggestions } from "@/lib/suggestions";
+import { extractBrand, getInitialSuggestions } from "@/lib/suggestions";
 import { ProductDetailActions } from "@/components/products/product-detail-actions";
 import { ProductCardSkeleton } from "@/components/products/product-card";
 import { Pill } from "@/components/tinsae/pill";
@@ -234,26 +234,6 @@ function SpecBlock({ title, rows }: { title: string; rows: SpecRow[] }) {
   );
 }
 
-/** The rest of the spec sheet, as a plain two-column list under the hero. */
-function MoreSpecs({ rows }: { rows: SpecRow[] }) {
-  if (rows.length === 0) return null;
-  return (
-    <section className="pt-10">
-      <h2 className="mb-3 text-[18px] font-extrabold tracking-[-0.02em] text-tn-ink">
-        More specifications
-      </h2>
-      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 border-t border-tn-hair2">
-        {rows.map((spec) => (
-          <div key={spec.key} className="flex justify-between gap-4 border-b border-tn-hair2 py-2.5 text-sm">
-            <dt className="text-tn-mute font-semibold">{spec.label}</dt>
-            <dd className="text-tn-ink font-bold text-right">{spec.value}</dd>
-          </div>
-        ))}
-      </dl>
-    </section>
-  );
-}
-
 function ShopComparison({
   product,
   now,
@@ -354,9 +334,12 @@ function ShopComparison({
             <FreshnessBar hours={hours} responded={responded} tone={tone} />
           </div>
 
-          {/* key specifications, then facts about this unit */}
-          <SpecBlock title="Key specifications" rows={specs.key} />
-          <SpecBlock title="This item" rows={specs.item} />
+          {/* Every spec in one grid: key attributes, then facts about this
+              unit, then the rest of the sheet. One list, one style. */}
+          <SpecBlock
+            title="Key specifications"
+            rows={[...specs.key, ...specs.item, ...specs.more]}
+          />
         </div>
       </div>
 
@@ -376,21 +359,23 @@ function ShopComparison({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-tn-red bg-tn-red-soft px-[18px] py-4">
+        {/* Marketplace card language; the brand-red marker moves to a ring
+            around the shop's initials tile. */}
+        <div className="border-tn-hair rounded-[18px] border bg-white px-[18px] py-4 transition-[transform,box-shadow,border-color] duration-150 hover:-translate-y-[3px] hover:border-[#E0DDD4] hover:shadow-[0_18px_44px_rgba(11,11,11,0.09)]">
           <div className="grid grid-cols-[2.4fr_1.2fr_1.3fr_1.3fr] items-center gap-4">
             <div className="flex min-w-0 items-center gap-3">
               {product.shop_slug ? (
                 <Link
                   href={`/shops/${product.shop_slug}`}
                   aria-label={`View ${product.shop_name}`}
-                  className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[11px] text-sm font-bold text-white transition-transform hover:scale-105"
+                  className="ring-tn-red/40 ring-offset-white flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[11px] text-sm font-bold text-white ring-2 ring-offset-2 transition-transform hover:scale-105"
                   style={{ background: shopColor(product.shop_name) }}
                 >
                   {initials(product.shop_name)}
                 </Link>
               ) : (
                 <span
-                  className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[11px] text-sm font-bold text-white"
+                  className="ring-tn-red/40 ring-offset-white flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[11px] text-sm font-bold text-white ring-2 ring-offset-2"
                   style={{ background: shopColor(product.shop_name) }}
                 >
                   {initials(product.shop_name)}
@@ -494,6 +479,25 @@ export default async function ProductDetailPage({ params }: Props) {
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
 
+  // Breadcrumb: brand is its own level, so the last crumb drops the brand the
+  // serializer prepends to the title ("Apple iPhone 16 Pro Max" -> "iPhone 16
+  // Pro Max"). Only split when the brand actually prefixes the title, so a
+  // stray spec value can't duplicate it.
+  const rawBrand = extractBrand(product);
+  const brand =
+    rawBrand && product.title.toLowerCase().startsWith(`${rawBrand.toLowerCase()} `)
+      ? rawBrand
+      : null;
+  const productName = brand ? product.title.slice(brand.length).trim() : product.title;
+
+  // The brand crumb browses the same listing filtered to this brand, scoped to
+  // the product's category when it has one.
+  const brandHref = (() => {
+    const params = new URLSearchParams({ brand: brand ?? "" });
+    if (product.category?.slug) params.set("category", product.category.slug);
+    return `/products?${params.toString()}`;
+  })();
+
   return (
     <main className="text-tn-ink mx-auto max-w-[1480px] px-6 pt-6 sm:px-8 lg:px-12 xl:px-16">
       <JsonLd data={productJsonLd(product)} />
@@ -506,16 +510,30 @@ export default async function ProductDetailPage({ params }: Props) {
           Home
         </Link>
         <Icon name="chevron" size={11} className="text-[#B7B5AD]" />
-        <Link href="/products" className="text-tn-mute hover:text-tn-ink">
+        <Link
+          href={
+            product.category?.slug
+              ? `/products?category=${product.category.slug}`
+              : "/products"
+          }
+          className="text-tn-mute hover:text-tn-ink"
+        >
           {product.category?.name ?? "Browse"}
         </Link>
+        {brand && (
+          <>
+            <Icon name="chevron" size={11} className="text-[#B7B5AD]" />
+            <Link href={brandHref} className="text-tn-mute hover:text-tn-ink">
+              {brand}
+            </Link>
+          </>
+        )}
         <Icon name="chevron" size={11} className="text-[#B7B5AD]" />
-        <span className="text-tn-ink">{product.title}</span>
+        <span className="text-tn-ink">{productName}</span>
       </nav>
 
       <div className="pt-5">
         <ShopComparison product={product} now={now} specs={specSections} />
-        <MoreSpecs rows={specSections.more} />
       </div>
 
       {/* Similar & infinite scrolling suggestion feed. Streamed: the tiered
