@@ -7,8 +7,9 @@
 // then bouncing — a flash of protected chrome and a redirect the user watches
 // happen. httpOnly also keeps both tokens out of reach of any XSS on the page.
 //
-// The access cookie's max-age mirrors the token's own lifetime, so the cookie
-// vanishing *is* the expiry signal. No clock comparison, no decoding a JWT in
+// The access cookie's max-age comes from the token's own `exp`, less a small
+// margin, so the cookie vanishing *is* the expiry signal — and it always
+// vanishes before the token dies. No clock comparison, no decoding a JWT in
 // the middleware.
 import { cache } from "react";
 import { cookies } from "next/headers";
@@ -16,7 +17,7 @@ import { redirect } from "next/navigation";
 import type { NextResponse } from "next/server";
 
 import { authDriver } from "./driver";
-import { ACCESS_TTL_SECONDS, REFRESH_TTL_SECONDS } from "./tokens";
+import { accessCookieMaxAge, refreshCookieMaxAge } from "./tokens";
 import { AuthApiError, type AuthTokens, type AuthUser } from "./types";
 
 /**
@@ -53,12 +54,12 @@ function options(maxAge: number) {
 }
 
 export function setSessionCookies(res: NextResponse, tokens: AuthTokens): void {
-  res.cookies.set(ACCESS_COOKIE, tokens.access, options(ACCESS_TTL_SECONDS));
-  res.cookies.set(REFRESH_COOKIE, tokens.refresh, options(REFRESH_TTL_SECONDS));
+  res.cookies.set(ACCESS_COOKIE, tokens.access, options(accessCookieMaxAge(tokens.access)));
+  res.cookies.set(REFRESH_COOKIE, tokens.refresh, options(refreshCookieMaxAge(tokens.refresh)));
 }
 
 export function setAccessCookie(res: NextResponse, access: string): void {
-  res.cookies.set(ACCESS_COOKIE, access, options(ACCESS_TTL_SECONDS));
+  res.cookies.set(ACCESS_COOKIE, access, options(accessCookieMaxAge(access)));
 }
 
 /**
@@ -70,7 +71,7 @@ export function setAccessCookie(res: NextResponse, access: string): void {
  * already blacklisted the token still sitting in the browser.
  */
 export function setRefreshCookie(res: NextResponse, refresh: string): void {
-  res.cookies.set(REFRESH_COOKIE, refresh, options(REFRESH_TTL_SECONDS));
+  res.cookies.set(REFRESH_COOKIE, refresh, options(refreshCookieMaxAge(refresh)));
 }
 
 export function clearSessionCookies(res: NextResponse): void {

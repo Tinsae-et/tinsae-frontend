@@ -426,6 +426,7 @@ function BrowseMenu({
   const counts = categoryCounts && Object.keys(categoryCounts).length > 0 ? categoryCounts : fetchedCounts;
   const menuRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openedByHoverRef = useRef(false);
 
   // Client-side fallback to fetch live counts if not provided via SSR
   useEffect(() => {
@@ -450,6 +451,9 @@ function BrowseMenu({
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
+    // Hover opens the menu on pointer devices; remember that so the click that
+    // usually follows (on the way to a link) doesn't immediately toggle it shut.
+    if (!open) openedByHoverRef.current = true;
     setOpen(true);
   };
 
@@ -466,6 +470,12 @@ function BrowseMenu({
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
+    }
+    // Consume the hover-open: the first click keeps the menu open, a second
+    // click toggles it closed. Touch/keyboard, which never hover, just toggle.
+    if (openedByHoverRef.current) {
+      openedByHoverRef.current = false;
+      return;
     }
     setOpen((prev) => !prev);
   };

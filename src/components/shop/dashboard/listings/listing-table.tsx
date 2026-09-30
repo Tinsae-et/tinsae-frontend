@@ -251,6 +251,7 @@ function ListingGridCard({
   onProductUpdated,
   onProductDeleted,
   onError,
+  onViewDetail,
 }: {
   product: ShopProduct;
   shopSlug: string;
@@ -261,6 +262,7 @@ function ListingGridCard({
   onProductUpdated?: (updated: ShopProduct) => void;
   onProductDeleted?: (slug: string) => void;
   onError?: (msg: string) => void;
+  onViewDetail?: (product: ShopProduct) => void;
 }) {
   const [fresh, setFresh] = useState<Freshness>(() =>
     freshness(product.last_confirmed_at, product.confirmation_status),
@@ -384,8 +386,9 @@ function ListingGridCard({
 
   return (
     <div
+      onClick={() => onViewDetail?.(product)}
       className={cn(
-        "bg-white rounded-2xl border-[1.5px] flex flex-col justify-between transition-all relative",
+        "bg-white rounded-2xl border-[1.5px] flex flex-col justify-between transition-all relative cursor-pointer",
         isSelected
           ? "border-tn-red ring-[3px] ring-tn-red/10"
           : "border-tn-hair hover:border-tn-hair/80",
@@ -410,7 +413,10 @@ function ListingGridCard({
           role="checkbox"
           aria-checked={isSelected}
           aria-label={`Select ${product.name}`}
-          onClick={() => toggleOne(product.slug)}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleOne(product.slug);
+          }}
           className={cn(
             "size-[22px] rounded-[7px] border flex items-center justify-center absolute top-2.5 left-2.5 transition-colors cursor-pointer z-10",
             isSelected
@@ -454,9 +460,17 @@ function ListingGridCard({
           <span className="text-[10.5px] font-bold uppercase tracking-[0.05em] text-tn-mute">
             {product.category || "General"}
           </span>
-          <h3 className="text-[14.5px] font-extrabold text-tn-ink truncate mt-0.5">
+          {/* The card is clickable for the mouse; this button is the keyboard path. */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewDetail?.(product);
+            }}
+            className="block max-w-full text-left text-[14.5px] font-extrabold text-tn-ink truncate mt-0.5 cursor-pointer rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tn-ink"
+          >
             {product.name}
-          </h3>
+          </button>
           <p className="text-xs text-tn-mute truncate mt-0.5">
             {product.description ? `${product.description} · ` : ""}
             {product.condition || "New"}
@@ -496,7 +510,10 @@ function ListingGridCard({
               {product.views ?? "—"} views · {product.inquiries ?? "—"} inq
             </span>
 
-            <div className="flex items-center gap-2">
+            <div
+              className="flex items-center gap-2"
+              onClick={(e) => e.stopPropagation()}
+            >
               {needConfirm ? (
                 <Pill
                   kind="solid"
@@ -1095,6 +1112,7 @@ export default function ListingsTable({
               onProductUpdated={handleProductUpdated}
               onProductDeleted={handleProductDeleted}
               onError={setGlobalError}
+              onViewDetail={(p) => setDetailProduct(p)}
             />
           ))}
         </div>
