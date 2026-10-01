@@ -1,16 +1,32 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/tinsae/icon";
 import { Pill } from "@/components/tinsae/pill";
+import { getTelegramState } from "@/lib/api/client";
+import type { TelegramState } from "@/lib/types";
 
 export function GuidedFirstRun({
   shopName,
+  shopSlug,
   basePath = "/shop/dashboard",
 }: {
   shopName: string;
+  shopSlug?: string;
   basePath?: string;
 }) {
+  const [teleState, setTeleState] = useState<TelegramState | null>(null);
+
+  useEffect(() => {
+    if (!shopSlug) return;
+    getTelegramState(shopSlug)
+      .then(setTeleState)
+      .catch(() => {});
+  }, [shopSlug]);
+
+  const isConnected = teleState?.status === "connected";
+
   return (
     <div className="rounded-3xl border border-tn-hair bg-white p-6 sm:p-8 shadow-sm">
       {/* Header banner */}
@@ -38,15 +54,27 @@ export function GuidedFirstRun({
           >
             Add your first product
           </Pill>
-          <Pill
-            kind="outline"
-            size="md"
-            icon="tg"
-            href={`${basePath}/telegram`}
-            className="text-tn-telegram hover:text-tn-telegram"
-          >
-            Connect Telegram
-          </Pill>
+          {isConnected ? (
+            <Pill
+              kind="outline"
+              size="md"
+              icon="check"
+              href={`${basePath}/telegram`}
+              className="border-tn-green text-tn-green hover:border-tn-green"
+            >
+              Telegram connected
+            </Pill>
+          ) : (
+            <Pill
+              kind="outline"
+              size="md"
+              icon="tg"
+              href={`${basePath}/telegram`}
+              className="text-tn-telegram hover:text-tn-telegram"
+            >
+              Connect Telegram
+            </Pill>
+          )}
         </div>
       </div>
 
@@ -83,15 +111,15 @@ export function GuidedFirstRun({
                 2
               </div>
               <h3 className="text-sm font-bold text-tn-ink">
-                Daily 1-tap freshness
+                Weekly 1-tap freshness
               </h3>
               <p className="text-xs text-tn-mute mt-1.5 leading-relaxed">
-                Confirm your stock is still available every morning. Only
+                Confirm your stock is still available with a single tap. Only
                 confirmed, fresh products stay visible to buyers.
               </p>
             </div>
             <span className="text-xs font-semibold text-tn-mute mt-4">
-              Via web or @TinsaeStockBot
+              Via web or @tinsae_et_bot
             </span>
           </div>
 

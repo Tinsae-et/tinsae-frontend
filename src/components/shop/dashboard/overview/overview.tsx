@@ -850,7 +850,7 @@ export default function Overview({
   );
 
   if (products.length === 0) {
-    return <GuidedFirstRun shopName={shopName} basePath={basePath} />;
+    return <GuidedFirstRun shopName={shopName} shopSlug={slug} basePath={basePath} />;
   }
 
   return (
@@ -895,7 +895,11 @@ export default function Overview({
       )}
       <Numbers shopName={shopName} products={products} />
       <div className="grid md:grid-cols-2 gap-4">
-        <DailyStockCheckIn products={products} />
+        <DailyStockCheckIn
+          products={products}
+          shopSlug={slug}
+          onProductsUpdated={refetch}
+        />
         <RecentActivities />
       </div>
       <ListingsTable products={products} shopSlug={slug} onProductUpdated={refetch} />

@@ -52,7 +52,7 @@ export function DoneStep({ state }: { state: OnboardingState }) {
           <div>
             <h2 className="text-lg font-extrabold text-white">Connect your Telegram bot</h2>
             <p className="text-[13px] text-white/65">
-              Confirm stock in one tap each morning so buyers only ever see what&apos;s available.
+              Confirm stock in one tap each week so buyers only ever see what&apos;s available.
             </p>
           </div>
         </div>
@@ -61,15 +61,14 @@ export function DoneStep({ state }: { state: OnboardingState }) {
           <Pill kind="light" size="md" iconAfter="arrow" onClick={() => router.push("/shop/dashboard/overview")}>
             Go to dashboard
           </Pill>
-          {/* Stub until the bot ticket lands — see docs/registration.md §3.2. */}
           <Pill
             kind="ghost"
             size="md"
             icon="tg"
-            href="https://t.me/TinsaeStockBot"
+            onClick={() => router.push("/shop/dashboard/telegram")}
             className="border-white/20 text-white hover:bg-white/10"
           >
-            Open @TinsaeStockBot
+            Connect Telegram bot
           </Pill>
         </div>
       </div>

@@ -13,6 +13,8 @@ import type {
   ShopProduct,
   ShopProductImage,
   ShopProfile,
+  TelegramConnectResult,
+  TelegramState,
 } from "../types";
 import { ApiError, shopProductSearchParams, type ShopProductQuery } from "./public";
 
@@ -198,3 +200,28 @@ export async function deleteListingImage(
   });
   if (!res.ok) return failure(res, "Failed deleting product image");
 }
+
+export async function getTelegramState(slug: string): Promise<TelegramState> {
+  const res = await fetch(shopPath(slug, "telegram"), {
+    method: "GET",
+    cache: "no-store",
+  });
+  if (!res.ok) return failure(res, "Couldn't load Telegram connection status");
+  return res.json();
+}
+
+export async function connectTelegram(slug: string): Promise<TelegramConnectResult> {
+  const res = await fetch(shopPath(slug, "telegram", "connect"), {
+    method: "POST",
+  });
+  if (!res.ok) return failure(res, "Couldn't generate Telegram connection link");
+  return res.json();
+}
+
+export async function disconnectTelegram(slug: string): Promise<void> {
+  const res = await fetch(shopPath(slug, "telegram", "disconnect"), {
+    method: "POST",
+  });
+  if (!res.ok) return failure(res, "Couldn't disconnect Telegram");
+}
+

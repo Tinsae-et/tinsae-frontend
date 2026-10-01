@@ -7,7 +7,7 @@ import "server-only";
 // deliberately no refresh-and-retry: a Server Component cannot write cookies,
 // so a rotated refresh token would be lost and the session silently ended.
 // The proxy has already refreshed the access token before any page renders.
-import type { Paginated, ShopProduct, ShopProductImage } from "../types";
+import type { Paginated, ShopProduct, ShopProductImage, TelegramState } from "../types";
 import { SERVER_API_URL } from "../config";
 import { readSession } from "../auth/session";
 import { ApiError } from "./public";
@@ -51,3 +51,11 @@ export function getProductImages(
     "product images",
   );
 }
+
+export function getTelegramState(shopSlug: string): Promise<TelegramState> {
+  return getAsUser(
+    `shops/${encodeURIComponent(shopSlug)}/telegram/`,
+    "Telegram connection state",
+  );
+}
+

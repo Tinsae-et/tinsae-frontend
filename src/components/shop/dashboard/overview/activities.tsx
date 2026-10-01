@@ -1,27 +1,66 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Icon } from "@/components/tinsae/icon";
-import type { ShopProduct } from "@/lib/types";
+import type { ShopProduct, TelegramState } from "@/lib/types";
 import { freshness } from "@/lib/format";
 import { Pill } from "@/components/tinsae/pill";
+import { confirmSelectedFreshness, getTelegramState } from "@/lib/api/client";
 
 /**
- * The daily stock check-in.
+ * The weekly stock check-in.
  *
- * The confirmed/total counts are real — derived from the same freshness rule
- * the badges use. Everything else about this card was invented: a fixed "9:00
- * am" schedule, a green "Complete" tag, and "next check-in tomorrow 9:00 am",
- * on a bot that reports none of those things to us. The Telegram prompt loop is
- * also currently switched off (backend README), so a card claiming a completed
- * check-in was doubly wrong.
- *
- * What is left says only what is true: how many listings are confirmed, and
- * that the bot is not reporting yet.
+ * Shows real confirmation counts and live connection status from the Telegram bot.
  */
-export function DailyStockCheckIn({ products }: { products: ShopProduct[] }) {
+export function DailyStockCheckIn({
+  products,
+  shopSlug,
+  telegramState,
+  onProductsUpdated,
+}: {
+  products: ShopProduct[];
+  shopSlug?: string;
+  telegramState?: TelegramState | null;
+  onProductsUpdated?: () => void;
+}) {
+  const [fetchedState, setFetchedState] = useState<TelegramState | null>(null);
+
+  useEffect(() => {
+    if (telegramState !== undefined || !shopSlug) return;
+    getTelegramState(shopSlug)
+      .then(setFetchedState)
+      .catch(() => {});
+  }, [shopSlug, telegramState]);
+
+  const state = telegramState !== undefined ? telegramState : fetchedState;
+  const [confirming, setConfirming] = useState(false);
+
   const active = products.filter((p) => p.is_available);
   const confirmed = active.filter(
     (p) => freshness(p.last_confirmed_at, p.confirmation_status).tone === "fresh",
   ).length;
   const needsAttention = active.length - confirmed;
+
+  const isConnected = state?.status === "connected";
+  const isBlocked = state?.status === "blocked";
+
+  const handleConfirmAll = async () => {
+    if (!shopSlug || needsAttention <= 0 || confirming) return;
+    const slugsToConfirm = active
+      .filter((p) => freshness(p.last_confirmed_at, p.confirmation_status).tone !== "fresh")
+      .map((p) => p.slug);
+    if (slugsToConfirm.length === 0) return;
+
+    setConfirming(true);
+    try {
+      await confirmSelectedFreshness(shopSlug, slugsToConfirm);
+      onProductsUpdated?.();
+    } catch {
+      // Keep state on failure
+    } finally {
+      setConfirming(false);
+    }
+  };
 
   return (
     <div className="bg-tn-ink rounded-[18px] p-[22px] flex flex-col justify-between gap-5 text-white">
@@ -32,16 +71,27 @@ export function DailyStockCheckIn({ products }: { products: ShopProduct[] }) {
           </div>
           <div className="flex flex-col">
             <span className="text-white font-extrabold text-[14px] leading-tight">
-              Daily stock check-in
+              Weekly stock check-in
             </span>
             <span className="font-tn-mono text-[11.5px] text-white/65 mt-0.5">
-              @TinsaeStockBot
+              @tinsae_et_bot
             </span>
           </div>
         </div>
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/10 text-white/70">
-          Not connected
-        </span>
+        {isConnected ? (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#1F8A5B]/25 text-[#34D399]">
+            <Icon name="check" size={12} strokeWidth={2.5} />
+            Connected
+          </span>
+        ) : isBlocked ? (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300">
+            Blocked
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/10 text-white/70">
+            Not connected
+          </span>
+        )}
       </div>
 
       <div className="bg-white/6 rounded-[13px] px-[15px] py-[13px] font-tn-mono text-[12.5px] leading-[1.7] text-white/85">
@@ -55,7 +105,11 @@ export function DailyStockCheckIn({ products }: { products: ShopProduct[] }) {
               {needsAttention > 0 ? ` · ${needsAttention} need attention` : ""}
             </div>
             <div className="text-white/60">
-              Scheduled check-ins start once the bot is connected.
+              {isConnected
+                ? "Weekly digests sent to your linked Telegram chat."
+                : isBlocked
+                  ? "Bot is blocked. Open Telegram to unblock and restart."
+                  : "Weekly check-ins start once the bot is connected."}
             </div>
           </>
         ) : (
@@ -66,8 +120,18 @@ export function DailyStockCheckIn({ products }: { products: ShopProduct[] }) {
       </div>
 
       <div className="flex items-center gap-3">
-        <Pill kind="light" size="sm" icon="check">
-          Confirm all now
+        <Pill
+          kind="light"
+          size="sm"
+          icon={confirming ? undefined : "check"}
+          disabled={confirming || needsAttention === 0}
+          onClick={handleConfirmAll}
+        >
+          {confirming
+            ? "Confirming…"
+            : needsAttention === 0
+              ? "All fresh"
+              : "Confirm all now"}
         </Pill>
         <Pill
           kind="ghost"
@@ -75,12 +139,13 @@ export function DailyStockCheckIn({ products }: { products: ShopProduct[] }) {
           href="/shop/dashboard/telegram"
           className="border-white/25 text-white hover:border-white/40 hover:bg-white/10 hover:text-white"
         >
-          Connect the bot
+          {isConnected ? "Manage bot" : "Connect the bot"}
         </Pill>
       </div>
     </div>
   );
 }
+
 
 /**
  * Recent activity.

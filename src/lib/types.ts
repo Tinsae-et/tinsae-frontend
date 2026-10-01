@@ -146,3 +146,18 @@ export type ShopProfile = {
   phone?: string;
   city?: string;
 };
+
+export type TelegramStatus = "idle" | "connected" | "blocked";
+
+export type TelegramState = {
+  status: TelegramStatus;
+  linked_at: string | null;
+  blocked_at: string | null;
+};
+
+export type TelegramConnectResult = {
+  code: string;
+  deep_link: string | null;
+  bot_username: string;
+  expires_at: string;
+};

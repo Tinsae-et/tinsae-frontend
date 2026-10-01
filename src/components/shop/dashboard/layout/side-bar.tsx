@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { Icon, IconName } from "@/components/tinsae/icon";
 import Link from "next/link";
@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 import { LogoutButton } from "@/components/auth/logout-button";
 import type { AuthShop } from "@/lib/auth/types";
 import { getInitials } from "@/lib/shops-data";
+import { getTelegramState } from "@/lib/api/client";
+import type { TelegramState } from "@/lib/types";
 
 type NavLinkItem = {
   to: string;
@@ -86,6 +88,17 @@ function Links({ links }: { links: NavLinkItem[] }) {
 }
 
 function SideBar({ showSidebar, shop }: { showSidebar: boolean; shop: AuthShop }) {
+  const [teleState, setTeleState] = useState<TelegramState | null>(null);
+
+  useEffect(() => {
+    getTelegramState(shop.slug)
+      .then(setTeleState)
+      .catch(() => {});
+  }, [shop.slug]);
+
+  const isConnected = teleState?.status === "connected";
+  const isBlocked = teleState?.status === "blocked";
+
   return (
     <aside
       className={cn(
@@ -118,8 +131,7 @@ function SideBar({ showSidebar, shop }: { showSidebar: boolean; shop: AuthShop }
             </span>
           </div>
 
-          {/* The signed-in merchant's shop. This used to be a hard-coded demo
-              shop, so every merchant saw "Almeda Electronics" here. */}
+          {/* The signed-in merchant's shop. */}
           <div className="flex items-center gap-2.5 bg-tn-paper border border-tn-hair2 rounded-[14px] p-[11px_12px] mt-4">
             <div className="size-[34px] rounded-[9px] bg-tn-ink text-white font-bold text-sm flex items-center justify-center shrink-0">
               {getInitials(shop.name)}
@@ -149,24 +161,56 @@ function SideBar({ showSidebar, shop }: { showSidebar: boolean; shop: AuthShop }
         </div>
       </div>
 
-      {/* PLACEHOLDER: bot status is not reported by the API yet; this card is
-          the same for every shop. */}
       {/* Bot status card */}
       <div className="p-3.5 mt-auto">
-        <div className="bg-tn-green-soft rounded-[14px] px-[14px] py-[13px] flex flex-col gap-1">
+        <Link
+          href="/shop/dashboard/telegram"
+          className={cn(
+            "rounded-[14px] p-3 flex flex-col gap-1 transition hover:opacity-95 block",
+            isConnected
+              ? "bg-tn-green-soft"
+              : isBlocked
+                ? "bg-amber-50 border border-amber-200"
+                : "bg-tn-paper border border-tn-hair"
+          )}
+        >
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Icon name="tg" size={15} className="text-tn-telegram" />
-              <span className="font-extrabold text-[12.5px] text-tn-ink">
-                Bot connected
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Icon name="tg" size={14} className="text-tn-telegram shrink-0" />
+              <span className="font-extrabold text-xs text-tn-ink truncate">
+                {isConnected
+                  ? "Bot connected"
+                  : isBlocked
+                    ? "Bot blocked"
+                    : "Bot not linked"}
               </span>
             </div>
-            <span className="size-[7px] rounded-full bg-tn-green shadow-[0_0_0_3px_#1F8A5B33]" />
+            <span
+              className={cn(
+                "size-2 rounded-full shrink-0",
+                isConnected
+                  ? "bg-tn-green shadow-[0_0_0_3px_#1F8A5B33]"
+                  : isBlocked
+                    ? "bg-amber-500 shadow-[0_0_0_3px_rgba(245,158,11,0.2)]"
+                    : "bg-tn-mute shadow-[0_0_0_3px_rgba(0,0,0,0.06)]"
+              )}
+            />
           </div>
-          <span className="font-tn-mono text-[11px] text-tn-ink2 mt-0.5">
-            Last ping 09:14 · @TinsaeStockBot
-          </span>
-        </div>
+          <div className="flex flex-col text-[11px] leading-snug text-tn-mute mt-0.5">
+            {isConnected ? (
+              <>
+                <span className="text-tn-ink2 font-medium">Weekly check-in</span>
+                <span className="font-tn-mono text-[10.5px] text-tn-telegram font-semibold truncate">
+                  @tinsae_et_bot
+                </span>
+              </>
+            ) : isBlocked ? (
+              <span className="text-amber-700 font-medium">Tap to unblock & restart</span>
+            ) : (
+              <span>Tap to connect @tinsae_et_bot</span>
+            )}
+          </div>
+        </Link>
       </div>
     </aside>
   );

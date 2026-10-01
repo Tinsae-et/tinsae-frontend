@@ -6,8 +6,8 @@ import Link from "next/link";
 import { Icon } from "@/components/tinsae/icon";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { Pill } from "@/components/tinsae/pill";
-import { updateShopProfile } from "@/lib/api/client";
-import type { Shop } from "@/lib/types";
+import { getTelegramState, updateShopProfile } from "@/lib/api/client";
+import type { Shop, TelegramState } from "@/lib/types";
 import {
   Feedback,
   FeedbackBanner,
@@ -33,6 +33,13 @@ export default function ProfileForm({ shop, slug, telegramUsername, onShopUpdate
   const [logo, setLogo] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [telegramState, setTelegramState] = useState<TelegramState | null>(null);
+
+  useEffect(() => {
+    getTelegramState(slug)
+      .then(setTelegramState)
+      .catch(() => {});
+  }, [slug]);
 
   const logoRef = useRef<string | null>(null);
   useEffect(() => {
@@ -178,25 +185,36 @@ export default function ProfileForm({ shop, slug, telegramUsername, onShopUpdate
         </Field>
 
         <Field
-          label="Telegram handle"
+          label="Telegram bot"
           hint={
-            <>
-              Set in{" "}
-              <Link href="/shop/dashboard/telegram" className="font-bold text-tn-ink underline">
-                Telegram setup
-              </Link>
-              .
-            </>
+            <Link href="/shop/dashboard/telegram" className="font-bold text-tn-ink underline">
+              {telegramState?.status === "connected" ? "Manage bot" : "Set up bot"}
+            </Link>
           }
         >
-          <input
-            type="text"
-            name="telegramHandle"
-            value={telegramUsername ? `@${telegramUsername.replace(/^@/, "")}` : ""}
-            readOnly
-            placeholder="Not linked yet"
-            className={`${inputClass} font-tn-mono`}
-          />
+          <div className="flex h-12 w-full items-center justify-between rounded-xl border-[1.5px] border-tn-hair bg-tn-paper px-3.5">
+            <span className="font-tn-mono text-sm font-semibold text-tn-ink">
+              {telegramUsername
+                ? `@${telegramUsername.replace(/^@/, "")}`
+                : telegramState?.status === "connected"
+                  ? "Connected"
+                  : "Not linked yet"}
+            </span>
+            {telegramState?.status === "connected" ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-tn-green/10 px-2.5 py-0.5 text-xs font-bold text-tn-green">
+                <Icon name="check" size={12} strokeWidth={2.5} />
+                Connected
+              </span>
+            ) : telegramState?.status === "blocked" ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-tn-warn/15 px-2.5 py-0.5 text-xs font-bold text-tn-warn">
+                Blocked
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 rounded-full bg-tn-hair px-2.5 py-0.5 text-xs font-bold text-tn-mute">
+                Disconnected
+              </span>
+            )}
+          </div>
         </Field>
       </div>
 
