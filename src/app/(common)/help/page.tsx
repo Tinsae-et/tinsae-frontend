@@ -56,7 +56,7 @@ const CATEGORIES: CategoryCard[] = [
     {
         id: "telegram",
         title: "Telegram bot",
-        description: "Connect, import stock, daily check-in",
+        description: "Connect, weekly check-in, manage stock via bot",
         count: 8,
         icon: "tg",
         iconBg: "bg-sky-50",

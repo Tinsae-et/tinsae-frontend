@@ -643,6 +643,9 @@ export default function TelegramSetup({
               )}
             </div>
           )}
+
+          {/* Bot Commands & Shortcuts Reference Card */}
+          <BotCommandsReference />
         </div>
 
         {/* Right Column: Interactive Chat Preview */}
@@ -653,6 +656,233 @@ export default function TelegramSetup({
             botUsername={connectResult?.bot_username}
           />
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Bot Commands Reference Component ───────────────────────────
+function BotCommandsReference() {
+  const [activeTab, setActiveTab] = useState<"commands" | "replies" | "quicksold" | "rules">("commands");
+
+  return (
+    <div className="rounded-[22px] border border-tn-hair bg-white p-6 sm:p-7 shadow-xs">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-tn-hair pb-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="flex size-6 items-center justify-center rounded-lg bg-tn-telegram/10 text-tn-telegram">
+              <Icon name="tg" size={14} />
+            </span>
+            <h2 className="text-base font-extrabold text-tn-ink">
+              Bot Menus & Commands Guide
+            </h2>
+          </div>
+          <p className="mt-1 text-xs text-tn-mute">
+            Everything you can do through the Telegram bot with your shop
+          </p>
+        </div>
+        <span className="rounded-full bg-tn-paper px-2.5 py-1 font-tn-mono text-[11px] font-bold text-tn-ink">
+          Available in @tinsae_et_bot
+        </span>
+      </div>
+
+      {/* Tabs */}
+      <div className="mt-4 flex flex-wrap gap-1.5 rounded-xl bg-tn-paper p-1.5">
+        {[
+          { id: "commands", label: "Menu & Commands" },
+          { id: "replies", label: "Weekly Check-in" },
+          { id: "quicksold", label: "Quick Sold Anytime" },
+          { id: "rules", label: "Freshness & Rules" },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id as typeof activeTab)}
+            className={cn(
+              "rounded-lg px-3 py-1.5 text-xs font-bold transition-all",
+              activeTab === tab.id
+                ? "bg-white text-tn-ink shadow-xs"
+                : "text-tn-mute hover:text-tn-ink"
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab Content */}
+      <div className="mt-5">
+        {activeTab === "commands" && (
+          <div className="space-y-3">
+            <p className="text-xs text-tn-mute">
+              These commands are accessible from Telegram&apos;s menu button (<b>☰</b>) or by typing a slash (<b>/</b>):
+            </p>
+            <div className="divide-y divide-tn-hair rounded-xl border border-tn-hair bg-tn-paper/50">
+              {[
+                {
+                  cmd: "/menu",
+                  desc: "Opens the interactive navigation hub with buttons for stock, status, and web dashboard.",
+                },
+                {
+                  cmd: "/myproducts",
+                  desc: "View and manage your listings with 1-tap inline buttons (Confirm, Sold, Pause, Resume).",
+                },
+                {
+                  cmd: "/status",
+                  desc: "Summary of fresh, due, and hidden items, plus your next check-in schedule.",
+                },
+                {
+                  cmd: "/pause_shop",
+                  desc: "Vacation mode: immediately pauses all your listings so buyers don't see outdated stock while you're away.",
+                },
+                {
+                  cmd: "/resume_shop",
+                  desc: "Resumes all your paused listings when you return from vacation.",
+                },
+                {
+                  cmd: "/unlink",
+                  desc: "Disconnects this Telegram chat from your shop (can be re-linked anytime).",
+                },
+                {
+                  cmd: "/help",
+                  desc: "Displays full instructions, command summaries, and reply examples in the chat.",
+                },
+              ].map((item) => (
+                <div key={item.cmd} className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 p-3.5">
+                  <code className="shrink-0 font-tn-mono text-xs font-bold text-tn-telegram">
+                    {item.cmd}
+                  </code>
+                  <span className="text-xs text-tn-ink">{item.desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "replies" && (
+          <div className="space-y-4">
+            <p className="text-xs text-tn-mute">
+              Every 7 days, the bot sends a morning digest listing products due for confirmation. You can reply in 4 convenient ways:
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-tn-hair bg-tn-paper/60 p-3.5">
+                <div className="flex items-center gap-1.5 font-tn-mono text-xs font-bold text-tn-green">
+                  <span>✅</span> All still available
+                </div>
+                <p className="mt-1 text-xs text-tn-ink">
+                  Tap the button or reply <code className="font-bold">all</code>, <code className="font-bold">yes</code>, or <code className="font-bold">ሁሉም</code>. Confirms all due items in one go and resets their freshness timer to 7 days.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-tn-hair bg-tn-paper/60 p-3.5">
+                <div className="flex items-center gap-1.5 font-tn-mono text-xs font-bold text-tn-red">
+                  <span>❌</span> sold 2 5
+                </div>
+                <p className="mt-1 text-xs text-tn-ink">
+                  Reply with the numbers from the list (e.g. <code className="font-bold">sold 2 5</code>). Marks items 2 and 5 out of stock, and confirms the rest are available.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-tn-hair bg-tn-paper/60 p-3.5">
+                <div className="flex items-center gap-1.5 font-tn-mono text-xs font-bold text-tn-telegram">
+                  <span>✏️</span> Check one by one
+                </div>
+                <p className="mt-1 text-xs text-tn-ink">
+                  Tap this button to review each due item individually with 1-tap Available / Sold buttons.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-tn-hair bg-tn-paper/60 p-3.5">
+                <div className="flex items-center gap-1.5 font-tn-mono text-xs font-bold text-tn-ink">
+                  <span>🕒</span> Reminders & Expiry
+                </div>
+                <p className="mt-1 text-xs text-tn-ink">
+                  If unanswered, the bot sends at most one reminder. If unconfirmed after 14 days, the listing is hidden from search until you confirm it.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "quicksold" && (
+          <div className="space-y-4">
+            <div className="rounded-xl border border-tn-telegram/30 bg-tn-telegram/5 p-4">
+              <h3 className="text-xs font-bold text-tn-ink">
+                ⚡ Instant Quick Sold with 1-Tap Undo
+              </h3>
+              <p className="mt-1.5 text-xs leading-relaxed text-tn-mute">
+                You don&apos;t have to wait for the weekly check-in! Whenever you make a sale in your physical store or online, simply send:
+              </p>
+              <div className="mt-2.5 rounded-lg border border-tn-hair bg-white px-3 py-2 font-tn-mono text-xs font-bold text-tn-ink">
+                sold [product name] <span className="font-normal text-tn-mute">(e.g., &quot;sold iPhone 15&quot; or &quot;sold Galaxy S24&quot;)</span>
+              </div>
+            </div>
+
+            <div className="space-y-2 text-xs text-tn-ink">
+              <div className="flex items-start gap-2">
+                <span className="font-bold text-tn-green">✓</span>
+                <span>The bot searches your active catalog and marks the matching item sold out immediately.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="font-bold text-tn-green">✓</span>
+                <span>The bot sends a confirmation with a 1-tap <b>Undo</b> button in case of accidental entry.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="font-bold text-tn-green">✓</span>
+                <span>If multiple products match, the bot asks you to clarify by tapping the exact item.</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "rules" && (
+          <div className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3.5">
+                <div className="font-tn-mono text-xs font-bold text-emerald-800">
+                  ≤ 7 days
+                </div>
+                <div className="mt-1 text-xs font-bold text-emerald-900">
+                  Fresh
+                </div>
+                <p className="mt-0.5 text-[11px] text-emerald-700">
+                  Green freshness dot. Ranked highest in buyer search results.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3.5">
+                <div className="font-tn-mono text-xs font-bold text-amber-800">
+                  7 – 14 days
+                </div>
+                <div className="mt-1 text-xs font-bold text-amber-900">
+                  Due for check-in
+                </div>
+                <p className="mt-0.5 text-[11px] text-amber-700">
+                  Amber freshness label. Included in your weekly bot morning digest.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-neutral-200 bg-neutral-100/70 p-3.5">
+                <div className="font-tn-mono text-xs font-bold text-neutral-800">
+                  &gt; 14 days
+                </div>
+                <div className="mt-1 text-xs font-bold text-neutral-900">
+                  Expired & Hidden
+                </div>
+                <p className="mt-0.5 text-[11px] text-neutral-600">
+                  Hidden from buyer search until you re-confirm via bot or dashboard.
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-tn-hair bg-tn-paper p-3.5 text-xs text-tn-mute">
+              <div className="font-bold text-tn-ink">🌙 Quiet Hours Policy: 21:00 – 07:00 EAT</div>
+              <p className="mt-0.5">
+                The bot respects your night rest and will never send automated digests or reminders between 9:00 PM and 7:00 AM East Africa Time.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

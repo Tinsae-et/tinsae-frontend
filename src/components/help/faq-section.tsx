@@ -58,6 +58,36 @@ const FAQS: Record<TopicId, FaqItem[]> = {
             answer:
                 "Go to your shop dashboard, click Listings, then New listing, and fill in the details.",
         },
+        {
+            id: "telegram-connect",
+            question: "How do I connect my shop to the Telegram bot?",
+            answer:
+                "Go to your Shop Dashboard → Telegram, tap 'Connect Telegram', and tap the button to open @tinsae_et_bot in Telegram (or send /link YOUR-CODE). Your chat is bound immediately.",
+        },
+        {
+            id: "telegram-commands",
+            question: "What commands are available in the Telegram bot?",
+            answer:
+                "Use /menu for the main interactive hub, /myproducts to manage items with inline buttons, /status to view freshness and check-in schedules, /pause_shop for vacation mode, /resume_shop to resume, and /help for instructions.",
+        },
+        {
+            id: "telegram-checkin",
+            question: "How do I reply to the weekly check-in?",
+            answer:
+                "When the bot sends your weekly morning digest, tap 'All still available' (or reply 'all' / 'yes' / 'ሁሉም') if everything is in stock. To mark specific items sold, reply 'sold 2 5'. You can also tap 'Check one by one'.",
+        },
+        {
+            id: "telegram-quicksold",
+            question: "Can I mark an item sold without waiting for check-in?",
+            answer:
+                "Yes. Text 'sold [product name]' (e.g. 'sold iPhone 15') to the bot at any time. It marks the item sold immediately and gives you a 1-tap Undo button.",
+        },
+        {
+            id: "telegram-quiet-hours",
+            question: "When does the bot send check-in messages?",
+            answer:
+                "The bot sends one morning digest per week on your shop's due date. It strictly enforces quiet hours between 21:00 and 07:00 EAT, so it will never disturb you at night.",
+        },
     ],
     trust: [
         {
