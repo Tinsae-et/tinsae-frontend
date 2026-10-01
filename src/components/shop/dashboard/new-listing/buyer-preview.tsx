@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Icon } from "@/components/tinsae/icon";
 import { kindForSlug, ProdPlaceholder } from "@/components/tinsae/prod-placeholder";
 import { ShopProductImage } from "@/lib/types";
@@ -127,49 +128,51 @@ export function ProductPreview({
 }
 
 export function DailyStockCheckIn() {
-  const [dailyCheckIn, setDailyCheckIn] = useState(true);
-
   return (
     <div className="rounded-[16px] border border-tn-hair bg-white p-4">
       <div className="flex items-center gap-3">
-        <div className="flex size-[38px] shrink-0 items-center justify-center rounded-[10px] bg-[#E9F5FB] text-[#229ED9]">
+        <div className="flex size-[38px] shrink-0 items-center justify-center rounded-[10px] bg-tn-telegram/10 text-tn-telegram">
           <Icon name="tg" size={19} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-[13.5px] font-extrabold text-tn-ink">
-            Daily stock check-in
+          <div className="flex items-center gap-2">
+            <span className="text-[13.5px] font-extrabold text-tn-ink">
+              Weekly stock check-in
+            </span>
+            <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[10.5px] font-bold text-emerald-700">
+              Automated
+            </span>
           </div>
           <div className="text-[11.5px] text-tn-mute truncate">
-            Include in the 9:00 am bot ping
+            Monitored by @tinsae_et_bot
           </div>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={dailyCheckIn}
-          onClick={() => setDailyCheckIn((v) => !v)}
-          className={cn(
-            "relative h-[27px] w-[46px] shrink-0 rounded-full transition-colors cursor-pointer border-none",
-            dailyCheckIn ? "bg-tn-green" : "bg-tn-hair"
-          )}
-        >
-          <span
-            className={cn(
-              "absolute top-[3px] h-[21px] w-[21px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.2)] transition-transform duration-150",
-              dailyCheckIn ? "left-[22px]" : "left-[3px]"
-            )}
-          />
-        </button>
       </div>
 
-      <div className="mt-3 rounded-[10px] bg-tn-paper px-3 py-2.5 text-xs text-tn-ink2 leading-relaxed">
-        {dailyCheckIn
-          ? 'Buyers see a "confirmed today" badge while you keep it fresh.'
-          : "This listing won’t be auto-confirmed — it may show as aging."}
+      <div className="mt-3 rounded-[10px] bg-tn-paper p-3 text-xs leading-relaxed text-tn-ink space-y-2">
+        <p className="text-tn-mute">
+          When published, this listing automatically starts with a{" "}
+          <b className="text-emerald-700 font-semibold">Fresh (7 days)</b> status.
+        </p>
+        <p className="text-tn-mute">
+          When due, the bot pings you on Telegram to confirm stock in 1 tap or reply{" "}
+          <code className="font-bold text-tn-ink">sold</code> if out of stock.
+        </p>
+        <div className="pt-1 border-t border-tn-hair/60 flex items-center justify-between">
+          <Link
+            href="/shop/dashboard/telegram"
+            className="text-[11px] font-bold text-tn-telegram hover:underline inline-flex items-center gap-1"
+          >
+            <span>Bot settings & guide</span>
+            <span>&rarr;</span>
+          </Link>
+        </div>
       </div>
     </div>
   );
 }
+
+export const WeeklyStockProtection = DailyStockCheckIn;
 
 export function BeforePublication({
   name,
