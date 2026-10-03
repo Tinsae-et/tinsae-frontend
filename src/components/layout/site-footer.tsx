@@ -51,7 +51,7 @@ export function SiteFooter() {
                               ? "/pricing"
                               : item === "Dashboard"
                                 ? "/dashboard"
-                                : item === "Telegram bot"
+                                : item === "Telegram bot" || item === "Telegram Bot"
                                   ? "/telegram-bot"
                                   : item === "About"
                                     ? "/about"
