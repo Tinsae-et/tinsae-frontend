@@ -11,8 +11,9 @@
 // in CI, which fails while any remain.
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = new URL("../src/", import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL("../src/", import.meta.url));
 const strict = process.argv.includes("--strict");
 
 function* files(dir) {
