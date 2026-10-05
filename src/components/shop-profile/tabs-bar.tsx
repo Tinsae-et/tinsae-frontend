@@ -1,10 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import MainSection from "./main-section";
 import type { Shop, Product, Paginated } from "@/lib/types";
 
 type TabId = "listings" | "about" | "policies" | "reviews";
+
+const TAB_IDS: TabId[] = ["listings", "about", "policies", "reviews"];
+
+function isTabId(value: string): value is TabId {
+  return (TAB_IDS as string[]).includes(value);
+}
 
 export function TabsBar({
   shop,
@@ -14,6 +20,24 @@ export function TabsBar({
   initialProducts?: Paginated<Product> | null;
 }) {
   const [tab, setTab] = useState<TabId>("listings");
+
+  // The active tab lives in the URL fragment (#about, #policies) so a tab can be
+  // linked to directly.
+  useEffect(() => {
+    const syncFromHash = () => {
+      const hash = window.location.hash.slice(1);
+      setTab(isTabId(hash) ? hash : "listings");
+    };
+    syncFromHash();
+    window.addEventListener("hashchange", syncFromHash);
+    return () => window.removeEventListener("hashchange", syncFromHash);
+  }, []);
+
+  const selectTab = (id: TabId) => {
+    setTab(id);
+    const url = id === "listings" ? window.location.pathname + window.location.search : `#${id}`;
+    window.history.replaceState(null, "", url);
+  };
 
   const listingsCount = initialProducts?.count ?? 0;
 
@@ -34,7 +58,7 @@ export function TabsBar({
               <button
                 key={t.id}
                 type="button"
-                onClick={() => setTab(t.id)}
+                onClick={() => selectTab(t.id)}
                 className={`inline-flex cursor-pointer items-center gap-1.5 border-b-[2.5px] px-4 py-3.5 text-sm font-semibold transition-colors ${
                   active
                     ? "border-tn-red text-tn-ink font-extrabold"

@@ -139,12 +139,13 @@ export default async function ShopProfilePage({ params }: Props) {
               "repeating-linear-gradient(45deg, #fff 0, #fff 1px, transparent 1px, transparent 16px)",
           }}
         />
-        {/* Ethiopic watermark per design */}
+        {/* Shop-name watermark. The design uses the Amharic name, which the API
+            doesn't serve, so it falls back to the shop's name. */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute top-4 right-8 select-none text-[114px] font-bold leading-none text-white/10"
+          className="pointer-events-none absolute top-5 right-6 select-none text-[56px] font-bold leading-none tracking-[-0.03em] whitespace-nowrap text-white/10 capitalize sm:right-8 sm:text-[84px] lg:text-[104px]"
         >
-          አልመዳ
+          {shop.name}
         </div>
       </div>
 
