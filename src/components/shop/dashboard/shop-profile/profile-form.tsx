@@ -126,17 +126,21 @@ export default function ProfileForm({
 
     setSaving(true);
     try {
-      const profile = logoFile ? new FormData() : null;
-      if (profile) {
+      const selectedLogo = logoFile;
+      let updated: Shop;
+      if (selectedLogo) {
+        const profile = new FormData();
         profile.append("name", trimmedName);
         profile.append("description", description.trim());
-        profile.append("logo", logoFile);
+        profile.append("logo", selectedLogo);
+        updated = await updateShopProfile(slug, profile);
+      } else {
+        updated = await updateShopProfile(slug, {
+          name: trimmedName,
+          description: description.trim(),
+        });
       }
-      const updated = await updateShopProfile(
-        slug,
-        profile ?? { name: trimmedName, description: description.trim() },
-      );
-      if (logoFile) {
+      if (selectedLogo) {
         setLogoFile(null);
         replaceLogo(normalizeImageUrl(updated.logo));
       }

@@ -80,7 +80,9 @@ export async function updateShopProfile(
       const firstField = Object.values(errorData).find(Array.isArray) as
         | string[]
         | undefined;
-      message = errorData.detail || firstField?.[0] || message;
+      const detail =
+        typeof errorData.detail === "string" ? errorData.detail : undefined;
+      message = detail || firstField?.[0] || message;
     } catch {
       // Keep default message
     }
