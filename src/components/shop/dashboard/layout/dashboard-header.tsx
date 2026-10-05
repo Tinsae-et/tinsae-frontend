@@ -10,7 +10,6 @@ import {
   VerificationHeader,
 } from "./headers";
 
-
 export default function DashboardHeader({
   setShowSidebar,
   shopSlug,
@@ -32,7 +31,7 @@ export default function DashboardHeader({
         pathname === "/shop/dashboard/listings/edit") && (
         <NewListingHeader setShowSidebar={setShowSidebar} />
       )}
-      {pathname === "/shop/dashboard/shop-profile" && (
+      {pathname === "/shop/dashboard/shop-setting" && (
         <ProfileHeader setShowSidebar={setShowSidebar} shopSlug={shopSlug} />
       )}
       {pathname === "/shop/dashboard/telegram" && (

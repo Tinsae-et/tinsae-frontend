@@ -83,10 +83,16 @@ export default function ShopProfile({
                 aria-current={isActive ? "true" : undefined}
                 className={cn(
                   "px-3.5 py-[11px] rounded-xl text-sm font-bold flex items-center gap-3 transition-colors whitespace-nowrap cursor-pointer text-left shrink-0 lg:w-full",
-                  isActive ? "bg-tn-red-soft text-tn-red" : "text-tn-ink2 hover:bg-tn-paper",
+                  isActive
+                    ? "bg-tn-red-soft text-tn-red"
+                    : "text-tn-ink2 hover:bg-tn-paper",
                 )}
               >
-                <Icon name={icon} size={17} className={isActive ? "text-tn-red" : "text-tn-mute"} />
+                <Icon
+                  name={icon}
+                  size={17}
+                  className={isActive ? "text-tn-red" : "text-tn-mute"}
+                />
                 <span>{text}</span>
               </button>
             );
@@ -96,11 +102,15 @@ export default function ShopProfile({
 
       <div className="flex-1 min-w-0 w-full">
         {!shop ? (
-          <SettingsCard title="Shop profile" sub="How your shop appears across Tinsae search and listings.">
+          <SettingsCard
+            title="Shop profile"
+            sub="How your shop appears across Tinsae search and listings."
+          >
             {loadFailed ? (
               <div className="flex flex-col items-start gap-3">
                 <p className="text-[13.5px] text-tn-ink2">
-                  We couldn&rsquo;t load your shop details. Editing is paused so nothing gets overwritten.
+                  We couldn&rsquo;t load your shop details. Editing is paused so
+                  nothing gets overwritten.
                 </p>
                 <Pill kind="outline" size="sm" onClick={retryLoad}>
                   Try again
@@ -123,11 +133,22 @@ export default function ShopProfile({
                 <ContactForm shop={shop} slug={slug} onShopUpdated={setShop} />
               </div>
             )}
-            {activeSection === "location" && <LocationPanel shop={shop} />}
-            {activeSection === "photos" && <PhotosPanel />}
-            {activeSection === "categories" && <CategoriesPanel />}
+            {activeSection === "location" && (
+              <LocationPanel shop={shop} slug={slug} onShopUpdated={setShop} />
+            )}
+            {activeSection === "photos" && <PhotosPanel slug={slug} />}
+            {activeSection === "categories" && (
+              <CategoriesPanel
+                shop={shop}
+                slug={slug}
+                onShopUpdated={setShop}
+              />
+            )}
             {activeSection === "team" && (
-              <TeamPanel ownerName={ownerName} ownerPhone={shop.phone || ownerPhone} />
+              <TeamPanel
+                ownerName={ownerName}
+                ownerPhone={shop.phone || ownerPhone}
+              />
             )}
           </>
         )}

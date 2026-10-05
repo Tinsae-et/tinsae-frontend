@@ -1,33 +1,62 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { Pill } from "@/components/tinsae/pill";
 import { Icon } from "@/components/tinsae/icon";
 import { SettingsCard } from "./settings-card";
+import {
+  deleteShopPhoto,
+  getShopPhotos,
+  uploadShopPhoto,
+} from "@/lib/api/client";
+import type { ShopPhoto } from "@/lib/types";
 
-// PLACEHOLDER: shop photos are not stored by the API yet; these are colour
-// swatches and nothing here is saved.
-const INITIAL_PHOTOS = [
-  { id: "1", tone: "#0F2A4D" },
-  { id: "2", tone: "#3a342c" },
-  { id: "3", tone: "#2a2a33" },
-  { id: "4", tone: "#23302a" },
-];
 const MAX_PHOTOS = 8;
-const TONES = ["#1a2a3a", "#2c1f1f", "#1f2c24", "#2c261f"];
 
-export default function PhotosPanel() {
-  const [photos, setPhotos] = useState(INITIAL_PHOTOS);
-  const [saved, setSaved] = useState(false);
+export default function PhotosPanel({ slug }: { slug: string }) {
+  const [photos, setPhotos] = useState<ShopPhoto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const removePhoto = (id: string) => setPhotos((prev) => prev.filter((p) => p.id !== id));
+  useEffect(() => {
+    getShopPhotos(slug)
+      .then(setPhotos)
+      .catch(() => setError("Could not load shop photos."))
+      .finally(() => setLoading(false));
+  }, [slug]);
 
-  const addPhoto = () => {
-    setPhotos((prev) =>
-      prev.length >= MAX_PHOTOS
-        ? prev
-        : [...prev, { id: String(Date.now()), tone: TONES[prev.length % TONES.length] }],
-    );
+  const removePhoto = async (id: number) => {
+    setError(null);
+    try {
+      await deleteShopPhoto(slug, id);
+      setPhotos((prev) => prev.filter((p) => p.id !== id));
+    } catch {
+      setError("Could not remove that photo.");
+    }
+  };
+
+  const addPhoto = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || photos.length >= MAX_PHOTOS) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const photo = await uploadShopPhoto(
+        slug,
+        file,
+        photos.length,
+        photos.length === 0,
+      );
+      setPhotos((prev) => [...prev, photo]);
+    } catch {
+      setError("Could not upload that photo.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -39,23 +68,35 @@ export default function PhotosPanel() {
           kind="solid"
           size="sm"
           icon="check"
-          onClick={() => {
-            setSaved(true);
-            setTimeout(() => setSaved(false), 2500);
-          }}
+          disabled={saving}
+          onClick={() => inputRef.current?.click()}
         >
-          {saved ? "Saved" : "Save photos"}
+          {saving ? "Uploading…" : "Add photo"}
         </Pill>
       }
     >
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="sr-only"
+        onChange={addPhoto}
+      />
+      {loading && <p className="text-[13.5px] text-tn-mute">Loading photos…</p>}
+      {error && <p className="mb-3 text-[13.5px] text-tn-red">{error}</p>}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {photos.map((item, index) => (
           <div
             key={item.id}
-            className="relative aspect-4/3 rounded-[13px] overflow-hidden border border-tn-hair flex items-center justify-center"
-            style={{ background: `linear-gradient(145deg, ${item.tone}, #0a0a0a)` }}
+            className="relative aspect-4/3 rounded-[13px] overflow-hidden border border-tn-hair bg-tn-paper"
           >
-            <Icon name="building" size={30} className="text-white opacity-40" />
+            <Image
+              src={item.url}
+              alt={`Shop photo ${index + 1}`}
+              fill
+              unoptimized
+              className="object-cover"
+            />
 
             {index === 0 && (
               <span className="absolute top-2 left-2 h-[22px] px-[9px] rounded-[7px] bg-white/95 text-[10.5px] font-extrabold text-tn-ink inline-flex items-center">
@@ -78,7 +119,7 @@ export default function PhotosPanel() {
           <button
             key={i}
             type="button"
-            onClick={addPhoto}
+            onClick={() => inputRef.current?.click()}
             className="aspect-4/3 rounded-[13px] border-[1.5px] border-dashed border-tn-hair bg-tn-paper flex flex-col items-center justify-center gap-[7px] cursor-pointer text-tn-mute hover:border-tn-ink/30 hover:text-tn-ink transition-colors"
           >
             <Icon name="plus" size={20} />

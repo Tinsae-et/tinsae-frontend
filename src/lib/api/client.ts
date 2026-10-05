@@ -13,10 +13,16 @@ import type {
   ShopProduct,
   ShopProductImage,
   ShopProfile,
+  ShopPhoto,
   TelegramConnectResult,
   TelegramState,
 } from "../types";
-import { ApiError, shopProductSearchParams, type ShopProductQuery } from "./public";
+import {
+  ApiError,
+  shopProductSearchParams,
+  type ShopProductQuery,
+} from "./public";
+import { normalizeImageUrl } from "../format";
 
 function shopPath(shopSlug: string, ...rest: (string | number)[]): string {
   return ["/api/shop", shopSlug, ...rest.map(String)]
@@ -41,11 +47,14 @@ export async function getShopProducts(
   init?: RequestInit,
 ): Promise<Paginated<ShopProduct>> {
   const params = shopProductSearchParams(query).toString();
-  const res = await fetch(`${shopPath(slug, "products")}${params ? `?${params}` : ""}`, {
-    method: "GET",
-    cache: "no-store",
-    ...init,
-  });
+  const res = await fetch(
+    `${shopPath(slug, "products")}${params ? `?${params}` : ""}`,
+    {
+      method: "GET",
+      cache: "no-store",
+      ...init,
+    },
+  );
   if (!res.ok) return failure(res, "Couldn't load products");
   return res.json();
 }
@@ -54,7 +63,8 @@ export async function updateShopProfile(
   slug: string,
   profile: Partial<ShopProfile> | FormData,
 ): Promise<Shop> {
-  const isFormData = typeof FormData !== "undefined" && profile instanceof FormData;
+  const isFormData =
+    typeof FormData !== "undefined" && profile instanceof FormData;
   const res = await fetch(shopPath(slug), {
     method: "PATCH",
     headers: isFormData ? undefined : { "Content-Type": "application/json" },
@@ -63,17 +73,57 @@ export async function updateShopProfile(
 
   if (!res.ok) {
     let message = `Could not update shop (${res.status})`;
+    let errorData: Record<string, unknown> | undefined;
     try {
-      const err = await res.json();
+      errorData = (await res.json()) as Record<string, unknown>;
       // DRF field errors arrive as {field: ["message"]}; surface the first.
-      const firstField = Object.values(err ?? {}).find(Array.isArray) as string[] | undefined;
-      message = err?.detail || firstField?.[0] || message;
+      const firstField = Object.values(errorData).find(Array.isArray) as
+        | string[]
+        | undefined;
+      message = errorData.detail || firstField?.[0] || message;
     } catch {
       // Keep default message
     }
-    throw new Error(message);
+    throw new ApiError(message, res.status, errorData);
   }
   return res.json();
+}
+
+export async function getShopPhotos(slug: string): Promise<ShopPhoto[]> {
+  const res = await fetch(shopPath(slug, "photos"), { cache: "no-store" });
+  if (!res.ok) return failure(res, "Could not load shop photos");
+  const data = await res.json();
+  const photos = Array.isArray(data) ? data : data.results;
+  return photos.map((photo: ShopPhoto) => ({
+    ...photo,
+    url: normalizeImageUrl(photo.url) || photo.url,
+  }));
+}
+
+export async function uploadShopPhoto(
+  slug: string,
+  file: File,
+  displayOrder: number,
+  isCover: boolean,
+): Promise<ShopPhoto> {
+  const body = new FormData();
+  body.append("image", file);
+  body.append("display_order", String(displayOrder));
+  body.append("is_cover", String(isCover));
+  const res = await fetch(shopPath(slug, "photos"), { method: "POST", body });
+  if (!res.ok) return failure(res, "Could not upload shop photo");
+  const photo = (await res.json()) as ShopPhoto;
+  return { ...photo, url: normalizeImageUrl(photo.url) || photo.url };
+}
+
+export async function deleteShopPhoto(
+  slug: string,
+  photoId: number,
+): Promise<void> {
+  const res = await fetch(shopPath(slug, "photos", photoId), {
+    method: "DELETE",
+  });
+  if (!res.ok) return failure(res, "Could not delete shop photo");
 }
 
 async function productAction(
@@ -89,20 +139,52 @@ async function productAction(
   return res.json();
 }
 
-export function confirmFreshness(shopSlug: string, productSlug: string): Promise<ShopProduct> {
-  return productAction(shopSlug, productSlug, "confirm", "Couldn't confirm freshness");
+export function confirmFreshness(
+  shopSlug: string,
+  productSlug: string,
+): Promise<ShopProduct> {
+  return productAction(
+    shopSlug,
+    productSlug,
+    "confirm",
+    "Couldn't confirm freshness",
+  );
 }
 
-export function markSold(shopSlug: string, productSlug: string): Promise<ShopProduct> {
-  return productAction(shopSlug, productSlug, "mark-sold", "Couldn't mark product as sold");
+export function markSold(
+  shopSlug: string,
+  productSlug: string,
+): Promise<ShopProduct> {
+  return productAction(
+    shopSlug,
+    productSlug,
+    "mark-sold",
+    "Couldn't mark product as sold",
+  );
 }
 
-export function pauseProduct(shopSlug: string, productSlug: string): Promise<ShopProduct> {
-  return productAction(shopSlug, productSlug, "pause", "Couldn't pause product");
+export function pauseProduct(
+  shopSlug: string,
+  productSlug: string,
+): Promise<ShopProduct> {
+  return productAction(
+    shopSlug,
+    productSlug,
+    "pause",
+    "Couldn't pause product",
+  );
 }
 
-export function resumeProduct(shopSlug: string, productSlug: string): Promise<ShopProduct> {
-  return productAction(shopSlug, productSlug, "resume", "Couldn't resume product");
+export function resumeProduct(
+  shopSlug: string,
+  productSlug: string,
+): Promise<ShopProduct> {
+  return productAction(
+    shopSlug,
+    productSlug,
+    "resume",
+    "Couldn't resume product",
+  );
 }
 
 export async function confirmSelectedFreshness(
@@ -118,12 +200,20 @@ export async function confirmSelectedFreshness(
   return res.json();
 }
 
-export async function deleteProduct(shopSlug: string, productSlug: string): Promise<void> {
-  const res = await fetch(shopPath(shopSlug, "products", productSlug), { method: "DELETE" });
+export async function deleteProduct(
+  shopSlug: string,
+  productSlug: string,
+): Promise<void> {
+  const res = await fetch(shopPath(shopSlug, "products", productSlug), {
+    method: "DELETE",
+  });
   if (!res.ok) return failure(res, "Couldn't delete product");
 }
 
-export async function createListing(product: NewProduct, shopSlug: string): Promise<ShopProduct> {
+export async function createListing(
+  product: NewProduct,
+  shopSlug: string,
+): Promise<ShopProduct> {
   const res = await fetch(shopPath(shopSlug, "products"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -133,7 +223,10 @@ export async function createListing(product: NewProduct, shopSlug: string): Prom
   return res.json();
 }
 
-export async function updateListing(product: NewProduct, shopSlug: string): Promise<ShopProduct> {
+export async function updateListing(
+  product: NewProduct,
+  shopSlug: string,
+): Promise<ShopProduct> {
   const res = await fetch(shopPath(shopSlug, "products", product.slug!), {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -148,9 +241,12 @@ export async function getListingImages(
   shopSlug: string,
   productSlug: string,
 ): Promise<ProductImage[]> {
-  const res = await fetch(shopPath(shopSlug, "products", productSlug, "images"), {
-    cache: "no-store",
-  });
+  const res = await fetch(
+    shopPath(shopSlug, "products", productSlug, "images"),
+    {
+      cache: "no-store",
+    },
+  );
   if (!res.ok) return failure(res, "Could not load product images");
   const data = (await res.json()) as ProductImage[] | Paginated<ProductImage>;
   return Array.isArray(data) ? data : data.results;
@@ -169,10 +265,13 @@ export async function uploadListingImage(
   shopSlug: string,
   image: ShopProductImage,
 ): Promise<ProductImage> {
-  const res = await fetch(shopPath(shopSlug, "products", productSlug, "images"), {
-    method: "POST",
-    body: imageForm(image),
-  });
+  const res = await fetch(
+    shopPath(shopSlug, "products", productSlug, "images"),
+    {
+      method: "POST",
+      body: imageForm(image),
+    },
+  );
   if (!res.ok) return failure(res, "Failed uploading product image");
   return res.json();
 }
@@ -195,9 +294,12 @@ export async function deleteListingImage(
   shopSlug: string,
   imageId: number,
 ): Promise<void> {
-  const res = await fetch(shopPath(shopSlug, "products", productSlug, "images", imageId), {
-    method: "DELETE",
-  });
+  const res = await fetch(
+    shopPath(shopSlug, "products", productSlug, "images", imageId),
+    {
+      method: "DELETE",
+    },
+  );
   if (!res.ok) return failure(res, "Failed deleting product image");
 }
 
@@ -210,11 +312,14 @@ export async function getTelegramState(slug: string): Promise<TelegramState> {
   return res.json();
 }
 
-export async function connectTelegram(slug: string): Promise<TelegramConnectResult> {
+export async function connectTelegram(
+  slug: string,
+): Promise<TelegramConnectResult> {
   const res = await fetch(shopPath(slug, "telegram", "connect"), {
     method: "POST",
   });
-  if (!res.ok) return failure(res, "Couldn't generate Telegram connection link");
+  if (!res.ok)
+    return failure(res, "Couldn't generate Telegram connection link");
   return res.json();
 }
 
@@ -224,4 +329,3 @@ export async function disconnectTelegram(slug: string): Promise<void> {
   });
   if (!res.ok) return failure(res, "Couldn't disconnect Telegram");
 }
-

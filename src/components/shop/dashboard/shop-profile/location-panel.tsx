@@ -5,6 +5,7 @@ import { Pill } from "@/components/tinsae/pill";
 import { Icon } from "@/components/tinsae/icon";
 import { cn } from "@/lib/utils";
 import type { Shop } from "@/lib/types";
+import { updateShopProfile } from "@/lib/api/client";
 import { Field, SettingsCard, getInitials, inputClass } from "./settings-card";
 
 // PLACEHOLDER: landmark and opening hours are not saved to the API yet, and
@@ -29,15 +30,38 @@ function useFlash() {
   return [on, flash] as const;
 }
 
-export default function LocationPanel({ shop }: { shop: Shop }) {
+export default function LocationPanel({
+  shop,
+  slug,
+  onShopUpdated,
+}: {
+  shop: Shop;
+  slug: string;
+  onShopUpdated?: (shop: Shop) => void;
+}) {
   const [neighborhood, setNeighborhood] = useState(shop.city || "");
-  const [landmark, setLandmark] = useState("");
+  const [landmark, setLandmark] = useState(shop.address || "");
   const [hours, setHours] = useState(DEFAULT_DAYS);
-  const [locSaved, saveLocation] = useFlash();
+  const [locSaved, setLocSaved] = useState(false);
   const [hoursSaved, saveHours] = useFlash();
 
+  const saveLocationDetails = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const updated = await updateShopProfile(slug, {
+      city: neighborhood.trim(),
+      address: landmark.trim(),
+    });
+    onShopUpdated?.(updated);
+    setLocSaved(true);
+    setTimeout(() => setLocSaved(false), 2500);
+  };
+
   const toggleDay = (index: number) => {
-    setHours((prev) => prev.map((item, i) => (i === index ? { ...item, open: !item.open } : item)));
+    setHours((prev) =>
+      prev.map((item, i) =>
+        i === index ? { ...item, open: !item.open } : item,
+      ),
+    );
   };
 
   return (
@@ -45,7 +69,7 @@ export default function LocationPanel({ shop }: { shop: Shop }) {
       <SettingsCard
         title="Location"
         sub="Pin your physical shop so buyers can find and visit you."
-        onSubmit={saveLocation}
+        onSubmit={saveLocationDetails}
         footer={
           <Pill kind="solid" size="sm" icon="check" type="submit">
             {locSaved ? "Saved" : "Save location"}
@@ -63,7 +87,14 @@ export default function LocationPanel({ shop }: { shop: Shop }) {
           >
             <rect width="800" height="200" fill="#E8EDE6" />
             <rect x="40" y="30" width="150" height="60" rx="8" fill="#E1E9DD" />
-            <rect x="560" y="120" width="190" height="64" rx="8" fill="#E1E9DD" />
+            <rect
+              x="560"
+              y="120"
+              width="190"
+              height="64"
+              rx="8"
+              fill="#E1E9DD"
+            />
             <g stroke="#fff" strokeWidth="14" strokeLinecap="round">
               <path d="M-20 110 L820 150" />
               <path d="M300 -20 L350 220" />
@@ -124,8 +155,13 @@ export default function LocationPanel({ shop }: { shop: Shop }) {
         }
       >
         {hours.map((item, index) => (
-          <div key={item.day} className="flex items-center gap-3.5 py-3 border-t border-tn-hair2">
-            <span className="w-[104px] text-[13.5px] font-bold text-tn-ink shrink-0">{item.day}</span>
+          <div
+            key={item.day}
+            className="flex items-center gap-3.5 py-3 border-t border-tn-hair2"
+          >
+            <span className="w-[104px] text-[13.5px] font-bold text-tn-ink shrink-0">
+              {item.day}
+            </span>
 
             <button
               type="button"
@@ -161,7 +197,9 @@ export default function LocationPanel({ shop }: { shop: Shop }) {
                 </span>
               </div>
             ) : (
-              <span className="text-[13px] font-semibold text-tn-mute">Closed</span>
+              <span className="text-[13px] font-semibold text-tn-mute">
+                Closed
+              </span>
             )}
           </div>
         ))}

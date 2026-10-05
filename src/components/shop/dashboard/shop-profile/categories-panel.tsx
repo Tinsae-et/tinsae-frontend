@@ -6,13 +6,24 @@ import { Icon } from "@/components/tinsae/icon";
 import { cn } from "@/lib/utils";
 import { useCategories } from "@/hooks/use-categories";
 import { SettingsCard } from "./settings-card";
+import { updateShopProfile } from "@/lib/api/client";
+import type { Shop } from "@/lib/types";
 
-// PLACEHOLDER: the shop API has no "categories sold" field yet, so selections
-// here are local only. The list itself is the backend's categories.
-export default function CategoriesPanel() {
+export default function CategoriesPanel({
+  shop,
+  slug,
+  onShopUpdated,
+}: {
+  shop: Shop;
+  slug: string;
+  onShopUpdated?: (shop: Shop) => void;
+}) {
   const categories = useCategories();
-  const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const [selected, setSelected] = useState<Set<string>>(
+    () => new Set(shop.categories ?? []),
+  );
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const toggle = (slug: string) => {
     setSelected((prev) => {
@@ -32,12 +43,22 @@ export default function CategoriesPanel() {
           kind="solid"
           size="sm"
           icon="check"
-          onClick={() => {
-            setSaved(true);
-            setTimeout(() => setSaved(false), 2500);
+          disabled={saving}
+          onClick={async () => {
+            setSaving(true);
+            try {
+              const updated = await updateShopProfile(slug, {
+                categories: [...selected],
+              });
+              onShopUpdated?.(updated);
+              setSaved(true);
+              setTimeout(() => setSaved(false), 2500);
+            } finally {
+              setSaving(false);
+            }
           }}
         >
-          {saved ? "Saved" : "Save categories"}
+          {saving ? "Saving…" : saved ? "Saved" : "Save categories"}
         </Pill>
       }
     >
@@ -56,20 +77,35 @@ export default function CategoriesPanel() {
                 onClick={() => toggle(cat.slug)}
                 className={cn(
                   "flex items-center gap-[13px] px-4 py-3.5 rounded-[13px] cursor-pointer text-left transition-colors border-[1.5px]",
-                  on ? "bg-tn-red-soft border-tn-red" : "bg-white border-tn-hair hover:border-tn-ink/20",
+                  on
+                    ? "bg-tn-red-soft border-tn-red"
+                    : "bg-white border-tn-hair hover:border-tn-ink/20",
                 )}
               >
                 <span className="size-[38px] rounded-[10px] bg-white border border-tn-hair flex items-center justify-center shrink-0">
-                  <Icon name={cat.icon} size={18} className={on ? "text-tn-red" : "text-tn-ink2"} />
+                  <Icon
+                    name={cat.icon}
+                    size={18}
+                    className={on ? "text-tn-red" : "text-tn-ink2"}
+                  />
                 </span>
-                <span className="flex-1 text-sm font-bold text-tn-ink">{cat.label}</span>
+                <span className="flex-1 text-sm font-bold text-tn-ink">
+                  {cat.label}
+                </span>
                 <span
                   className={cn(
                     "size-[22px] rounded-[7px] shrink-0 flex items-center justify-center transition-colors",
                     on ? "bg-tn-red" : "border-[1.5px] border-tn-hair bg-white",
                   )}
                 >
-                  {on && <Icon name="check" size={13} className="text-white" strokeWidth={3} />}
+                  {on && (
+                    <Icon
+                      name="check"
+                      size={13}
+                      className="text-white"
+                      strokeWidth={3}
+                    />
+                  )}
                 </span>
               </button>
             );

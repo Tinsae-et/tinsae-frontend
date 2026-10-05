@@ -7,6 +7,8 @@ import { Icon } from "@/components/tinsae/icon";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { Pill } from "@/components/tinsae/pill";
 import { getTelegramState, updateShopProfile } from "@/lib/api/client";
+import { ApiError } from "@/lib/api/public";
+import { normalizeImageUrl } from "@/lib/format";
 import type { Shop, TelegramState } from "@/lib/types";
 import {
   Feedback,
@@ -26,20 +28,53 @@ type Props = {
   onShopUpdated?: (shop: Shop) => void;
 };
 
-export default function ProfileForm({ shop, slug, telegramUsername, onShopUpdated }: Props) {
+export default function ProfileForm({
+  shop,
+  slug,
+  telegramUsername,
+  onShopUpdated,
+}: Props) {
   const [name, setName] = useState<string>(shop.name ?? "");
-  const [description, setDescription] = useState<string>(shop.description ?? "");
-  // PLACEHOLDER: the logo is preview-only; the shop API has no logo field yet.
-  const [logo, setLogo] = useState<string | null>(null);
+  const [description, setDescription] = useState<string>(
+    shop.description ?? "",
+  );
+  const [logo, setLogo] = useState<string | null>(() =>
+    normalizeImageUrl(shop.logo),
+  );
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
-  const [telegramState, setTelegramState] = useState<TelegramState | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [telegramState, setTelegramState] = useState<TelegramState | null>(
+    null,
+  );
 
   useEffect(() => {
     getTelegramState(slug)
       .then(setTelegramState)
       .catch(() => {});
   }, [slug]);
+
+  useEffect(() => {
+    const dirty =
+      name !== (shop.name ?? "") ||
+      description !== (shop.description ?? "") ||
+      logo !== normalizeImageUrl(shop.logo) ||
+      Boolean(logoFile);
+    const warn = (event: BeforeUnloadEvent) => {
+      if (dirty) event.preventDefault();
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [
+    description,
+    logo,
+    logoFile,
+    name,
+    shop.description,
+    shop.logo,
+    shop.name,
+  ]);
 
   const logoRef = useRef<string | null>(null);
   useEffect(() => {
@@ -60,14 +95,20 @@ export default function ProfileForm({ shop, slug, telegramUsername, onShopUpdate
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) replaceLogo(URL.createObjectURL(file));
+    e.target.value = "";
+    if (file) {
+      setLogoFile(file);
+      replaceLogo(URL.createObjectURL(file));
+    }
   };
 
   const handleReset = () => {
     setName(shop.name ?? "");
     setDescription(shop.description ?? "");
-    replaceLogo(null);
+    setLogoFile(null);
+    replaceLogo(normalizeImageUrl(shop.logo));
     setFeedback(null);
+    setFieldErrors({});
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -85,16 +126,37 @@ export default function ProfileForm({ shop, slug, telegramUsername, onShopUpdate
 
     setSaving(true);
     try {
-      const updated = await updateShopProfile(slug, {
-        name: trimmedName,
-        description: description.trim(),
-      });
+      const profile = logoFile ? new FormData() : null;
+      if (profile) {
+        profile.append("name", trimmedName);
+        profile.append("description", description.trim());
+        profile.append("logo", logoFile);
+      }
+      const updated = await updateShopProfile(
+        slug,
+        profile ?? { name: trimmedName, description: description.trim() },
+      );
+      if (logoFile) {
+        setLogoFile(null);
+        replaceLogo(normalizeImageUrl(updated.logo));
+      }
       onShopUpdated?.(updated);
       setFeedback({ type: "success", message: "Shop profile saved." });
     } catch (err) {
+      if (err instanceof ApiError && err.data) {
+        const next: Record<string, string> = {};
+        for (const [field, value] of Object.entries(err.data)) {
+          if (Array.isArray(value) && typeof value[0] === "string")
+            next[field] = value[0];
+        }
+        setFieldErrors(next);
+      }
       setFeedback({
         type: "error",
-        message: err instanceof Error ? err.message : "Couldn't save your profile. Please try again.",
+        message:
+          err instanceof Error
+            ? err.message
+            : "Couldn't save your profile. Please try again.",
       });
     } finally {
       setSaving(false);
@@ -112,10 +174,21 @@ export default function ProfileForm({ shop, slug, telegramUsername, onShopUpdate
       onSubmit={handleSubmit}
       footer={
         <>
-          <Pill kind="outline" size="sm" onClick={handleReset} disabled={saving}>
+          <Pill
+            kind="outline"
+            size="sm"
+            onClick={handleReset}
+            disabled={saving}
+          >
             Cancel
           </Pill>
-          <Pill kind="solid" size="sm" icon={saving ? undefined : "check"} type="submit" disabled={saving}>
+          <Pill
+            kind="solid"
+            size="sm"
+            icon={saving ? undefined : "check"}
+            type="submit"
+            disabled={saving}
+          >
             {saving ? "Saving…" : "Save changes"}
           </Pill>
         </>
@@ -127,7 +200,14 @@ export default function ProfileForm({ shop, slug, telegramUsername, onShopUpdate
       <div className="flex items-center gap-[18px] flex-wrap mb-[22px]">
         {logo ? (
           <div className="size-[72px] rounded-2xl overflow-hidden border border-tn-hair bg-tn-paper shrink-0">
-            <Image src={logo} alt="Shop logo" width={72} height={72} unoptimized className="size-full object-cover" />
+            <Image
+              src={logo}
+              alt="Shop logo"
+              width={72}
+              height={72}
+              unoptimized
+              className="size-full object-cover"
+            />
           </div>
         ) : (
           <div className="size-[72px] bg-[#0F2A4D] rounded-2xl flex items-center justify-center text-white font-extrabold text-2xl shrink-0">
@@ -148,7 +228,9 @@ export default function ProfileForm({ shop, slug, telegramUsername, onShopUpdate
               Change logo
             </span>
           </label>
-          <p className="text-[11.5px] text-tn-mute mt-2">Square PNG, at least 256×256.</p>
+          <p className="text-[11.5px] text-tn-mute mt-2">
+            Square PNG, at least 256×256.
+          </p>
         </div>
 
         <div className="ml-auto shrink-0">
@@ -170,13 +252,14 @@ export default function ProfileForm({ shop, slug, telegramUsername, onShopUpdate
       </div>
 
       <div className="grid sm:grid-cols-2 gap-4 mb-4">
-        <Field label="Shop name">
+        <Field label="Shop name" error={fieldErrors.name}>
           <input
             type="text"
             name="name"
             value={name}
             onChange={(e) => {
               setName(e.target.value);
+              setFieldErrors((prev) => ({ ...prev, name: "" }));
               clearFeedback();
             }}
             placeholder="Enter shop name"
@@ -187,8 +270,13 @@ export default function ProfileForm({ shop, slug, telegramUsername, onShopUpdate
         <Field
           label="Telegram bot"
           hint={
-            <Link href="/shop/dashboard/telegram" className="font-bold text-tn-ink underline">
-              {telegramState?.status === "connected" ? "Manage bot" : "Set up bot"}
+            <Link
+              href="/shop/dashboard/telegram"
+              className="font-bold text-tn-ink underline"
+            >
+              {telegramState?.status === "connected"
+                ? "Manage bot"
+                : "Set up bot"}
             </Link>
           }
         >

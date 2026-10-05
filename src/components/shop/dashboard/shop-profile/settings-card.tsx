@@ -30,7 +30,8 @@ export function SettingsCard({
   bodyClassName,
   children,
 }: CardProps) {
-  const className = "border border-tn-hair rounded-[18px] bg-white overflow-hidden";
+  const className =
+    "border border-tn-hair rounded-[18px] bg-white overflow-hidden";
   const inner = (
     <>
       <div className="px-[22px] pt-[18px] pb-[14px] border-b border-tn-hair2">
@@ -38,7 +39,9 @@ export function SettingsCard({
           {title}
         </h2>
         {sub && (
-          <p className="text-[12.5px] leading-[1.45] text-tn-mute mt-[3px]">{sub}</p>
+          <p className="text-[12.5px] leading-[1.45] text-tn-mute mt-[3px]">
+            {sub}
+          </p>
         )}
       </div>
       <div className={cn("px-[22px] py-5", bodyClassName)}>{children}</div>
@@ -62,17 +65,26 @@ export function SettingsCard({
 export function Field({
   label,
   hint,
+  error,
   children,
 }: {
   label: string;
   hint?: React.ReactNode;
+  error?: string;
   children: React.ReactNode;
 }) {
   return (
     <label className="block">
-      <span className="block text-[12.5px] font-bold text-tn-ink2 mb-[7px]">{label}</span>
+      <span className="block text-[12.5px] font-bold text-tn-ink2 mb-[7px]">
+        {label}
+      </span>
       {children}
-      {hint && <span className="block text-[11.5px] text-tn-mute mt-1.5">{hint}</span>}
+      {error && (
+        <span className="block text-[11.5px] text-tn-red mt-1.5">{error}</span>
+      )}
+      {hint && (
+        <span className="block text-[11.5px] text-tn-mute mt-1.5">{hint}</span>
+      )}
     </label>
   );
 }
