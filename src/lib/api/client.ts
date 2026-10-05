@@ -76,13 +76,14 @@ export async function updateShopProfile(
     let errorData: Record<string, unknown> | undefined;
     try {
       errorData = (await res.json()) as Record<string, unknown>;
-      // DRF field errors arrive as {field: ["message"]}; surface the first.
-      const firstField = Object.values(errorData).find(Array.isArray) as
-        | string[]
-        | undefined;
-      const detail =
-        typeof errorData.detail === "string" ? errorData.detail : undefined;
-      message = detail || firstField?.[0] || message;
+      if (errorData && typeof errorData === "object") {
+        const firstField = Object.values(errorData).find(Array.isArray) as
+          | string[]
+          | undefined;
+        const detail =
+          typeof errorData.detail === "string" ? errorData.detail : undefined;
+        message = detail || firstField?.[0] || message;
+      }
     } catch {
       // Keep default message
     }
