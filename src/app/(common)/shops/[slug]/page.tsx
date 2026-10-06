@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Icon } from "@/components/tinsae/icon";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { TabsBar } from "@/components/shop-profile/tabs-bar";
+import { ShareButton } from "@/components/shop-profile/share-button";
 import { getPublicShopProducts, getShop } from "@/lib/api/public";
 import { Pill } from "@/components/tinsae/pill";
 import { getInitials, getShopColor } from "@/lib/shops-data";
@@ -212,9 +213,7 @@ export default async function ShopProfilePage({ params }: Props) {
           </div>
 
           <div className="flex items-center gap-2.5 pb-1">
-            <Pill kind="outline" size="md" icon="arrow" href={`/shops/${slug}`}>
-              Share
-            </Pill>
+            <ShareButton shopName={shop.name} />
 
             <Pill kind="solid" size="md" icon={contactIcon} href={contactHref}>
               {contactLabel}

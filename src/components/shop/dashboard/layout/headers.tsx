@@ -1,14 +1,34 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Icon } from "@/components/tinsae/icon";
 import { Pill } from "@/components/tinsae/pill";
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
+import { confirmAllShopProducts } from "@/lib/api/client";
 
 export const OverviewHeader = ({
   setShowSidebar,
 }: {
   setShowSidebar: (val: boolean) => void;
 }) => {
+  const [currentTime, setCurrentTime] = useState("");
+
+  useEffect(() => {
+    const formatCurrentTime = () => {
+      setCurrentTime(
+        new Intl.DateTimeFormat(undefined, {
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        }).format(new Date()),
+      );
+    };
+
+    formatCurrentTime();
+    const interval = window.setInterval(formatCurrentTime, 60_000);
+    return () => window.clearInterval(interval);
+  }, []);
+
   return (
     <div className="w-full flex items-center justify-between">
       <div className="flex items-center gap-3">
@@ -33,7 +53,9 @@ export const OverviewHeader = ({
       <div className="flex items-center gap-2.5">
         <div className="hidden md:flex h-[42px] px-4 rounded-full border border-tn-hair bg-white items-center gap-2 text-[13px] text-tn-ink shadow-[0_2px_8px_rgba(11,11,11,0.04)]">
           <Icon name="clock" size={15} className="text-tn-mute" />
-          <span className="font-tn-mono text-xs">Today · Jun 4</span>
+          <span className="font-tn-mono text-xs">
+            {currentTime ? `Today · ${currentTime}` : "Today"}
+          </span>
         </div>
 
         <Pill kind="outline" size="sm" icon="bell">
@@ -55,9 +77,31 @@ export const OverviewHeader = ({
 
 export const ListingHeader = ({
   setShowSidebar,
+  shopSlug,
 }: {
   setShowSidebar: (val: boolean) => void;
+  shopSlug: string;
 }) => {
+  const [confirmState, setConfirmState] = useState<
+    "idle" | "loading" | "success" | "empty" | "error"
+  >("idle");
+
+  const handleConfirmAll = async () => {
+    if (confirmState === "loading") return;
+    setConfirmState("loading");
+    try {
+      const confirmed = await confirmAllShopProducts(shopSlug);
+      if (confirmed === 0) {
+        setConfirmState("empty");
+        return;
+      }
+      setConfirmState("success");
+      window.dispatchEvent(new Event("tinsae:listings-refresh"));
+    } catch {
+      setConfirmState("error");
+    }
+  };
+
   return (
     <div className="w-full flex items-center justify-between">
       <div className="flex items-center gap-3">
@@ -80,8 +124,27 @@ export const ListingHeader = ({
       </div>
 
       <div className="flex items-center gap-2.5">
-        <Pill kind="outline" size="sm" icon="check">
-          Confirm all stock
+        <Pill
+          kind="outline"
+          size="sm"
+          icon={confirmState === "loading" ? undefined : "check"}
+          disabled={confirmState === "loading"}
+          onClick={handleConfirmAll}
+        >
+          {confirmState === "loading" ? (
+            <>
+              <Loader2 className="size-3.5 animate-spin" />
+              Confirming...
+            </>
+          ) : confirmState === "success" ? (
+            "All stock confirmed"
+          ) : confirmState === "empty" ? (
+            "No listings to confirm"
+          ) : confirmState === "error" ? (
+            "Try again"
+          ) : (
+            "Confirm all stock"
+          )}
         </Pill>
         <Pill
           kind="solid"
@@ -136,17 +199,21 @@ export const NewListingHeader = ({
       </div>
 
       <div className="flex items-center gap-2.5">
-        <Pill kind="outline" size="sm">
-          Save draft
-        </Pill>
-        <button
-          className="inline-flex items-center justify-center gap-2 rounded-full font-bold tracking-[-0.01em] whitespace-nowrap transition-[transform,box-shadow,background] duration-150 hover:-translate-y-px hover:bg-tn-red/90 bg-tn-red py-2 px-4 text-white cursor-pointer shadow-[0_2px_8px_rgba(204,48,0,0.2)]"
-          type="submit"
-          form="product-form"
-        >
-          <Check className="w-4 h-4" />
-          {isEdit ? "Save changes" : "Publish listing"}
-        </button>
+        {isEdit && (
+          <>
+            <Pill kind="outline" size="sm">
+              Save draft
+            </Pill>
+            <button
+              className="inline-flex items-center justify-center gap-2 rounded-full font-bold tracking-[-0.01em] whitespace-nowrap transition-[transform,box-shadow,background] duration-150 hover:-translate-y-px hover:bg-tn-red/90 bg-tn-red py-2 px-4 text-white cursor-pointer shadow-[0_2px_8px_rgba(204,48,0,0.2)]"
+              type="submit"
+              form="product-form"
+            >
+              <Check className="w-4 h-4" />
+              Save changes
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

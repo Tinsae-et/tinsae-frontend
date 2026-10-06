@@ -14,7 +14,13 @@ import {
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import Image from "next/image";
-import { confirmFreshness, markSold, pauseProduct, resumeProduct } from "@/lib/api/client";
+import {
+  confirmAllShopProducts,
+  confirmFreshness,
+  markSold,
+  pauseProduct,
+  resumeProduct,
+} from "@/lib/api/client";
 import DeleteListing from "../listings/delete-listing";
 import {
   Loader2,
@@ -554,7 +560,10 @@ function TableRow({
               {product.name}
             </button>
             <div className="text-[11.5px] text-tn-mute truncate">
-              {product.description || (product.brand ? `${product.brand} · ${product.category}` : product.category)}
+              {product.description ||
+                (product.brand
+                  ? `${product.brand} · ${product.category}`
+                  : product.category)}
             </div>
             {rowError && (
               <div className="text-[10.5px] text-red-600 font-semibold mt-0.5">
@@ -739,10 +748,30 @@ function ListingsTable({
 function Numbers({
   shopName,
   products,
+  shopSlug,
+  onProductsUpdated,
 }: {
   shopName: string;
   products: ShopProduct[];
+  shopSlug: string;
+  onProductsUpdated: () => void;
 }) {
+  const [confirmState, setConfirmState] = useState<
+    "idle" | "loading" | "success" | "empty" | "error"
+  >("idle");
+
+  const handleConfirmAll = async () => {
+    if (confirmState === "loading") return;
+    setConfirmState("loading");
+    try {
+      const confirmed = await confirmAllShopProducts(shopSlug);
+      setConfirmState(confirmed === 0 ? "empty" : "success");
+      onProductsUpdated();
+    } catch {
+      setConfirmState("error");
+    }
+  };
+
   const kpis = useMemo(() => buildKpis(products), [products]);
 
   const needsReconfirming = products.filter(
@@ -781,8 +810,27 @@ function Numbers({
         </div>
 
         <div className="flex items-center gap-3">
-          <Pill kind="outline" size="md" icon="check">
-            Confirm all stock
+          <Pill
+            kind="outline"
+            size="md"
+            icon={confirmState === "loading" ? undefined : "check"}
+            disabled={confirmState === "loading"}
+            onClick={handleConfirmAll}
+          >
+            {confirmState === "loading" ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Confirming...
+              </>
+            ) : confirmState === "success" ? (
+              "All stock confirmed"
+            ) : confirmState === "empty" ? (
+              "No listings to confirm"
+            ) : confirmState === "error" ? (
+              "Try again"
+            ) : (
+              "Confirm all stock"
+            )}
           </Pill>
           <Pill kind="solid" size="md" icon="msg">
             Reply to inquiries
@@ -819,7 +867,10 @@ export default function Overview({
   // backend allows (max_page_size = 100). DRF's default page of 20 made every
   // total wrong for larger shops. Beyond 100 listings the tiles need a
   // server-side stats endpoint.
-  const { products, loading, refetch } = useShopProducts({ pageSize: 100 }, slug);
+  const { products, loading, refetch } = useShopProducts(
+    { pageSize: 100 },
+    slug,
+  );
 
   if (loading) {
     return (
@@ -850,7 +901,9 @@ export default function Overview({
   );
 
   if (products.length === 0) {
-    return <GuidedFirstRun shopName={shopName} shopSlug={slug} basePath={basePath} />;
+    return (
+      <GuidedFirstRun shopName={shopName} shopSlug={slug} basePath={basePath} />
+    );
   }
 
   return (
@@ -877,8 +930,8 @@ export default function Overview({
                   confirmation
                 </h2>
                 <p className="mt-1 text-sm font-medium text-tn-ink2">
-                  Confirm your stock today so buyers see accurate availability in
-                  search. Unconfirmed products become hidden.
+                  Confirm your stock today so buyers see accurate availability
+                  in search. Unconfirmed products become hidden.
                 </p>
               </div>
             </div>
@@ -893,7 +946,12 @@ export default function Overview({
           </div>
         </section>
       )}
-      <Numbers shopName={shopName} products={products} />
+      <Numbers
+        shopName={shopName}
+        products={products}
+        shopSlug={slug}
+        onProductsUpdated={refetch}
+      />
       <div className="grid md:grid-cols-2 gap-4">
         <DailyStockCheckIn
           products={products}
@@ -902,7 +960,11 @@ export default function Overview({
         />
         <RecentActivities />
       </div>
-      <ListingsTable products={products} shopSlug={slug} onProductUpdated={refetch} />
+      <ListingsTable
+        products={products}
+        shopSlug={slug}
+        onProductUpdated={refetch}
+      />
     </div>
   );
 }

@@ -203,6 +203,35 @@ export async function confirmSelectedFreshness(
   return res.json();
 }
 
+/** Confirms every product in the shop, respecting the API's batch limit. */
+export async function confirmAllShopProducts(
+  shopSlug: string,
+): Promise<number> {
+  const slugs: string[] = [];
+  let page = 1;
+
+  while (true) {
+    const response = await getShopProducts(
+      shopSlug,
+      { page, pageSize: 100 },
+      { cache: "no-store" },
+    );
+    slugs.push(...response.results.map((product) => product.slug));
+    if (!response.next || response.results.length === 0) break;
+    page += 1;
+  }
+
+  let confirmed = 0;
+  for (let index = 0; index < slugs.length; index += 100) {
+    const response = await confirmSelectedFreshness(
+      shopSlug,
+      slugs.slice(index, index + 100),
+    );
+    confirmed += response.confirmed.length;
+  }
+  return confirmed;
+}
+
 export async function deleteProduct(
   shopSlug: string,
   productSlug: string,

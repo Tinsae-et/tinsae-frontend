@@ -25,7 +25,7 @@ export default function DashboardHeader({
         <OverviewHeader setShowSidebar={setShowSidebar} />
       )}
       {pathname === "/shop/dashboard/listings" && (
-        <ListingHeader setShowSidebar={setShowSidebar} />
+        <ListingHeader setShowSidebar={setShowSidebar} shopSlug={shopSlug} />
       )}
       {(pathname === "/shop/dashboard/listings/new" ||
         pathname === "/shop/dashboard/listings/edit") && (
