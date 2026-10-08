@@ -93,6 +93,7 @@ Settings come from environment variables (see `.env.example`). The real
 | --------------------- | ----------------------------------------------------------- | ---------------------------------- |
 | `NEXT_PUBLIC_API_URL` | Backend API base URL for **browser** code                   | `http://localhost:8000`            |
 | `API_INTERNAL_URL`    | Backend API base URL for **server-side** code (Docker only) | `http://host.docker.internal:8000` |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Google Maps JS API key for the shop profile map (optional) | your restricted dev key |
 
 The `NEXT_PUBLIC_` prefix makes a value available to browser-side code.
 
