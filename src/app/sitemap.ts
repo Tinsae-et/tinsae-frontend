@@ -27,6 +27,7 @@ const STATIC_ROUTES = [
   "/terms-and-privacy",
   "/returns",
   "/press",
+  "/telegram-bot",
 ];
 
 async function collect<T>(
