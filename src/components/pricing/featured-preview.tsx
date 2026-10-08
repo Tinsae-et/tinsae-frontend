@@ -1,7 +1,44 @@
 import { Zap } from "lucide-react";
 
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
-import { PREVIEW_SHOPS } from "./data";
+
+// An illustration of the Featured ad format, not live data: example shops in a
+// mock search result, labelled as the real one will be.
+type PreviewShop = {
+  initials: string;
+  initialsBg: string;
+  name: string;
+  location: string;
+  price: string;
+  featured?: boolean;
+};
+
+const PREVIEW_SHOPS: PreviewShop[] = [
+  {
+    initials: "AE",
+    initialsBg: "#0B0B0B",
+    name: "Almeda Electronics",
+    location: "Bole · Atlas",
+    price: "ETB 142,500",
+    featured: true,
+  },
+  {
+    initials: "MT",
+    initialsBg: "#2D4543",
+    name: "Mosaic Tech Hub",
+    location: "Bole · Friendship",
+    price: "ETB 144,800",
+    featured: false,
+  },
+  {
+    initials: "AD",
+    initialsBg: "#334155",
+    name: "Axum Digital",
+    location: "Bole · Olympia",
+    price: "ETB 145,200",
+    featured: false,
+  },
+];
 
 export function FeaturedPreview() {
   const featuredShop = PREVIEW_SHOPS.find((s) => s.featured);
@@ -19,7 +56,7 @@ export function FeaturedPreview() {
             Top of the results, with a ribbon that earns trust.
           </h2>
           <p className="text-tn-mute mt-4 max-w-md text-sm leading-relaxed sm:text-[14.5px]">
-            Featured shops appear above standard listings on the exact searches
+            Featured shops will appear above standard results on the exact searches
             buyers are already making — clearly marked, never disguised as
             anything but a verified shop putting its best price forward.
           </p>

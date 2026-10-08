@@ -3,13 +3,9 @@
 import { useState } from "react";
 import { Plus, X } from "lucide-react";
 
-import { PRICING_FAQS, type PricingFaq } from "./data";
+import type { PricingFaq } from "@/lib/pricing";
 
-interface BillingFaqProps {
-  faqs?: readonly PricingFaq[];
-}
-
-export function BillingFaq({ faqs = PRICING_FAQS }: BillingFaqProps) {
+export function BillingFaq({ faqs }: { faqs: readonly PricingFaq[] }) {
   // First item open by default as in design screenshot
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
@@ -23,7 +19,7 @@ export function BillingFaq({ faqs = PRICING_FAQS }: BillingFaqProps) {
         {/* Eyebrow and Heading */}
         <div className="text-center">
           <p className="text-tn-red mb-2 text-[11px] font-extrabold tracking-[0.14em] uppercase sm:text-xs">
-            Billing Questions
+            Questions
           </p>
           <h2 className="text-tn-ink text-2xl leading-tight font-extrabold tracking-[-0.03em] sm:text-[32px]">
             Good to know

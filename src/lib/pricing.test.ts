@@ -1,57 +1,46 @@
 import { describe, expect, it } from "vitest";
-import {
-  PRICING_PLANS,
-  PRICING_FAQS,
-  BILLING_ACCOUNT,
-  BILLING_INVOICES,
-  PREVIEW_SHOPS,
-} from "@/components/pricing/data";
+import { PRICING, annualSavingMonths, formatAmount, monthlyPrice, priceNote } from "./pricing";
 
-describe("Pricing Page Data & Architecture", () => {
-  it("includes all 3 tiers with correct data matching 10 Billing.png", () => {
-    expect(PRICING_PLANS).toHaveLength(3);
-    const [free, featured, premium] = PRICING_PLANS;
-
-    expect(free.name).toBe("Free");
-    expect(free.monthlyPrice).toBe("0");
-    expect(free.cta).toBe("Current plan");
-    expect(free.features).toContain("Up to 20 live listings");
-    expect(free.features).toContain("Verified shop badge");
-
-    expect(featured.name).toBe("Featured");
-    expect(featured.featured).toBe(true);
-    expect(featured.monthlyPrice).toBe("1,500");
-    expect(featured.cta).toBe("Upgrade to Featured");
-    expect(featured.features).toContain("Featured placement in search");
-
-    expect(premium.name).toBe("Premium");
-    expect(premium.monthlyPrice).toBe("3,500");
-    expect(premium.cta).toBe("Upgrade to Premium");
-    expect(premium.features).toContain("Top-of-search boosts");
+describe("pricing config", () => {
+  it("has the three tiers, free first, each leading to sign-up", () => {
+    expect(PRICING.plans.map((p) => p.id)).toEqual(["free", "featured", "premium"]);
+    expect(PRICING.plans[0].monthly).toBe(0);
+    expect(PRICING.signupHref).toBe("/signup");
   });
 
-  it("contains valid billing account and invoices matching design mockup", () => {
-    expect(BILLING_ACCOUNT.currentPlan).toBe("Featured");
-    expect(BILLING_ACCOUNT.paymentMethod.provider).toBe("telebirr");
-    expect(BILLING_ACCOUNT.paymentMethod.status).toBe("Active");
-
-    expect(BILLING_INVOICES).toHaveLength(3);
-    expect(BILLING_INVOICES[0].id).toBe("INV-2026-0612");
-    expect(BILLING_INVOICES[0].status).toBe("Paid");
+  it("marks the paid tiers as not yet purchasable", () => {
+    for (const plan of PRICING.plans) {
+      expect(Boolean(plan.comingSoon)).toBe(plan.monthly > 0);
+    }
   });
 
-  it("contains all FAQ items matching design mockup", () => {
-    expect(PRICING_FAQS).toHaveLength(4);
-    expect(PRICING_FAQS[0].question).toContain("take a commission");
-    expect(PRICING_FAQS[1].question).toContain("cancel or change plan");
-    expect(PRICING_FAQS[2].question).toContain("listings if I downgrade");
-    expect(PRICING_FAQS[3].question).toContain("payment methods");
+  it("opens the FAQ with the commission answer", () => {
+    expect(PRICING.faqs[0].question).toMatch(/commission/);
+    expect(PRICING.faqs[0].answer).toMatch(/^No/);
+  });
+});
+
+describe("price display", () => {
+  const featured = { monthly: 1500, annual: 15000 };
+  const premium = { monthly: 3500, annual: 35000 };
+
+  it("spreads the annual price over twelve months, rounded", () => {
+    expect(monthlyPrice(featured, "monthly")).toBe(1500);
+    expect(monthlyPrice(featured, "annual")).toBe(1250);
+    expect(monthlyPrice(premium, "annual")).toBe(2917);
   });
 
-  it("contains the preview shops for the search mockup", () => {
-    expect(PREVIEW_SHOPS).toHaveLength(3);
-    const featuredShop = PREVIEW_SHOPS.find((s) => s.featured);
-    expect(featuredShop?.name).toBe("Almeda Electronics");
-    expect(featuredShop?.price).toBe("ETB 142,500");
+  it("describes how each cycle is billed", () => {
+    expect(priceNote({ monthly: 0, annual: 0 }, "annual")).toBe("Free forever");
+    expect(priceNote(featured, "monthly")).toBe("Billed monthly");
+    expect(priceNote(featured, "annual")).toBe("ETB 15,000 billed yearly");
+  });
+
+  it("derives the 'months free' badge from the prices", () => {
+    expect(annualSavingMonths(PRICING.plans)).toBe(2);
+  });
+
+  it("formats with thousands separators", () => {
+    expect(formatAmount(15000)).toBe("15,000");
   });
 });
