@@ -35,6 +35,8 @@ export type Product = {
   shop_name: string;
   shop_slug?: string;
   shop_verified: boolean;
+  /** The seller's logo; null shows their initials instead. */
+  shop_logo?: string | null;
   category: Category | null;
   /** Ordered product images (primary first); empty when unset. */
   images: ProductImage[];
@@ -158,6 +160,8 @@ export type ShopProfile = {
   city?: string;
   address?: string;
   categories?: string[];
+  /** Null clears the logo; a new one is sent as multipart instead. */
+  logo?: null;
 };
 
 export type TelegramStatus = "idle" | "connected" | "blocked";

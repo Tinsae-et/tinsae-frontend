@@ -139,7 +139,7 @@ export const ListingHeader = ({
           ) : confirmState === "success" ? (
             "All stock confirmed"
           ) : confirmState === "empty" ? (
-            "No listings to confirm"
+            "No products to confirm"
           ) : confirmState === "error" ? (
             "Try again"
           ) : (

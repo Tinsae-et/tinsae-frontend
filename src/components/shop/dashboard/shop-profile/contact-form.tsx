@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Pill } from "@/components/tinsae/pill";
 import { updateShopProfile } from "@/lib/api/client";
-import { ApiError } from "@/lib/api/public";
+import { fieldErrorsFrom, saveErrorMessage } from "@/lib/field-errors";
 import type { Shop } from "@/lib/types";
 import {
   Feedback,
@@ -17,54 +17,52 @@ type Props = {
   shop: Shop;
   slug: string;
   onShopUpdated?: (shop: Shop) => void;
+  onDirtyChange?: (dirty: boolean) => void;
 };
 
-export default function ContactForm({ shop, slug, onShopUpdated }: Props) {
+export default function ContactForm({
+  shop,
+  slug,
+  onShopUpdated,
+  onDirtyChange,
+}: Props) {
   const [phone, setPhone] = useState<string>(shop.phone ?? "");
-  // PLACEHOLDER: the shop API has no public-email field yet; this is not saved.
-  const [publicEmail, setPublicEmail] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
-  const [fieldError, setFieldError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  React.useEffect(() => {
-    const dirty = phone !== (shop.phone ?? "");
-    const warn = (event: BeforeUnloadEvent) => {
-      if (dirty) event.preventDefault();
-    };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [phone, shop.phone]);
+  const dirty = phone !== (shop.phone ?? "");
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFeedback(null);
-    setFieldError("");
 
     const cleanPhone = phone.trim();
     if (!cleanPhone) {
-      setFeedback({
-        type: "error",
-        message: "Phone number is required so buyers can contact your shop.",
-      });
+      setFieldErrors({ phone: "Buyers need a number to reach your shop." });
       return;
     }
 
     setSaving(true);
     try {
       const updated = await updateShopProfile(slug, { phone: cleanPhone });
+      setPhone(updated.phone ?? cleanPhone);
       onShopUpdated?.(updated);
+      setFieldErrors({});
       setFeedback({ type: "success", message: "Contact details saved." });
     } catch (err) {
-      if (err instanceof ApiError && Array.isArray(err.data?.phone)) {
-        setFieldError(String(err.data.phone[0]));
-      }
+      const fields = fieldErrorsFrom(err);
+      setFieldErrors(fields);
       setFeedback({
         type: "error",
-        message:
-          err instanceof Error
-            ? err.message
-            : "Could not update phone number. Please try again.",
+        message: saveErrorMessage(
+          err,
+          fields,
+          "Couldn't save your phone number. Please try again.",
+        ),
       });
     } finally {
       setSaving(false);
@@ -93,31 +91,21 @@ export default function ContactForm({ shop, slug, onShopUpdated }: Props) {
       <div className="grid sm:grid-cols-2 gap-4">
         <Field
           label="Phone"
-          error={fieldError}
+          error={fieldErrors.phone}
           hint={<>Shown only after a buyer taps &ldquo;reveal&rdquo;.</>}
         >
           <input
             type="tel"
             name="phone"
             value={phone}
+            aria-invalid={Boolean(fieldErrors.phone) || undefined}
             onChange={(e) => {
               setPhone(e.target.value);
-              setFieldError("");
+              setFieldErrors((prev) => ({ ...prev, phone: "" }));
               if (feedback) setFeedback(null);
             }}
             placeholder="+251 9X XXX XXXX"
             className={`${inputClass} font-tn-mono`}
-          />
-        </Field>
-
-        <Field label="Public email (optional)">
-          <input
-            type="email"
-            name="publicEmail"
-            value={publicEmail}
-            onChange={(e) => setPublicEmail(e.target.value)}
-            placeholder="sales@yourshop.et"
-            className={inputClass}
           />
         </Field>
       </div>

@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Pill } from "@/components/tinsae/pill";
 import { Icon } from "@/components/tinsae/icon";
 import { cn } from "@/lib/utils";
 import { useCategories } from "@/hooks/use-categories";
-import { SettingsCard } from "./settings-card";
+import { Feedback, FeedbackBanner, SettingsCard } from "./settings-card";
 import { updateShopProfile } from "@/lib/api/client";
 import type { Shop } from "@/lib/types";
 
@@ -13,25 +13,58 @@ export default function CategoriesPanel({
   shop,
   slug,
   onShopUpdated,
+  onDirtyChange,
 }: {
   shop: Shop;
   slug: string;
   onShopUpdated?: (shop: Shop) => void;
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const categories = useCategories();
   const [selected, setSelected] = useState<Set<string>>(
     () => new Set(shop.categories ?? []),
   );
-  const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
 
-  const toggle = (slug: string) => {
+  const stored = shop.categories ?? [];
+  const dirty =
+    selected.size !== stored.length || stored.some((c) => !selected.has(c));
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+
+  const toggle = (category: string) => {
+    setFeedback(null);
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(slug)) next.delete(slug);
-      else next.add(slug);
+      if (next.has(category)) next.delete(category);
+      else next.add(category);
       return next;
     });
+  };
+
+  const save = async () => {
+    setSaving(true);
+    setFeedback(null);
+    try {
+      const updated = await updateShopProfile(slug, {
+        categories: [...selected],
+      });
+      setSelected(new Set(updated.categories ?? []));
+      onShopUpdated?.(updated);
+      setFeedback({ type: "success", message: "Categories saved." });
+    } catch (err) {
+      setFeedback({
+        type: "error",
+        message:
+          err instanceof Error && err.message
+            ? err.message
+            : "Couldn't save your categories. Please try again.",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -44,24 +77,13 @@ export default function CategoriesPanel({
           size="sm"
           icon="check"
           disabled={saving}
-          onClick={async () => {
-            setSaving(true);
-            try {
-              const updated = await updateShopProfile(slug, {
-                categories: [...selected],
-              });
-              onShopUpdated?.(updated);
-              setSaved(true);
-              setTimeout(() => setSaved(false), 2500);
-            } finally {
-              setSaving(false);
-            }
-          }}
+          onClick={save}
         >
-          {saving ? "Saving…" : saved ? "Saved" : "Save categories"}
+          {saving ? "Saving…" : "Save categories"}
         </Pill>
       }
     >
+      <FeedbackBanner feedback={feedback} />
       {categories.length === 0 ? (
         <p className="text-[13.5px] text-tn-mute">Loading categories…</p>
       ) : (

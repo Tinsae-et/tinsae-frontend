@@ -1,20 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import ProfileForm from "./profile-form";
 import ContactForm from "./contact-form";
 import LocationPanel from "./location-panel";
-import PhotosPanel from "./photos-panel";
 import CategoriesPanel from "./categories-panel";
 import TeamPanel from "./team-panel";
-import { SettingsCard } from "./settings-card";
-import { Pill } from "@/components/tinsae/pill";
 import { Icon, IconName } from "@/components/tinsae/icon";
+import { useUnsavedChangesWarning } from "@/hooks/use-unsaved-changes-warning";
 import { cn } from "@/lib/utils";
-import type { Shop } from "@/lib/types";
-import { getShop } from "@/lib/api/public";
+import type { Shop, ShopPhoto, TelegramState } from "@/lib/types";
+import type { VerificationStateResponse } from "@/lib/verification";
 
-type SectionId = "profile" | "location" | "photos" | "categories" | "team";
+type SectionId = "profile" | "location" | "categories" | "team";
 
 type NavItem = {
   id: SectionId;
@@ -24,44 +22,39 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   { id: "profile", text: "Profile", icon: "user" },
-  { id: "location", text: "Location & hours", icon: "pin" },
-  { id: "photos", text: "Photos", icon: "gallery" },
+  { id: "location", text: "Location", icon: "pin" },
   { id: "categories", text: "Categories", icon: "box" },
   { id: "team", text: "Team", icon: "msg" },
 ];
 
 export default function ShopProfile({
   initialShop,
+  initialCover,
   slug,
   ownerName,
   ownerPhone,
+  telegram,
   telegramUsername,
+  verification,
 }: {
-  initialShop: Shop | null;
+  initialShop: Shop;
+  initialCover: ShopPhoto | null;
   slug: string;
   ownerName: string;
   ownerPhone?: string;
+  telegram: TelegramState | null;
   telegramUsername?: string;
+  verification: VerificationStateResponse | null;
 }) {
-  const [shop, setShop] = useState<Shop | null>(initialShop);
-  const [loadFailed, setLoadFailed] = useState(false);
+  const [shop, setShop] = useState<Shop>(initialShop);
   const [activeSection, setActiveSection] = useState<SectionId>("profile");
-
-  const loadShop = useCallback(() => {
-    getShop(slug, { cache: "no-store" })
-      .then(setShop)
-      .catch(() => setLoadFailed(true));
-  }, [slug]);
-
-  const retryLoad = () => {
-    setLoadFailed(false);
-    loadShop();
-  };
-
-  // The server read failed; try once from the browser before showing an error.
-  useEffect(() => {
-    if (!initialShop) loadShop();
-  }, [initialShop, loadShop]);
+  // Each form reports whether it holds unsaved edits; one page-level guard
+  // then covers reloads and links out of settings.
+  const [dirtyForms, setDirtyForms] = useState<Record<string, boolean>>({});
+  const markDirty = useCallback((form: string, dirty: boolean) => {
+    setDirtyForms((prev) => (Boolean(prev[form]) === dirty ? prev : { ...prev, [form]: dirty }));
+  }, []);
+  useUnsavedChangesWarning(Object.values(dirtyForms).some(Boolean));
 
   return (
     // Full width by choice: the design caps this at 1040px with a 660px panel
@@ -70,7 +63,7 @@ export default function ShopProfile({
       {/* Section nav: sticky column on desktop, scrolling chip row below 1024px */}
       <aside className="w-full lg:w-[220px] shrink-0 lg:sticky lg:top-[92px]">
         <nav
-          aria-label="Shop profile sections"
+          aria-label="Shop settings sections"
           className="flex flex-row overflow-x-auto lg:flex-col gap-1 lg:gap-[3px] pb-1 lg:pb-0"
         >
           {NAV_ITEMS.map(({ id, text, icon }) => {
@@ -100,58 +93,50 @@ export default function ShopProfile({
         </nav>
       </aside>
 
+      {/* Every section stays mounted, so switching sections keeps unsaved edits. */}
       <div className="flex-1 min-w-0 w-full">
-        {!shop ? (
-          <SettingsCard
-            title="Shop profile"
-            sub="How your shop appears across Tinsae search and listings."
-          >
-            {loadFailed ? (
-              <div className="flex flex-col items-start gap-3">
-                <p className="text-[13.5px] text-tn-ink2">
-                  We couldn&rsquo;t load your shop details. Editing is paused so
-                  nothing gets overwritten.
-                </p>
-                <Pill kind="outline" size="sm" onClick={retryLoad}>
-                  Try again
-                </Pill>
-              </div>
-            ) : (
-              <p className="text-[13.5px] text-tn-mute">Loading your shop…</p>
-            )}
-          </SettingsCard>
-        ) : (
-          <>
-            {activeSection === "profile" && (
-              <div className="flex flex-col gap-[18px]">
-                <ProfileForm
-                  shop={shop}
-                  slug={slug}
-                  telegramUsername={telegramUsername}
-                  onShopUpdated={setShop}
-                />
-                <ContactForm shop={shop} slug={slug} onShopUpdated={setShop} />
-              </div>
-            )}
-            {activeSection === "location" && (
-              <LocationPanel shop={shop} slug={slug} onShopUpdated={setShop} />
-            )}
-            {activeSection === "photos" && <PhotosPanel slug={slug} />}
-            {activeSection === "categories" && (
-              <CategoriesPanel
-                shop={shop}
-                slug={slug}
-                onShopUpdated={setShop}
-              />
-            )}
-            {activeSection === "team" && (
-              <TeamPanel
-                ownerName={ownerName}
-                ownerPhone={shop.phone || ownerPhone}
-              />
-            )}
-          </>
-        )}
+        <div
+          className={cn(
+            "flex-col gap-[18px]",
+            activeSection === "profile" ? "flex" : "hidden",
+          )}
+        >
+          <ProfileForm
+            shop={shop}
+            slug={slug}
+            initialCover={initialCover}
+            telegram={telegram}
+            telegramUsername={telegramUsername}
+            verification={verification}
+            onShopUpdated={setShop}
+            onDirtyChange={(dirty) => markDirty("profile", dirty)}
+          />
+          <ContactForm
+            shop={shop}
+            slug={slug}
+            onShopUpdated={setShop}
+            onDirtyChange={(dirty) => markDirty("contact", dirty)}
+          />
+        </div>
+        <div hidden={activeSection !== "location"}>
+          <LocationPanel
+            shop={shop}
+            slug={slug}
+            onShopUpdated={setShop}
+            onDirtyChange={(dirty) => markDirty("location", dirty)}
+          />
+        </div>
+        <div hidden={activeSection !== "categories"}>
+          <CategoriesPanel
+            shop={shop}
+            slug={slug}
+            onShopUpdated={setShop}
+            onDirtyChange={(dirty) => markDirty("categories", dirty)}
+          />
+        </div>
+        <div hidden={activeSection !== "team"}>
+          <TeamPanel ownerName={ownerName} ownerPhone={shop.phone || ownerPhone} />
+        </div>
       </div>
     </div>
   );

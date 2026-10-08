@@ -71,36 +71,8 @@ export async function updateShopProfile(
     body: isFormData ? profile : JSON.stringify(profile),
   });
 
-  if (!res.ok) {
-    let message = `Could not update shop (${res.status})`;
-    let errorData: Record<string, unknown> | undefined;
-    try {
-      errorData = (await res.json()) as Record<string, unknown>;
-      if (errorData && typeof errorData === "object") {
-        const firstField = Object.values(errorData).find(Array.isArray) as
-          | string[]
-          | undefined;
-        const detail =
-          typeof errorData.detail === "string" ? errorData.detail : undefined;
-        message = detail || firstField?.[0] || message;
-      }
-    } catch {
-      // Keep default message
-    }
-    throw new ApiError(message, res.status, errorData);
-  }
+  if (!res.ok) return failure(res, "Could not update shop");
   return res.json();
-}
-
-export async function getShopPhotos(slug: string): Promise<ShopPhoto[]> {
-  const res = await fetch(shopPath(slug, "photos"), { cache: "no-store" });
-  if (!res.ok) return failure(res, "Could not load shop photos");
-  const data = await res.json();
-  const photos = Array.isArray(data) ? data : data.results;
-  return photos.map((photo: ShopPhoto) => ({
-    ...photo,
-    url: normalizeImageUrl(photo.url) || photo.url,
-  }));
 }
 
 export async function uploadShopPhoto(

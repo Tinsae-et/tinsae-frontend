@@ -93,8 +93,8 @@ export default async function ShopProfilePage({ params }: Props) {
   // backend provides them.
   const brandColor = getShopColor(shop.name);
   const initials = getInitials(shop.name);
-  const coverPhoto =
-    shop.photos?.find((photo) => photo.is_cover) ?? shop.photos?.[0];
+  // Only the photo the owner chose as cover; none means the gradient.
+  const coverPhoto = shop.photos?.find((photo) => photo.is_cover);
   const coverUrl = normalizeImageUrl(coverPhoto?.url);
   const logoUrl = normalizeImageUrl(shop.logo);
   const totalCount = initialProducts?.count ?? 0;

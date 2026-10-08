@@ -745,7 +745,7 @@ export function Form({
                   </span>
                 ) : categories.length === 0 ? (
                   <span className="text-xs text-tn-mute">
-                    Select categories in Shop settings before adding a listing.
+                    Select categories in Shop settings before adding a product.
                   </span>
                 ) : (
                   categories.map((c) => {
@@ -1167,7 +1167,7 @@ export function Form({
                   Availability
                 </div>
                 <div className="text-xs text-tn-mute">
-                  Control whether this listing is active and purchasable by
+                  Control whether this product is active and purchasable by
                   buyers
                 </div>
               </div>

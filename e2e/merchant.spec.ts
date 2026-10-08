@@ -24,7 +24,7 @@ test("sign in lands on the dashboard, showing the merchant's own shop", async ({
 });
 
 test("session cookies are httpOnly and the token never reaches the page", async ({ page, context }) => {
-  await signIn(page, "/shop/dashboard/shop-profile");
+  await signIn(page, "/shop/dashboard/shop-setting");
 
   const cookies = await context.cookies();
   const session = cookies.filter((c) => c.name.includes("tinsae_"));
