@@ -246,6 +246,17 @@ export async function getShops(query?: ShopQuery, init?: RequestInit): Promise<P
   return res.json();
 }
 
+export type ShopArea = { city: string; count: number };
+
+/** Areas (shop cities) that have verified shops, busiest first. */
+export async function getShopAreas(init?: RequestInit): Promise<ShopArea[]> {
+  const res = await fetch(`${API_URL}/api/v1/shops/areas/`, readInit(REVALIDATE.shops, init));
+  if (!res.ok) {
+    throw new Error(`Couldn't load shop areas (${res.status})`);
+  }
+  return res.json();
+}
+
 export async function getPublicStats(init?: RequestInit): Promise<ShopMetrics> {
   const res = await fetch(`${CATALOG}/public-stats/`, readInit(REVALIDATE.stats, init));
   if (!res.ok) {

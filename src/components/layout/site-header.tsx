@@ -666,7 +666,7 @@ function BrowseMenu({
                           size={15}
                           className="text-tn-green"
                         />
-                        Verified Shops
+                        Verified shops
                       </span>
                       <Icon name="arrow" size={13} className="text-tn-mute" />
                     </Link>
@@ -1063,7 +1063,7 @@ export function SiteHeader({
                 className="text-tn-ink hover:text-tn-red flex items-center gap-1.5 transition-colors"
               >
                 <Icon name="building" size={13} className="text-tn-green" />
-                <span>Verified Bole Shops</span>
+                <span>Verified shops</span>
               </Link>
               <span className="text-tn-hair">•</span>
               <Link
