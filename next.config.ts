@@ -73,6 +73,16 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  async redirects() {
+    // Shop settings moved from shop-profile; keep old bookmarks working.
+    return [
+      {
+        source: "/shop/dashboard/shop-profile",
+        destination: "/shop/dashboard/shop-setting",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

@@ -25,7 +25,7 @@ const NAVLINKS: NavLinkItem[] = [
   { to: "/shop/dashboard/overview", text: "Overview", icon: "home" },
   { to: "/shop/dashboard/listings", text: "Listings", icon: "box" },
   { to: "/shop/dashboard/listings/new", text: "Add product", icon: "plus" },
-  { to: "/shop/dashboard/shop-profile", text: "Shop profile", icon: "user" },
+  { to: "/shop/dashboard/shop-setting", text: "Shop settings", icon: "user" },
   { to: "/shop/dashboard/telegram", text: "Telegram setup", icon: "tg" },
   { to: "/shop/dashboard/get-verified", text: "Get verified", icon: "shield" },
 ];
@@ -39,7 +39,8 @@ function Links({ links }: { links: NavLinkItem[] }) {
         const isActive =
           pathname === l.to ||
           (l.to === "/shop/dashboard/overview" &&
-            (pathname === "/shop/dashboard" || pathname === "/shop/dashboard/")) ||
+            (pathname === "/shop/dashboard" ||
+              pathname === "/shop/dashboard/")) ||
           (l.to === "/shop/dashboard/listings/new" &&
             (pathname === "/shop/dashboard/listings/new" ||
               pathname.startsWith("/shop/dashboard/listings/edit"))) ||
@@ -58,7 +59,7 @@ function Links({ links }: { links: NavLinkItem[] }) {
               "flex items-center justify-between px-3 py-[11px] my-[2px] rounded-[11px] text-[13.5px] transition-colors",
               isActive
                 ? "bg-tn-ink text-white font-bold"
-                : "text-tn-ink2 font-semibold hover:bg-tn-paper"
+                : "text-tn-ink2 font-semibold hover:bg-tn-paper",
             )}
           >
             <div className="flex items-center gap-[11px]">
@@ -74,7 +75,7 @@ function Links({ links }: { links: NavLinkItem[] }) {
               <span
                 className={cn(
                   "font-tn-mono text-[10.5px] font-bold rounded-full px-[7px] py-0.5",
-                  isActive ? "bg-white text-tn-ink" : "bg-tn-red text-white"
+                  isActive ? "bg-white text-tn-ink" : "bg-tn-red text-white",
                 )}
               >
                 {l.count}
@@ -87,7 +88,13 @@ function Links({ links }: { links: NavLinkItem[] }) {
   );
 }
 
-function SideBar({ showSidebar, shop }: { showSidebar: boolean; shop: AuthShop }) {
+function SideBar({
+  showSidebar,
+  shop,
+}: {
+  showSidebar: boolean;
+  shop: AuthShop;
+}) {
   const [teleState, setTeleState] = useState<TelegramState | null>(null);
 
   useEffect(() => {
@@ -104,7 +111,7 @@ function SideBar({ showSidebar, shop }: { showSidebar: boolean; shop: AuthShop }
       className={cn(
         "w-[248px] shrink-0 h-screen border-r border-tn-hair bg-white flex flex-col justify-between z-30 transition-transform",
         "fixed inset-y-0 left-0 lg:sticky lg:top-0",
-        showSidebar ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        showSidebar ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
       )}
     >
       <div>
@@ -171,7 +178,7 @@ function SideBar({ showSidebar, shop }: { showSidebar: boolean; shop: AuthShop }
               ? "bg-tn-green-soft"
               : isBlocked
                 ? "bg-amber-50 border border-amber-200"
-                : "bg-tn-paper border border-tn-hair"
+                : "bg-tn-paper border border-tn-hair",
           )}
         >
           <div className="flex items-center justify-between">
@@ -192,20 +199,24 @@ function SideBar({ showSidebar, shop }: { showSidebar: boolean; shop: AuthShop }
                   ? "bg-tn-green shadow-[0_0_0_3px_#1F8A5B33]"
                   : isBlocked
                     ? "bg-amber-500 shadow-[0_0_0_3px_rgba(245,158,11,0.2)]"
-                    : "bg-tn-mute shadow-[0_0_0_3px_rgba(0,0,0,0.06)]"
+                    : "bg-tn-mute shadow-[0_0_0_3px_rgba(0,0,0,0.06)]",
               )}
             />
           </div>
           <div className="flex flex-col text-[11px] leading-snug text-tn-mute mt-0.5">
             {isConnected ? (
               <>
-                <span className="text-tn-ink2 font-medium">Weekly check-in</span>
+                <span className="text-tn-ink2 font-medium">
+                  Weekly check-in
+                </span>
                 <span className="font-tn-mono text-[10.5px] text-tn-telegram font-semibold truncate">
                   @tinsae_et_bot
                 </span>
               </>
             ) : isBlocked ? (
-              <span className="text-amber-700 font-medium">Tap to unblock & restart</span>
+              <span className="text-amber-700 font-medium">
+                Tap to unblock & restart
+              </span>
             ) : (
               <span>Tap to connect @tinsae_et_bot</span>
             )}

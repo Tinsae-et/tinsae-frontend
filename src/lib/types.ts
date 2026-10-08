@@ -35,6 +35,8 @@ export type Product = {
   shop_name: string;
   shop_slug?: string;
   shop_verified: boolean;
+  /** The seller's logo; null shows their initials instead. */
+  shop_logo?: string | null;
   category: Category | null;
   /** Ordered product images (primary first); empty when unset. */
   images: ProductImage[];
@@ -65,7 +67,11 @@ export type Shop = {
   name: string;
   slug: string;
   description: string;
+  logo?: string | null;
   city: string;
+  address?: string;
+  categories?: string[];
+  photos?: ShopPhoto[];
   phone?: string;
   latitude?: string | number | null;
   longitude?: string | number | null;
@@ -76,6 +82,13 @@ export type Shop = {
   updated_at?: string;
 };
 
+export type ShopPhoto = {
+  id: number;
+  url: string;
+  image?: string;
+  display_order: number;
+  is_cover: boolean;
+};
 
 export type ShopProduct = {
   id: number;
@@ -114,7 +127,7 @@ export type NewProduct = {
   specs: Record<string, unknown>;
   status: string;
   slug?: string;
-}
+};
 
 export type ShopProductImage = {
   id?: number;
@@ -145,6 +158,10 @@ export type ShopProfile = {
   description?: string;
   phone?: string;
   city?: string;
+  address?: string;
+  categories?: string[];
+  /** Null clears the logo; a new one is sent as multipart instead. */
+  logo?: null;
 };
 
 export type TelegramStatus = "idle" | "connected" | "blocked";

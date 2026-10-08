@@ -760,6 +760,17 @@ export default function ListingsTable({
   const recount = () => setCountsVersion((v) => v + 1);
 
   useEffect(() => {
+    const refreshListings = () => {
+      setSelected([]);
+      refetch();
+      recount();
+    };
+    window.addEventListener("tinsae:listings-refresh", refreshListings);
+    return () =>
+      window.removeEventListener("tinsae:listings-refresh", refreshListings);
+  }, [refetch]);
+
+  useEffect(() => {
     const controller = new AbortController();
     const tabs: [keyof typeof tabCounts, ShopProductQuery][] = [
       ["all", {}],
@@ -770,9 +781,11 @@ export default function ListingsTable({
     ];
     Promise.all(
       tabs.map(([key, q]) =>
-        getShopProducts(slug, { ...q, pageSize: 1 }, { signal: controller.signal }).then(
-          (res) => [key, res.count] as const,
-        ),
+        getShopProducts(
+          slug,
+          { ...q, pageSize: 1 },
+          { signal: controller.signal },
+        ).then((res) => [key, res.count] as const),
       ),
     )
       .then((entries) => {

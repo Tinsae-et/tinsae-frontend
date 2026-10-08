@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { Pill } from "@/components/tinsae/pill";
 import { Icon } from "@/components/tinsae/icon";
 import { SettingsCard, getInitials } from "./settings-card";
 
@@ -21,7 +20,7 @@ type Props = {
 
 export default function TeamPanel({ ownerName, ownerPhone }: Props) {
   // PLACEHOLDER: the API has no team model yet, so only the signed-in owner
-  // is listed. Invite and the member menu do nothing until roles are defined.
+  // is listed. Inviting teammates waits until roles are defined.
   const members: TeamMember[] = [
     { id: "owner", name: ownerName, role: "Owner", phone: ownerPhone, color: "#0F2A4D", isOwner: true },
   ];
@@ -31,11 +30,6 @@ export default function TeamPanel({ ownerName, ownerPhone }: Props) {
       title="Team"
       sub="People who can manage listings and reply to buyers on this shop."
       bodyClassName="py-1.5"
-      footer={
-        <Pill kind="outline" size="sm" icon="plus">
-          Invite teammate
-        </Pill>
-      }
     >
       {members.map((member, i) => (
         <div key={member.id} className={`flex items-center gap-3.5 py-3.5 ${i ? "border-t border-tn-hair2" : ""}`}>
