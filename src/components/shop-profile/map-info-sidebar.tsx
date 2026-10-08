@@ -1,8 +1,15 @@
+"use client";
+
 import React from "react";
+import dynamic from "next/dynamic";
 import { Icon } from "@/components/tinsae/icon";
 import { getInitials } from "@/lib/shops-data";
+import { getDirectionsUrl, getShopLocation } from "@/lib/shop-location";
 import type { Shop } from "@/lib/types";
-import Map from "./map";
+
+// Split out of the page bundle and only fetched in the browser, so the Maps
+// library never delays the rest of the profile.
+const ShopLocationMap = dynamic(() => import("./shop-location-map"), { ssr: false });
 
 // PLACEHOLDER: the API has no opening hours yet; these are the same for every
 // shop. Hide until Shop serves real hours.
@@ -13,44 +20,38 @@ const HOURS = [
 ];
 
 export function MapInfoSidebar({ shop }: { shop: Shop }) {
-  const queryLocation = encodeURIComponent(
-    shop.latitude && shop.longitude
-      ? `${shop.latitude},${shop.longitude}`
-      : `${shop.name} ${shop.city || "Addis Ababa"}`
-  );
-  const directionsUrl = `https://www.google.com/maps/search/?api=1&query=${queryLocation}`;
+  const location = getShopLocation(shop);
   const initials = getInitials(shop.name);
 
   return (
-    <aside className="space-y-4 lg:sticky lg:top-[128px] self-start max-h-[calc(100vh-140px)] overflow-y-auto pr-0.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+    <aside className="space-y-4 lg:sticky lg:top-[128px] self-start lg:max-h-[calc(100vh-140px)] lg:overflow-y-auto pr-0.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
       {/* Map card (sticky) */}
       <div className="border-tn-hair overflow-hidden rounded-2xl border bg-white shadow-xs">
-        <div className="relative h-[220px] overflow-hidden bg-[#E8E1D2]">
-          {
-            shop.latitude && shop.longitude ?
-              <Map lat={Number(shop.latitude)} lng={Number(shop.longitude)} label={initials} /> :
-              <div className="flex items-center justify-center p-4 text-tn-mute h-full">
-                Location not available
-              </div>
-          }
-        </div>
+        {/* No stored coordinates: text address only, never a guessed spot. */}
+        {location && (
+          <div className="relative h-[220px] overflow-hidden bg-[#E8E1D2]">
+            <ShopLocationMap location={location} label={initials} />
+          </div>
+        )}
 
         <div className="p-4">
           <div className="text-tn-ink text-sm font-bold">{shop.name}</div>
-          <div className="text-tn-ink2 mt-1 text-xs leading-relaxed">
-            {shop.city ? `${shop.city} · Addis Ababa, Ethiopia` : "Addis Ababa, Ethiopia"}
-          </div>
+          {shop.city && (
+            <div className="text-tn-ink2 mt-1 text-xs leading-relaxed">{shop.city}</div>
+          )}
 
           <div className="mt-3.5 flex gap-2">
-            <a
-              href={directionsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="border-tn-hair text-tn-ink hover:bg-tn-paper flex flex-1 items-center justify-center gap-1.5 rounded-full border py-2 text-xs font-semibold transition"
-            >
-              <Icon name="pin" size={13} />
-              Directions
-            </a>
+            {location && (
+              <a
+                href={getDirectionsUrl(location)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="border-tn-hair text-tn-ink hover:bg-tn-paper flex flex-1 items-center justify-center gap-1.5 rounded-full border py-2 text-xs font-semibold transition"
+              >
+                <Icon name="pin" size={13} />
+                Get directions
+              </a>
+            )}
             {shop.phone ? (
               <a
                 href={`tel:${shop.phone}`}
