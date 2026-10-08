@@ -1,9 +1,8 @@
 import { getProducts, getPublicStats, getShops } from "@/lib/api/public";
 import type { Product } from "@/lib/types";
-import { mapShopToDirectoryShop } from "@/lib/shops-data";
 import { Hero } from "@/components/home/hero";
 import { BrowseCategories } from "@/components/home/browse-categories";
-import { TopShops, type TopShopItem } from "@/components/home/top-shops";
+import { TopShops } from "@/components/home/top-shops";
 import { FreshListings } from "@/components/home/fresh-listings";
 import { Features } from "@/components/home/features";
 import { HowItWorks } from "@/components/home/how-it-works";
@@ -38,25 +37,7 @@ export default async function Home() {
 
   const freshest: Product[] = products?.results ?? [];
 
-  const topShops: TopShopItem[] =
-    shopsData?.results && shopsData.results.length > 0
-      ? shopsData.results.map((shop) => {
-          const mapped = mapShopToDirectoryShop(shop);
-          return {
-            name: mapped.name,
-            slug: mapped.slug,
-            hood: mapped.hood,
-            city: mapped.city,
-            rating: mapped.rating,
-            ratings: mapped.ratings,
-            listings: mapped.listings,
-            reply: mapped.responseTime,
-            dist: mapped.dist,
-            color: mapped.color,
-            isVerified: mapped.isVerified,
-          };
-        })
-      : [];
+  const topShops = shopsData?.results ?? [];
 
   return (
     <main>
