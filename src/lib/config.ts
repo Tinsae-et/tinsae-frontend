@@ -25,3 +25,10 @@ export const API_URL = typeof window === "undefined" ? SERVER_API_URL : PUBLIC_A
  * one image can serve any domain.
  */
 export const SITE_URL = (process.env.SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+
+/**
+ * Browser key for the Google Maps JavaScript API (the shop profile map).
+ * Inlined at build time like NEXT_PUBLIC_API_URL. Optional: without it the
+ * map is hidden and the address and directions link still work.
+ */
+export const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";

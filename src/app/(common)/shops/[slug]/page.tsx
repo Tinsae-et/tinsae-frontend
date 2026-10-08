@@ -4,9 +4,12 @@ import { notFound } from "next/navigation";
 import { Icon } from "@/components/tinsae/icon";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { TabsBar } from "@/components/shop-profile/tabs-bar";
+import { ShareButton } from "@/components/shop-profile/share-button";
 import { getPublicShopProducts, getShop } from "@/lib/api/public";
 import { Pill } from "@/components/tinsae/pill";
 import { getInitials, getShopColor } from "@/lib/shops-data";
+import { normalizeImageUrl } from "@/lib/format";
+import Image from "next/image";
 
 type Stat = {
   value: string;
@@ -90,6 +93,10 @@ export default async function ShopProfilePage({ params }: Props) {
   // backend provides them.
   const brandColor = getShopColor(shop.name);
   const initials = getInitials(shop.name);
+  // Only the photo the owner chose as cover; none means the gradient.
+  const coverPhoto = shop.photos?.find((photo) => photo.is_cover);
+  const coverUrl = normalizeImageUrl(coverPhoto?.url);
+  const logoUrl = normalizeImageUrl(shop.logo);
   const totalCount = initialProducts?.count ?? 0;
 
   const phone = shop.phone;
@@ -129,7 +136,9 @@ export default async function ShopProfilePage({ params }: Props) {
       <div
         className="relative h-[172px] w-full overflow-hidden"
         style={{
-          background: `linear-gradient(120deg, ${brandColor} 0%, #1A4178 65%, #2D5A9E 100%)`,
+          background: coverUrl
+            ? `linear-gradient(120deg, rgba(15, 42, 77, 0.2), rgba(15, 42, 77, 0.45)), url("${coverUrl}") center / cover`
+            : `linear-gradient(120deg, ${brandColor} 0%, #1A4178 65%, #2D5A9E 100%)`,
         }}
       >
         <div
@@ -139,12 +148,13 @@ export default async function ShopProfilePage({ params }: Props) {
               "repeating-linear-gradient(45deg, #fff 0, #fff 1px, transparent 1px, transparent 16px)",
           }}
         />
-        {/* Ethiopic watermark per design */}
+        {/* Shop-name watermark. The design uses the Amharic name, which the API
+            doesn't serve, so it falls back to the shop's name. */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute top-4 right-8 select-none text-[114px] font-bold leading-none text-white/10"
+          className="pointer-events-none absolute top-5 right-6 select-none text-[56px] font-bold leading-none tracking-[-0.03em] whitespace-nowrap text-white/10 capitalize sm:right-8 sm:text-[84px] lg:text-[104px]"
         >
-          አልመዳ
+          {shop.name}
         </div>
       </div>
 
@@ -153,10 +163,20 @@ export default async function ShopProfilePage({ params }: Props) {
         <div className="relative flex flex-wrap items-end justify-between gap-4 pb-2">
           <div className="flex items-end gap-5">
             <div
-              className="-mt-11 flex size-24 shrink-0 items-center justify-center rounded-3xl border-4 border-white text-3xl font-extrabold text-white shadow-[0_12px_32px_rgba(11,11,11,0.14)] sm:size-28 sm:text-4xl"
+              className="relative -mt-11 flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-3xl border-4 border-white text-3xl font-extrabold text-white shadow-[0_12px_32px_rgba(11,11,11,0.14)] sm:size-28 sm:text-4xl"
               style={{ backgroundColor: brandColor }}
             >
-              {initials}
+              {logoUrl ? (
+                <Image
+                  src={logoUrl}
+                  alt={`${shop.name} logo`}
+                  fill
+                  unoptimized
+                  className="object-cover"
+                />
+              ) : (
+                initials
+              )}
             </div>
 
             <div className="pb-1">
@@ -179,29 +199,23 @@ export default async function ShopProfilePage({ params }: Props) {
 
               <div className="text-tn-ink2 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13.5px]">
                 <span className="flex items-center gap-1.5">
-                  <Icon name="pin" size={14} className="text-tn-mute shrink-0" />
-                  {shop.city ? `${shop.city} · Addis Ababa` : "Bole · Addis Ababa"}
+                  <Icon
+                    name="pin"
+                    size={14}
+                    className="text-tn-mute shrink-0"
+                  />
+                  {shop.city
+                    ? `${shop.city} · Addis Ababa`
+                    : "Bole · Addis Ababa"}
                 </span>
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-2.5 pb-1">
-            <Pill
-              kind="outline"
-              size="md"
-              icon="arrow"
-              href={`/shops/${slug}`}
-            >
-              Share
-            </Pill>
+            <ShareButton shopName={shop.name} />
 
-            <Pill
-              kind="solid"
-              size="md"
-              icon={contactIcon}
-              href={contactHref}
-            >
+            <Pill kind="solid" size="md" icon={contactIcon} href={contactHref}>
               {contactLabel}
             </Pill>
           </div>

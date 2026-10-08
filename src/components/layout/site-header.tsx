@@ -134,7 +134,10 @@ function SearchField({
   // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -152,10 +155,15 @@ function SearchField({
     if (!results) return;
     if (idx >= 0 && idx < totalCategories) {
       const cat = results.categories[idx];
-      router.push(`/products?q=${encodeURIComponent(q.trim())}&category=${encodeURIComponent(cat.slug)}`);
+      router.push(
+        `/products?q=${encodeURIComponent(q.trim())}&category=${encodeURIComponent(cat.slug)}`,
+      );
       setIsOpen(false);
       onSubmitted?.();
-    } else if (idx >= totalCategories && idx < totalCategories + totalProducts) {
+    } else if (
+      idx >= totalCategories &&
+      idx < totalCategories + totalProducts
+    ) {
       const prod = results.products[idx - totalCategories];
       router.push(`/products/${prod.slug}`);
       setIsOpen(false);
@@ -203,7 +211,10 @@ function SearchField({
   };
 
   return (
-    <div ref={containerRef} className={cn("relative min-w-0 flex-1", className)}>
+    <div
+      ref={containerRef}
+      className={cn("relative min-w-0 flex-1", className)}
+    >
       <form onSubmit={handleSubmit} role="search" className="w-full">
         <div
           className={cn(
@@ -354,9 +365,7 @@ function SearchField({
                         <span className="truncate max-w-[130px] sm:max-w-[180px]">
                           {prod.shopName}
                         </span>
-                        {prod.shopVerified && (
-                          <VerifiedBadge size={12} />
-                        )}
+                        {prod.shopVerified && <VerifiedBadge size={12} />}
                         {prod.condition && (
                           <>
                             <span className="text-tn-hair">•</span>
@@ -377,16 +386,19 @@ function SearchField({
           )}
 
           {/* Empty State */}
-          {results && results.products.length === 0 && results.categories.length === 0 && !loading && (
-            <div className="py-7 px-4 text-center">
-              <p className="text-sm font-medium text-tn-ink2">
-                No matching products found for &ldquo;{q.trim()}&rdquo;
-              </p>
-              <p className="text-xs text-tn-mute mt-1">
-                Press Enter to search all products in catalog
-              </p>
-            </div>
-          )}
+          {results &&
+            results.products.length === 0 &&
+            results.categories.length === 0 &&
+            !loading && (
+              <div className="py-7 px-4 text-center">
+                <p className="text-sm font-medium text-tn-ink2">
+                  No matching products found for &ldquo;{q.trim()}&rdquo;
+                </p>
+                <p className="text-xs text-tn-mute mt-1">
+                  Press Enter to search all products in catalog
+                </p>
+              </div>
+            )}
 
           {/* Footer View All Action */}
           {results && (
@@ -398,11 +410,15 @@ function SearchField({
               }}
               className={cn(
                 "w-full px-4 py-3 bg-[#FAF9F6] flex items-center justify-between text-[13px] font-bold text-tn-red transition-colors cursor-pointer",
-                selectedIndex === totalItems - 1 ? "bg-[#F3EFE6]" : "hover:bg-[#F4F2EC]",
+                selectedIndex === totalItems - 1
+                  ? "bg-[#F3EFE6]"
+                  : "hover:bg-[#F4F2EC]",
               )}
             >
               <span>
-                View all {results.totalProducts > 0 ? `${results.totalProducts} ` : ""}results for &ldquo;{q.trim()}&rdquo;
+                View all{" "}
+                {results.totalProducts > 0 ? `${results.totalProducts} ` : ""}
+                results for &ldquo;{q.trim()}&rdquo;
               </span>
               <Icon name="arrow" size={15} />
             </button>
@@ -421,16 +437,25 @@ function BrowseMenu({
   categoryCounts?: Record<string, number>;
 }) {
   const [open, setOpen] = useState(false);
-  const [fetchedCounts, setFetchedCounts] = useState<Record<string, number> | undefined>(undefined);
+  const [fetchedCounts, setFetchedCounts] = useState<
+    Record<string, number> | undefined
+  >(undefined);
   const hasAttemptedRef = useRef(false);
-  const counts = categoryCounts && Object.keys(categoryCounts).length > 0 ? categoryCounts : fetchedCounts;
+  const counts =
+    categoryCounts && Object.keys(categoryCounts).length > 0
+      ? categoryCounts
+      : fetchedCounts;
   const menuRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const openedByHoverRef = useRef(false);
 
   // Client-side fallback to fetch live counts if not provided via SSR
   useEffect(() => {
-    if ((categoryCounts && Object.keys(categoryCounts).length > 0) || hasAttemptedRef.current) return;
+    if (
+      (categoryCounts && Object.keys(categoryCounts).length > 0) ||
+      hasAttemptedRef.current
+    )
+      return;
     hasAttemptedRef.current = true;
     let active = true;
     fetch("/api/public-stats")
@@ -610,7 +635,11 @@ function BrowseMenu({
                         className="flex items-center justify-between rounded-lg px-2.5 py-2 text-[12.5px] text-tn-ink2"
                       >
                         <span className="flex items-center gap-2 font-semibold">
-                          <Icon name={c.icon} size={15} className="text-tn-mute" />
+                          <Icon
+                            name={c.icon}
+                            size={15}
+                            className="text-tn-mute"
+                          />
                           {c.label}
                         </span>
                         <span className="rounded bg-amber-100/90 px-1.5 py-0.5 text-[10px] font-extrabold text-amber-900">
@@ -632,7 +661,11 @@ function BrowseMenu({
                       className="hover:bg-white flex items-center justify-between rounded-lg px-2.5 py-2 text-[13px] font-bold text-tn-ink transition-colors hover:shadow-xs"
                     >
                       <span className="flex items-center gap-2">
-                        <Icon name="building" size={15} className="text-tn-green" />
+                        <Icon
+                          name="building"
+                          size={15}
+                          className="text-tn-green"
+                        />
                         Verified Shops
                       </span>
                       <Icon name="arrow" size={13} className="text-tn-mute" />
@@ -654,7 +687,11 @@ function BrowseMenu({
                       className="hover:bg-white flex items-center justify-between rounded-lg px-2.5 py-2 text-[13px] font-bold text-tn-ink transition-colors hover:shadow-xs"
                     >
                       <span className="flex items-center gap-2">
-                        <Icon name="sliders" size={15} className="text-tn-ink" />
+                        <Icon
+                          name="sliders"
+                          size={15}
+                          className="text-tn-ink"
+                        />
                         Compare Specs
                       </span>
                       <Icon name="arrow" size={13} className="text-tn-mute" />
@@ -769,7 +806,9 @@ export function SiteHeader({
   }, [accountMenuOpen]);
 
   // Scroll lock, Escape, focus trap and focus restore for the mobile drawer.
-  const drawerRef = useModal<HTMLDivElement>(drawerOpen, () => setDrawerOpen(false));
+  const drawerRef = useModal<HTMLDivElement>(drawerOpen, () =>
+    setDrawerOpen(false),
+  );
 
   return (
     <header
@@ -785,7 +824,10 @@ export function SiteHeader({
       {/* Desktop bar */}
       <div className="mx-auto hidden h-[72px] max-w-[1480px] items-center gap-5 px-6 sm:px-8 lg:px-12 xl:px-16 lg:flex">
         <Logo />
-        <BrowseMenu categories={categories} categoryCounts={stats?.category_product_count} />
+        <BrowseMenu
+          categories={categories}
+          categoryCounts={stats?.category_product_count}
+        />
         <SearchField
           className="hidden max-w-[760px] flex-1 lg:block"
           inputRef={searchRef}
@@ -903,7 +945,11 @@ export function SiteHeader({
                             onClick={() => setAccountMenuOpen(false)}
                             className="text-tn-ink2 hover:bg-tn-paper hover:text-tn-ink flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13.5px] font-semibold transition-colors"
                           >
-                            <Icon name="home" size={16} className="text-tn-mute" />
+                            <Icon
+                              name="home"
+                              size={16}
+                              className="text-tn-mute"
+                            />
                             <span>Shop dashboard</span>
                           </Link>
                           <Link
@@ -911,11 +957,15 @@ export function SiteHeader({
                             onClick={() => setAccountMenuOpen(false)}
                             className="text-tn-ink2 hover:bg-tn-paper hover:text-tn-ink flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13.5px] font-semibold transition-colors"
                           >
-                            <Icon name="box" size={16} className="text-tn-mute" />
+                            <Icon
+                              name="box"
+                              size={16}
+                              className="text-tn-mute"
+                            />
                             <span>My listings</span>
                           </Link>
                           <Link
-                            href="/shop/dashboard/shop-profile"
+                            href="/shop/dashboard/shop-setting"
                             onClick={() => setAccountMenuOpen(false)}
                             className="text-tn-ink2 hover:bg-tn-paper hover:text-tn-ink flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13.5px] font-semibold transition-colors"
                           >
@@ -934,7 +984,11 @@ export function SiteHeader({
                             onClick={() => setAccountMenuOpen(false)}
                             className="text-tn-ink2 hover:bg-tn-paper hover:text-tn-ink flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13.5px] font-semibold transition-colors"
                           >
-                            <Icon name="sliders" size={16} className="text-tn-mute" />
+                            <Icon
+                              name="sliders"
+                              size={16}
+                              className="text-tn-mute"
+                            />
                             <span>Compare products</span>
                           </Link>
                           <Link
@@ -942,7 +996,11 @@ export function SiteHeader({
                             onClick={() => setAccountMenuOpen(false)}
                             className="text-tn-ink2 hover:bg-tn-paper hover:text-tn-ink flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13.5px] font-semibold transition-colors"
                           >
-                            <Icon name="tg" size={16} className="text-tn-mute" />
+                            <Icon
+                              name="tg"
+                              size={16}
+                              className="text-tn-mute"
+                            />
                             <span>List your shop</span>
                           </Link>
                         </>
@@ -1050,7 +1108,8 @@ export function SiteHeader({
               role="dialog"
               aria-modal="true"
               aria-label="Menu"
-              className="animate-[tnRise_0.5s_ease_both] absolute inset-y-0 right-0 z-[2] flex w-[min(360px,86vw)] flex-col bg-white shadow-[-20px_0_60px_rgba(11,11,11,0.2)]">
+              className="animate-[tnRise_0.5s_ease_both] absolute inset-y-0 right-0 z-[2] flex w-[min(360px,86vw)] flex-col bg-white shadow-[-20px_0_60px_rgba(11,11,11,0.2)]"
+            >
               <div className="border-tn-hair flex h-16 items-center justify-between border-b px-5">
                 {/* <Logo /> */}
                 <button

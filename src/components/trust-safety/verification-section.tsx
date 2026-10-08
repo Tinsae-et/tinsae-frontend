@@ -25,7 +25,7 @@ const verificationSteps: { icon: IconName; title: string; description: string }[
 
 export function VerificationSection() {
   return (
-    <section className="mx-auto mt-20 max-w-[1240px] px-6 lg:mt-24 lg:px-7">
+    <section id="verification" className="mx-auto mt-20 max-w-[1240px] scroll-mt-24 px-6 lg:mt-24 lg:px-7">
       <SectionHead
         center
         eyebrow="The verification process"

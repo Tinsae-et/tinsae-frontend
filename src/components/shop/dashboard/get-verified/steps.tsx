@@ -214,8 +214,14 @@ function DocumentStep({
     if (licenseName) docTags.push(`Trade License: ${licenseName}`);
     if (faydaName) docTags.push(`Owner ID / Fayda: ${faydaName}`);
 
-    if (docTags.length > 0 && !fullDetail.includes(licenseName || "") && !fullDetail.includes(faydaName || "")) {
-      fullDetail = fullDetail ? `${fullDetail} [Attached: ${docTags.join(", ")}]` : `Attached: ${docTags.join(", ")}`;
+    if (
+      docTags.length > 0 &&
+      !fullDetail.includes(licenseName || "") &&
+      !fullDetail.includes(faydaName || "")
+    ) {
+      fullDetail = fullDetail
+        ? `${fullDetail} [Attached: ${docTags.join(", ")}]`
+        : `Attached: ${docTags.join(", ")}`;
     }
 
     const validation = validateVerificationDetail(fullDetail);
@@ -236,7 +242,9 @@ function DocumentStep({
       if (err && typeof err === "object") {
         setErrors(err as VerificationFieldError);
       } else {
-        setErrors({ detail: "An error occurred while submitting your request." });
+        setErrors({
+          detail: "An error occurred while submitting your request.",
+        });
       }
     } finally {
       setIsSubmitting(false);
@@ -269,9 +277,10 @@ function DocumentStep({
                 Verified Business Credentials
               </div>
               <p className="mt-1 text-xs text-neutral-600">
-                Your trade license and identity documents have been inspected and confirmed by
-                Tinsae Compliance.
-                {reviewedAt && ` Verified on ${formatVerificationDate(reviewedAt)}.`}
+                Your trade license and identity documents have been inspected
+                and confirmed by Tinsae Compliance.
+                {reviewedAt &&
+                  ` Verified on ${formatVerificationDate(reviewedAt)}.`}
               </p>
             </div>
           )}
@@ -291,9 +300,10 @@ function DocumentStep({
                 )}
               </div>
               <p className="mt-2 text-xs text-neutral-700 leading-relaxed">
-                Your documents and business details are currently being reviewed by a Tinsae
-                compliance specialist. Turnaround is typically 24–48 hours. You will be notified via
-                Telegram once review is complete.
+                Your documents and business details are currently being reviewed
+                by a Tinsae compliance specialist. Turnaround is typically 24–48
+                hours. You will be notified via Telegram once review is
+                complete.
               </p>
               {supportingDetail && (
                 <div className="mt-3 rounded-lg border border-amber-200/80 bg-white p-3 font-mono text-[11px] text-neutral-700 whitespace-pre-wrap">
@@ -323,7 +333,8 @@ function DocumentStep({
                 </div>
               )}
               <p className="mt-2 text-xs text-neutral-600">
-                Please update your business information or documents below and resubmit.
+                Please update your business information or documents below and
+                resubmit.
               </p>
             </div>
           )}
@@ -354,7 +365,9 @@ function DocumentStep({
                     </div>
                     <div className="text-xs text-neutral-400">
                       {licenseName ? (
-                        <span className="text-emerald-600 font-medium">✓ {licenseName}</span>
+                        <span className="text-emerald-600 font-medium">
+                          ✓ {licenseName}
+                        </span>
                       ) : (
                         "PDF or photo"
                       )}
@@ -378,7 +391,9 @@ function DocumentStep({
                     </div>
                     <div className="text-xs text-neutral-400">
                       {faydaName ? (
-                        <span className="text-emerald-600 font-medium">✓ {faydaName}</span>
+                        <span className="text-emerald-600 font-medium">
+                          ✓ {faydaName}
+                        </span>
                       ) : (
                         "Front & back"
                       )}
@@ -402,7 +417,11 @@ function DocumentStep({
                     onChange={(e) => {
                       setDetail(e.target.value);
                       if (errors?.supporting_detail) {
-                        setErrors((prev) => (prev ? { ...prev, supporting_detail: undefined } : null));
+                        setErrors((prev) =>
+                          prev
+                            ? { ...prev, supporting_detail: undefined }
+                            : null,
+                        );
                       }
                     }}
                     placeholder="e.g. Business TIN: 0098765432, Addis Ababa Trade Bureau License #14/2016, Storefront location notes..."
@@ -434,7 +453,11 @@ function DocumentStep({
                     </>
                   ) : (
                     <>
-                      <Icon name="check" className="h-3.5 w-3.5" strokeWidth={3} />
+                      <Icon
+                        name="check"
+                        className="h-3.5 w-3.5"
+                        strokeWidth={3}
+                      />
                       {rejected ? "Resubmit documents" : "Submit documents"}
                     </>
                   )}
@@ -481,16 +504,20 @@ function StoreFront({
       {isOpen && (
         <div className="border-t border-neutral-100 px-5 pb-5 pt-4 text-xs text-neutral-600 leading-relaxed">
           <p>
-            Physical retail stores in Addis Ababa (Bole, Piazza, Mercato, etc.) are verified on-site
-            to confirm walk-in availability and stock authenticity.
+            Physical retail stores in Addis Ababa (Bole, Piazza, Mercato, etc.)
+            are verified on-site to confirm walk-in availability and stock
+            authenticity.
           </p>
           <div className="mt-3 rounded-xl border border-neutral-200 bg-neutral-50/70 p-3.5">
             <span className="font-semibold text-neutral-800">
               Location check scheduled during manual review.
             </span>{" "}
             Make sure your shop address is up to date in your{" "}
-            <Link href="/shop/dashboard/shop-profile" className="font-bold text-tn-ink underline">
-              Shop profile
+            <Link
+              href="/shop/dashboard/shop-setting"
+              className="font-bold text-tn-ink underline"
+            >
+              Shop settings
             </Link>
             .
           </div>
@@ -529,8 +556,8 @@ function InPerson({
       />
       {isOpen && (
         <div className="border-t border-neutral-100 px-5 pb-5 pt-4 text-xs text-neutral-600">
-          A Tinsae compliance agent visits your physical store after document inspection to award
-          the verified merchant badge.
+          A Tinsae compliance agent visits your physical store after document
+          inspection to award the verified merchant badge.
         </div>
       )}
     </div>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCategorySchema, getProduct } from "@/lib/api/public";
@@ -7,7 +8,7 @@ import { formatSpecSections, type SpecRow, type SpecSections } from "@/lib/specs
 import { parseSizeGb } from "@/lib/specs/schema";
 import { SITE_URL } from "@/lib/config";
 import { JsonLd } from "@/components/json-ld";
-import { formatETB, freshness, type FreshnessTone } from "@/lib/format";
+import { formatETB, freshness, normalizeImageUrl, type FreshnessTone } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/lib/types";
 import { kindForSlug } from "@/components/tinsae/prod-placeholder";
@@ -253,6 +254,13 @@ function ShopComparison({
     : null;
   const responded = product.last_confirmed_at !== null;
   const tone = f.tone;
+  // The shop's logo when it has one, else its initials on the shop colour.
+  const shopLogo = normalizeImageUrl(product.shop_logo);
+  const shopAvatar = shopLogo ? (
+    <Image src={shopLogo} alt="" fill unoptimized sizes="42px" className="object-cover" />
+  ) : (
+    initials(product.shop_name)
+  );
 
   return (
     <div>
@@ -368,17 +376,17 @@ function ShopComparison({
                 <Link
                   href={`/shops/${product.shop_slug}`}
                   aria-label={`View ${product.shop_name}`}
-                  className="ring-tn-red/40 ring-offset-white flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[11px] text-sm font-bold text-white ring-2 ring-offset-2 transition-transform hover:scale-105"
+                  className="ring-tn-red/40 ring-offset-white relative flex h-[42px] w-[42px] shrink-0 items-center justify-center overflow-hidden rounded-[11px] text-sm font-bold text-white ring-2 ring-offset-2 transition-transform hover:scale-105"
                   style={{ background: shopColor(product.shop_name) }}
                 >
-                  {initials(product.shop_name)}
+                  {shopAvatar}
                 </Link>
               ) : (
                 <span
-                  className="ring-tn-red/40 ring-offset-white flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[11px] text-sm font-bold text-white ring-2 ring-offset-2"
+                  className="ring-tn-red/40 ring-offset-white relative flex h-[42px] w-[42px] shrink-0 items-center justify-center overflow-hidden rounded-[11px] text-sm font-bold text-white ring-2 ring-offset-2"
                   style={{ background: shopColor(product.shop_name) }}
                 >
-                  {initials(product.shop_name)}
+                  {shopAvatar}
                 </span>
               )}
               <div className="min-w-0">

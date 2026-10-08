@@ -7,7 +7,8 @@ import "server-only";
 // deliberately no refresh-and-retry: a Server Component cannot write cookies,
 // so a rotated refresh token would be lost and the session silently ended.
 // The proxy has already refreshed the access token before any page renders.
-import type { Paginated, ShopProduct, ShopProductImage, TelegramState } from "../types";
+import type { Paginated, Shop, ShopPhoto, ShopProduct, ShopProductImage, TelegramState } from "../types";
+import type { VerificationStateResponse } from "../verification";
 import { SERVER_API_URL } from "../config";
 import { readSession } from "../auth/session";
 import { ApiError } from "./public";
@@ -59,3 +60,28 @@ export function getTelegramState(shopSlug: string): Promise<TelegramState> {
   );
 }
 
+/**
+ * The signed-in owner's view of their shop. Unlike the public read in ./public,
+ * this carries owner-only fields such as `address` — a settings form seeded
+ * from the public view would save those back as blanks.
+ */
+export function getOwnShop(shopSlug: string): Promise<Shop> {
+  return getAsUser(`shops/${encodeURIComponent(shopSlug)}/`, "shop");
+}
+
+export function getVerificationState(shopSlug: string): Promise<VerificationStateResponse> {
+  return getAsUser(
+    `shops/${encodeURIComponent(shopSlug)}/verification/state/`,
+    "verification state",
+  );
+}
+
+/** The shop's cover photo — the banner on its public page — or null. */
+export async function getShopCover(shopSlug: string): Promise<ShopPhoto | null> {
+  const data = await getAsUser<ShopPhoto[] | Paginated<ShopPhoto>>(
+    `shops/${encodeURIComponent(shopSlug)}/photos/`,
+    "shop photos",
+  );
+  const photos = Array.isArray(data) ? data : (data.results ?? []);
+  return photos.find((photo) => photo.is_cover) ?? null;
+}

@@ -1,6 +1,9 @@
 import React from "react";
 import MapInfoSidebar from "./map-info-sidebar";
 import ListingSection from "./listing-section";
+import AboutTab from "./about-tab";
+import PoliciesTab from "./policies-tab";
+import ReviewsTab from "./reviews-tab";
 import type { Shop, Product, Paginated } from "@/lib/types";
 
 export function MainSection({
@@ -17,14 +20,11 @@ export function MainSection({
       <div className={tab === "listings" ? "block" : "hidden"}>
         <ListingSection slug={shop.slug} initialProducts={initialProducts} />
       </div>
-      {tab !== "listings" && (
-        <div className="border-tn-hair rounded-2xl border bg-white p-8 text-center">
-          <h3 className="text-tn-ink text-lg font-bold capitalize">{tab}</h3>
-          <p className="text-tn-mute mt-1.5 text-sm">
-            Detailed {tab} information for {shop.name} is coming soon.
-          </p>
-        </div>
+      {tab === "about" && (
+        <AboutTab shop={shop} listingsCount={initialProducts?.count ?? 0} />
       )}
+      {tab === "policies" && <PoliciesTab shop={shop} />}
+      {tab === "reviews" && <ReviewsTab shop={shop} />}
       {/* Map + info sidebar */}
       <MapInfoSidebar shop={shop} />
     </div>

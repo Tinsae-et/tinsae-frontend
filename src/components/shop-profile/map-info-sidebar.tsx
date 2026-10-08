@@ -1,7 +1,15 @@
+"use client";
+
 import React from "react";
+import dynamic from "next/dynamic";
 import { Icon } from "@/components/tinsae/icon";
 import { getInitials } from "@/lib/shops-data";
+import { getDirectionsUrl, getShopLocation } from "@/lib/shop-location";
 import type { Shop } from "@/lib/types";
+
+// Split out of the page bundle and only fetched in the browser, so the Maps
+// library never delays the rest of the profile.
+const ShopLocationMap = dynamic(() => import("./shop-location-map"), { ssr: false });
 
 // PLACEHOLDER: the API has no opening hours yet; these are the same for every
 // shop. Hide until Shop serves real hours.
@@ -12,76 +20,38 @@ const HOURS = [
 ];
 
 export function MapInfoSidebar({ shop }: { shop: Shop }) {
-  const queryLocation = encodeURIComponent(
-    shop.latitude && shop.longitude
-      ? `${shop.latitude},${shop.longitude}`
-      : `${shop.name} ${shop.city || "Addis Ababa"}`
-  );
-  const directionsUrl = `https://www.google.com/maps/search/?api=1&query=${queryLocation}`;
+  const location = getShopLocation(shop);
   const initials = getInitials(shop.name);
 
   return (
-    <aside className="space-y-4 lg:sticky lg:top-[128px] self-start max-h-[calc(100vh-140px)] overflow-y-auto pr-0.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+    <aside className="space-y-4 lg:sticky lg:top-[128px] self-start lg:max-h-[calc(100vh-140px)] lg:overflow-y-auto pr-0.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
       {/* Map card (sticky) */}
       <div className="border-tn-hair overflow-hidden rounded-2xl border bg-white shadow-xs">
-        {/* Map SVG illustration */}
-        <div className="relative h-[220px] overflow-hidden bg-[#E8E1D2]">
-          <svg
-            width="100%"
-            height="100%"
-            viewBox="0 0 320 220"
-            preserveAspectRatio="xMidYMid slice"
-            aria-hidden="true"
-          >
-            <path d="M0 76 Q120 56 320 96" stroke="#fff" strokeWidth="14" fill="none" />
-            <path d="M40 0 L80 220" stroke="#fff" strokeWidth="10" fill="none" />
-            <path d="M180 0 Q200 110 240 220" stroke="#fff" strokeWidth="8" fill="none" />
-            <path d="M0 168 L320 186" stroke="#fff" strokeWidth="8" fill="none" />
-            {[
-              [20, 20, 40, 38],
-              [100, 28, 58, 28],
-              [182, 112, 40, 48],
-              [230, 150, 58, 46],
-              [110, 140, 48, 56],
-            ].map(([x, y, w, h], i) => (
-              <rect
-                key={i}
-                x={x}
-                y={y}
-                width={w}
-                height={h}
-                fill="#F1ECE0"
-                stroke="#D8D0BD"
-                strokeWidth="0.5"
-              />
-            ))}
-            <rect x="238" y="96" width="60" height="38" fill="#D9E5C8" stroke="#C0CFA8" />
-          </svg>
-          <div className="absolute top-[46%] left-[42%] -translate-x-1/2 -translate-y-full">
-            <div className="bg-tn-red flex size-[34px] -rotate-45 items-center justify-center rounded-[50%_50%_50%_0] border-[2.5px] border-white shadow-[0_4px_14px_rgba(204,48,0,0.45)]">
-              <span className="rotate-45 text-[11px] font-extrabold text-white">
-                {initials}
-              </span>
-            </div>
+        {/* No stored coordinates: text address only, never a guessed spot. */}
+        {location && (
+          <div className="relative h-[220px] overflow-hidden bg-[#E8E1D2]">
+            <ShopLocationMap location={location} label={initials} />
           </div>
-        </div>
+        )}
 
         <div className="p-4">
           <div className="text-tn-ink text-sm font-bold">{shop.name}</div>
-          <div className="text-tn-ink2 mt-1 text-xs leading-relaxed">
-            {shop.city ? `${shop.city} · Addis Ababa, Ethiopia` : "Addis Ababa, Ethiopia"}
-          </div>
+          {shop.city && (
+            <div className="text-tn-ink2 mt-1 text-xs leading-relaxed">{shop.city}</div>
+          )}
 
           <div className="mt-3.5 flex gap-2">
-            <a
-              href={directionsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="border-tn-hair text-tn-ink hover:bg-tn-paper flex flex-1 items-center justify-center gap-1.5 rounded-full border py-2 text-xs font-semibold transition"
-            >
-              <Icon name="pin" size={13} />
-              Directions
-            </a>
+            {location && (
+              <a
+                href={getDirectionsUrl(location)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="border-tn-hair text-tn-ink hover:bg-tn-paper flex flex-1 items-center justify-center gap-1.5 rounded-full border py-2 text-xs font-semibold transition"
+              >
+                <Icon name="pin" size={13} />
+                Get directions
+              </a>
+            )}
             {shop.phone ? (
               <a
                 href={`tel:${shop.phone}`}

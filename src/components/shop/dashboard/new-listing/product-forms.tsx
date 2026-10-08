@@ -14,7 +14,12 @@ import {
   Loader2,
 } from "lucide-react";
 import { Icon, IconName } from "@/components/tinsae/icon";
-import { Category, NewProduct, ShopProduct, ShopProductImage } from "@/lib/types";
+import {
+  Category,
+  NewProduct,
+  ShopProduct,
+  ShopProductImage,
+} from "@/lib/types";
 import {
   createListing,
   updateListing,
@@ -23,7 +28,11 @@ import {
   deleteListingImage,
 } from "@/lib/api/client";
 import { ApiError, getCategories } from "@/lib/api/public";
-import { BeforePublication, DailyStockCheckIn, ProductPreview } from "./buyer-preview";
+import {
+  BeforePublication,
+  DailyStockCheckIn,
+  ProductPreview,
+} from "./buyer-preview";
 import { SpecFields } from "./spec-fields";
 import { FormCombobox } from "@/components/tinsae/form-select";
 import { useListingSpecs } from "./use-listing-specs";
@@ -31,7 +40,18 @@ import { normalizeImageUrl } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 // Suggested brands before a category (and its schema) is picked.
-const BRANDS = ["Apple", "Samsung", "Tecno", "Infinix", "Xiaomi", "Sony", "Dell", "HP", "Lenovo", "JBL"];
+const BRANDS = [
+  "Apple",
+  "Samsung",
+  "Tecno",
+  "Infinix",
+  "Xiaomi",
+  "Sony",
+  "Dell",
+  "HP",
+  "Lenovo",
+  "JBL",
+];
 
 const CONDITION_OPTIONS = [
   { value: "new", label: "New · Sealed" },
@@ -55,7 +75,12 @@ const MARKET_RANGES: Record<string, [number, number]> = {
 
 const MAX_PHOTOS = 5;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const ALLOWED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+];
 
 export function validateImageFile(file: File): string | null {
   if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
@@ -97,7 +122,9 @@ function ProductCardSection({
         <h3 className="text-base font-extrabold text-tn-ink tracking-[-0.02em]">
           {title}
         </h3>
-        {hint && <span className="text-xs text-tn-mute font-medium">{hint}</span>}
+        {hint && (
+          <span className="text-xs text-tn-mute font-medium">{hint}</span>
+        )}
       </div>
       {children}
     </div>
@@ -109,11 +136,13 @@ export function Form({
   action,
   initialProduct = null,
   initialImages = [],
+  allowedCategorySlugs,
 }: {
   shopSlug: string;
   action: string;
   initialProduct?: ShopProduct | null;
   initialImages?: ShopProductImage[];
+  allowedCategorySlugs?: string[];
 }) {
   const router = useRouter();
 
@@ -160,7 +189,6 @@ export function Form({
   // Suggestions only; any brand can be typed.
   const brandOptions = schema?.brands ?? BRANDS;
 
-
   // Categories
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadingCats, setLoadingCats] = useState<boolean>(true);
@@ -170,7 +198,14 @@ export function Form({
     getCategories()
       .then((res) => {
         if (mounted) {
-          setCategories(res.results || []);
+          const available = res.results || [];
+          setCategories(
+            allowedCategorySlugs
+              ? available.filter((category) =>
+                  allowedCategorySlugs.includes(category.slug),
+                )
+              : available,
+          );
           setLoadingCats(false);
         }
       })
@@ -181,42 +216,59 @@ export function Form({
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [allowedCategorySlugs]);
 
   // Photos State
   const [coverPhoto, setCoverPhoto] = useState<ShopProductImage | null>(() => {
     if (initialImages && initialImages.length > 0) {
       const img = initialImages.find((i) => i.is_primary) || initialImages[0];
       const rawSrc = img.url || img.image || img.preview || "";
-      const normalized = typeof rawSrc === "string" ? (normalizeImageUrl(rawSrc) || rawSrc) : "";
+      const normalized =
+        typeof rawSrc === "string" ? normalizeImageUrl(rawSrc) || rawSrc : "";
       return {
         ...img,
         image: img.image || rawSrc,
-        preview: img.preview ? (normalizeImageUrl(img.preview) || img.preview) : normalized,
-        url: typeof img.url === "string" ? (normalizeImageUrl(img.url) || img.url) : normalized,
+        preview: img.preview
+          ? normalizeImageUrl(img.preview) || img.preview
+          : normalized,
+        url:
+          typeof img.url === "string"
+            ? normalizeImageUrl(img.url) || img.url
+            : normalized,
       };
     }
     return null;
   });
 
-  const [extraPhotos, setExtraPhotos] = useState<(ShopProductImage | null)[]>(() => {
-    const slots: (ShopProductImage | null)[] = [null, null, null, null];
-    if (initialImages && initialImages.length > 0) {
-      const primary = initialImages.find((img) => img.is_primary) || initialImages[0];
-      const others = initialImages.filter((img) => img !== primary);
-      others.slice(0, 4).forEach((img, idx) => {
-        const rawSrc = img.url || img.image || img.preview || "";
-        const normalized = typeof rawSrc === "string" ? (normalizeImageUrl(rawSrc) || rawSrc) : "";
-        slots[idx] = {
-          ...img,
-          image: img.image || rawSrc,
-          preview: img.preview ? (normalizeImageUrl(img.preview) || img.preview) : normalized,
-          url: typeof img.url === "string" ? (normalizeImageUrl(img.url) || img.url) : normalized,
-        };
-      });
-    }
-    return slots;
-  });
+  const [extraPhotos, setExtraPhotos] = useState<(ShopProductImage | null)[]>(
+    () => {
+      const slots: (ShopProductImage | null)[] = [null, null, null, null];
+      if (initialImages && initialImages.length > 0) {
+        const primary =
+          initialImages.find((img) => img.is_primary) || initialImages[0];
+        const others = initialImages.filter((img) => img !== primary);
+        others.slice(0, 4).forEach((img, idx) => {
+          const rawSrc = img.url || img.image || img.preview || "";
+          const normalized =
+            typeof rawSrc === "string"
+              ? normalizeImageUrl(rawSrc) || rawSrc
+              : "";
+          slots[idx] = {
+            ...img,
+            image: img.image || rawSrc,
+            preview: img.preview
+              ? normalizeImageUrl(img.preview) || img.preview
+              : normalized,
+            url:
+              typeof img.url === "string"
+                ? normalizeImageUrl(img.url) || img.url
+                : normalized,
+          };
+        });
+      }
+      return slots;
+    },
+  );
 
   const [deletedImageIds, setDeletedImageIds] = useState<number[]>([]);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -242,10 +294,12 @@ export function Form({
       formData.name !== (initialProduct?.name || "") ||
       formData.brand !== (initialProduct?.brand || "") ||
       formData.description !== (initialProduct?.description || "") ||
-      formData.price !== (initialProduct?.price ? String(initialProduct.price) : "") ||
+      formData.price !==
+        (initialProduct?.price ? String(initialProduct.price) : "") ||
       formData.category !== (initialProduct?.category || "") ||
       formData.condition !== (initialProduct?.condition || "new") ||
-      formData.is_available !== (initialProduct ? initialProduct.is_available : true) ||
+      formData.is_available !==
+        (initialProduct ? initialProduct.is_available : true) ||
       formData.stock !== (initialProduct?.stock ?? 1) ||
       variant !== ((initialProduct?.specs?.variant as string) || "") ||
       specs.isDirty
@@ -272,7 +326,10 @@ export function Form({
   }, [isDirty, deletedImageIds, coverPhoto, extraPhotos, uploading]);
 
   // Field updater
-  const updateField = <K extends keyof typeof formData>(key: K, value: (typeof formData)[K]) => {
+  const updateField = <K extends keyof typeof formData>(
+    key: K,
+    value: (typeof formData)[K],
+  ) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
     if (fieldErrors[key]) {
       setFieldErrors((prev) => {
@@ -398,7 +455,10 @@ export function Form({
   const getImageSrc = (photo: ShopProductImage | null) => {
     if (!photo) return "";
     if (photo.image instanceof File) {
-      if (typeof photo.preview === "string" && photo.preview.startsWith("blob:")) {
+      if (
+        typeof photo.preview === "string" &&
+        photo.preview.startsWith("blob:")
+      ) {
         return photo.preview;
       }
       return URL.createObjectURL(photo.image);
@@ -426,7 +486,8 @@ export function Form({
     if (!formData.price.trim()) {
       errors.price = "Price is required";
     } else if (!/^\d+(\.\d{1,2})?$/.test(formData.price.trim())) {
-      errors.price = "Please enter a valid decimal number in ETB (e.g. 1500 or 1500.50)";
+      errors.price =
+        "Please enter a valid decimal number in ETB (e.g. 1500 or 1500.50)";
     } else if (parseFloat(formData.price) <= 0) {
       errors.price = "Price must be greater than 0";
     }
@@ -486,7 +547,11 @@ export function Form({
        * Uploads a new photo once, or re-orders one already stored. A File
        * uploaded by an earlier, partly failed attempt counts as stored.
        */
-      const savePhoto = async (photo: ShopProductImage, is_primary: boolean, display_order: number) => {
+      const savePhoto = async (
+        photo: ShopProductImage,
+        is_primary: boolean,
+        display_order: number,
+      ) => {
         const file = photo.image instanceof File ? photo.image : null;
         const storedId = file ? uploadedIdsRef.current.get(file) : photo.id;
         if (file && storedId === undefined) {
@@ -513,8 +578,8 @@ export function Form({
         setUploadProgress("Removing deleted photos...");
         await Promise.allSettled(
           deletedImageIds.map((id) =>
-            deleteListingImage(productSlug, shopSlug, id)
-          )
+            deleteListingImage(productSlug, shopSlug, id),
+          ),
         );
       }
 
@@ -527,12 +592,17 @@ export function Form({
       // Handle extra photos
       const activeExtra = extraPhotos
         .map((photo, idx) => ({ photo, order: idx + 1 }))
-        .filter((item): item is { photo: ShopProductImage; order: number } => item.photo !== null);
+        .filter(
+          (item): item is { photo: ShopProductImage; order: number } =>
+            item.photo !== null,
+        );
 
       let count = 0;
       for (const { photo, order } of activeExtra) {
         count++;
-        setUploadProgress(`Uploading photo ${count} of ${activeExtra.length}...`);
+        setUploadProgress(
+          `Uploading photo ${count} of ${activeExtra.length}...`,
+        );
         await savePhoto(photo, false, order);
       }
 
@@ -542,26 +612,44 @@ export function Form({
     } catch (err: unknown) {
       console.error("Listing save error:", err);
       if (err instanceof ApiError && err.status === 400 && err.data) {
-        const fieldKeys = ["name", "brand", "category", "price", "description", "stock", "condition"];
+        const fieldKeys = [
+          "name",
+          "brand",
+          "category",
+          "price",
+          "description",
+          "stock",
+          "condition",
+        ];
         const errorsMap: Record<string, string> = {};
         let mappedAny = false;
         Object.entries(err.data).forEach(([key, val]) => {
           // Spec errors arrive nested: {"specs": {"storage": ["..."]}}.
-          if (key === "specs" && val && typeof val === "object" && !Array.isArray(val)) {
+          if (
+            key === "specs" &&
+            val &&
+            typeof val === "object" &&
+            !Array.isArray(val)
+          ) {
             const shown = new Set(schema?.fields.map((f) => f.key) ?? []);
             const unshown: string[] = [];
-            Object.entries(val as Record<string, unknown>).forEach(([specKey, specVal]) => {
-              const message = Array.isArray(specVal) ? specVal.join(" ") : String(specVal);
-              if (shown.has(specKey)) {
-                errorsMap[`spec.${specKey}`] = message;
-                mappedAny = true;
-              } else {
-                // No field to show it on (e.g. an old key): surface it rather
-                // than failing silently.
-                unshown.push(message);
-              }
-            });
-            if (unshown.length) setServerError(`Specifications: ${unshown.join(" ")}`);
+            Object.entries(val as Record<string, unknown>).forEach(
+              ([specKey, specVal]) => {
+                const message = Array.isArray(specVal)
+                  ? specVal.join(" ")
+                  : String(specVal);
+                if (shown.has(specKey)) {
+                  errorsMap[`spec.${specKey}`] = message;
+                  mappedAny = true;
+                } else {
+                  // No field to show it on (e.g. an old key): surface it rather
+                  // than failing silently.
+                  unshown.push(message);
+                }
+              },
+            );
+            if (unshown.length)
+              setServerError(`Specifications: ${unshown.join(" ")}`);
             return;
           }
           if (fieldKeys.includes(key)) {
@@ -572,11 +660,19 @@ export function Form({
         });
         setFieldErrors(errorsMap);
         if (!mappedAny) {
-          const detail = err.data.detail || err.data.non_field_errors || "Please check the form for errors.";
-          setServerError(Array.isArray(detail) ? detail.join(" ") : String(detail));
+          const detail =
+            err.data.detail ||
+            err.data.non_field_errors ||
+            "Please check the form for errors.";
+          setServerError(
+            Array.isArray(detail) ? detail.join(" ") : String(detail),
+          );
         }
       } else {
-        const msg = err instanceof Error ? err.message : "Failed to save listing. Please try again.";
+        const msg =
+          err instanceof Error
+            ? err.message
+            : "Failed to save listing. Please try again.";
         setServerError(msg);
       }
     } finally {
@@ -631,7 +727,11 @@ export function Form({
           </div>
         )}
 
-        <form id="product-form" onSubmit={handleSubmit} className="flex flex-col">
+        <form
+          id="product-form"
+          onSubmit={handleSubmit}
+          className="flex flex-col"
+        >
           {/* Section 1: Product */}
           <ProductCardSection title="Product">
             <div>
@@ -640,7 +740,13 @@ export function Form({
               </label>
               <div className="flex flex-wrap gap-2">
                 {loadingCats ? (
-                  <span className="text-xs text-tn-mute">Loading categories...</span>
+                  <span className="text-xs text-tn-mute">
+                    Loading categories...
+                  </span>
+                ) : categories.length === 0 ? (
+                  <span className="text-xs text-tn-mute">
+                    Select categories in Shop settings before adding a product.
+                  </span>
                 ) : (
                   categories.map((c) => {
                     const isSelected = formData.category === c.slug;
@@ -653,7 +759,7 @@ export function Form({
                           "inline-flex items-center gap-1.5 h-10 px-3.5 rounded-[11px] text-xs font-bold transition-colors cursor-pointer border",
                           isSelected
                             ? "border-tn-ink bg-tn-ink text-white"
-                            : "border-tn-hair bg-white text-tn-ink2 hover:bg-tn-paper"
+                            : "border-tn-hair bg-white text-tn-ink2 hover:bg-tn-paper",
                         )}
                       >
                         <Icon
@@ -694,7 +800,10 @@ export function Form({
               </div>
 
               <div>
-                <label htmlFor="listing-brand" className="text-[12.5px] font-bold text-tn-ink2 mb-1.5 block">
+                <label
+                  htmlFor="listing-brand"
+                  className="text-[12.5px] font-bold text-tn-ink2 mb-1.5 block"
+                >
                   Brand
                 </label>
                 {/* Typed, with the category's common brands suggested: a list
@@ -705,7 +814,9 @@ export function Form({
                   onChange={(v) => updateField("brand", v)}
                   suggestions={brandOptions}
                   maxLength={100}
-                  placeholder={brandOptions.length ? `e.g. ${brandOptions[0]}` : "Brand"}
+                  placeholder={
+                    brandOptions.length ? `e.g. ${brandOptions[0]}` : "Brand"
+                  }
                   className="font-semibold placeholder:font-normal"
                 />
                 {fieldErrors.brand && (
@@ -917,15 +1028,20 @@ export function Form({
             hint={categories.find((c) => c.slug === formData.category)?.name}
           >
             {!formData.category ? (
-              <p className="text-[13px] text-tn-mute">Pick a category to see the specs buyers compare on.</p>
+              <p className="text-[13px] text-tn-mute">
+                Pick a category to see the specs buyers compare on.
+              </p>
             ) : specs.loadFailed ? (
               <p className="text-[13px] text-tn-red">
-                Couldn&rsquo;t load the spec fields for this category. Check your connection and pick it again.
+                Couldn&rsquo;t load the spec fields for this category. Check
+                your connection and pick it again.
               </p>
             ) : specs.loading ? (
               <p className="text-[13px] text-tn-mute">Loading spec fields…</p>
             ) : !schema ? (
-              <p className="text-[13px] text-tn-mute">This category has no spec fields yet.</p>
+              <p className="text-[13px] text-tn-mute">
+                This category has no spec fields yet.
+              </p>
             ) : (
               <SpecFields
                 schema={schema}
@@ -977,7 +1093,9 @@ export function Form({
                   step={1}
                   placeholder="1"
                   value={formData.stock}
-                  onChange={(e) => updateField("stock", parseInt(e.target.value) || 0)}
+                  onChange={(e) =>
+                    updateField("stock", parseInt(e.target.value) || 0)
+                  }
                   className="w-full h-[46px] px-3.5 rounded-[11px] border border-tn-hair bg-white font-tn-mono text-sm font-semibold text-tn-ink placeholder:text-tn-mute/50 focus:outline-none focus:ring-2 focus:ring-tn-hair focus:border-tn-ink transition-colors"
                 />
                 {fieldErrors.stock && (
@@ -989,10 +1107,21 @@ export function Form({
             </div>
 
             {/* Market Comparison */}
-            <div className={cn("flex items-center gap-3 p-3.5 rounded-[13px] mb-4 transition-colors", marketBg)}>
-              <Icon name="pulse" size={18} className={cn("shrink-0", marketColor)} />
+            <div
+              className={cn(
+                "flex items-center gap-3 p-3.5 rounded-[13px] mb-4 transition-colors",
+                marketBg,
+              )}
+            >
+              <Icon
+                name="pulse"
+                size={18}
+                className={cn("shrink-0", marketColor)}
+              />
               <div className="flex-1 min-w-0">
-                <div className={cn("text-xs font-bold", marketColor)}>{marketCopy}</div>
+                <div className={cn("text-xs font-bold", marketColor)}>
+                  {marketCopy}
+                </div>
                 <div className="text-[11.5px] text-tn-ink2/80 font-tn-mono mt-0.5">
                   5 shops nearby: {formatETB(lo)} – {formatETB(hi)}
                 </div>
@@ -1016,7 +1145,7 @@ export function Form({
                         "h-9 px-3.5 rounded-full text-xs font-bold border transition-colors cursor-pointer",
                         active
                           ? "border-tn-ink bg-tn-ink text-white"
-                          : "border-tn-hair bg-white text-tn-ink2 hover:bg-tn-paper"
+                          : "border-tn-hair bg-white text-tn-ink2 hover:bg-tn-paper",
                       )}
                     >
                       {c.label}
@@ -1034,25 +1163,30 @@ export function Form({
             {/* Availability */}
             <div className="pt-3 border-t border-tn-hair2 flex items-center justify-between">
               <div>
-                <div className="text-[13.5px] font-bold text-tn-ink">Availability</div>
+                <div className="text-[13.5px] font-bold text-tn-ink">
+                  Availability
+                </div>
                 <div className="text-xs text-tn-mute">
-                  Control whether this listing is active and purchasable by buyers
+                  Control whether this product is active and purchasable by
+                  buyers
                 </div>
               </div>
               <button
                 type="button"
                 role="switch"
                 aria-checked={formData.is_available}
-                onClick={() => updateField("is_available", !formData.is_available)}
+                onClick={() =>
+                  updateField("is_available", !formData.is_available)
+                }
                 className={cn(
                   "relative h-[27px] w-[46px] shrink-0 rounded-full transition-colors cursor-pointer border-none",
-                  formData.is_available ? "bg-tn-green" : "bg-tn-hair"
+                  formData.is_available ? "bg-tn-green" : "bg-tn-hair",
                 )}
               >
                 <span
                   className={cn(
                     "absolute top-[3px] h-[21px] w-[21px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.2)] transition-transform duration-150",
-                    formData.is_available ? "left-[22px]" : "left-[3px]"
+                    formData.is_available ? "left-[22px]" : "left-[3px]",
                   )}
                 />
               </button>
@@ -1079,7 +1213,11 @@ export function Form({
           name={formData.name}
           price={formData.price}
           condition={formData.condition}
-          specsComplete={!specs.loading && !specs.loadFailed && Object.keys(specErrors).length === 0}
+          specsComplete={
+            !specs.loading &&
+            !specs.loadFailed &&
+            Object.keys(specErrors).length === 0
+          }
           coverPhoto={coverPhoto}
           extraPhotos={extraPhotos}
           action={action}
