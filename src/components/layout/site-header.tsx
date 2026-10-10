@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -557,18 +557,29 @@ function BrowseMenu({
   const menuRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const openedByHoverRef = useRef(false);
-  // The parent tile whose subcategory panel is open, and its close timer.
+  // The group tile ("Vehicles & Auto") expanded into its floating card. It
+  // opens after a short rest (hover intent), so sweeping across the grid
+  // never flashes a card, and closes shortly after the pointer leaves.
   const [expanded, setExpanded] = useState<string | null>(null);
+  const openRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const collapseRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const expand = (slug: string | null) => {
+  const clearTimers = () => {
+    if (openRef.current) clearTimeout(openRef.current);
     if (collapseRef.current) clearTimeout(collapseRef.current);
-    collapseRef.current = null;
+    openRef.current = collapseRef.current = null;
+  };
+  const expandSoon = (slug: string) => {
+    clearTimers();
+    if (expanded !== slug) openRef.current = setTimeout(() => setExpanded(slug), 120);
+  };
+  const expandNow = (slug: string | null) => {
+    clearTimers();
     setExpanded(slug);
   };
   const collapseSoon = () => {
-    if (collapseRef.current) clearTimeout(collapseRef.current);
-    collapseRef.current = setTimeout(() => setExpanded(null), 160);
+    clearTimers();
+    collapseRef.current = setTimeout(() => setExpanded(null), 150);
   };
 
   // Client-side fallback to fetch live counts if not provided via SSR
@@ -652,6 +663,7 @@ function BrowseMenu({
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       if (collapseRef.current) clearTimeout(collapseRef.current);
+      if (openRef.current) clearTimeout(openRef.current);
     };
   }, []);
 
@@ -698,7 +710,9 @@ function BrowseMenu({
           <div className="absolute -top-3 inset-x-0 h-3" />
           <div
             role="menu"
-            className="w-[760px] overflow-hidden rounded-[20px] border border-tn-hair bg-white shadow-[0_26px_64px_rgba(11,11,11,0.18)]"
+            // No overflow clipping: an expanded group card may float past the
+            // menu's edge. The rounded corners live on the edge sections instead.
+            className="w-[760px] rounded-[20px] border border-tn-hair bg-white shadow-[0_26px_64px_rgba(11,11,11,0.18)]"
           >
             <div className="grid grid-cols-12">
               {/* Left 8 columns: All Live Categories */}
@@ -723,35 +737,25 @@ function BrowseMenu({
                     const hasChildren = !!c.children?.length;
                     const isExpanded = expanded === c.slug;
                     return (
-                      <Fragment key={c.slug}>
+                      <div
+                        key={c.slug}
+                        className="relative"
+                        onMouseEnter={() => (hasChildren ? expandSoon(c.slug) : expandNow(null))}
+                        onMouseLeave={hasChildren ? collapseSoon : undefined}
+                      >
                         <Link
                           href={`/products?category=${c.slug}`}
                           onClick={() => setOpen(false)}
-                          onMouseEnter={() => expand(hasChildren ? c.slug : null)}
-                          onMouseLeave={hasChildren ? collapseSoon : undefined}
-                          onFocus={() => expand(hasChildren ? c.slug : null)}
+                          onFocus={() => expandNow(hasChildren ? c.slug : null)}
                           aria-haspopup={hasChildren ? "menu" : undefined}
                           aria-expanded={hasChildren ? isExpanded : undefined}
-                          className={cn(
-                            "group flex items-start gap-3 rounded-xl p-2.5 transition-colors hover:bg-tn-paper",
-                            isExpanded && "bg-tn-paper",
-                          )}
+                          className="group flex items-start gap-3 rounded-xl p-2.5 transition-colors hover:bg-tn-paper"
                         >
-                          <span
-                            className={cn(
-                              "bg-tn-paper text-tn-ink group-hover:bg-white group-hover:shadow-sm inline-flex size-10 shrink-0 items-center justify-center rounded-[11px] transition-all",
-                              isExpanded && "bg-white shadow-sm",
-                            )}
-                          >
+                          <span className="bg-tn-paper text-tn-ink group-hover:bg-white group-hover:shadow-sm inline-flex size-10 shrink-0 items-center justify-center rounded-[11px] transition-all">
                             <Icon name={c.icon} size={20} />
                           </span>
                           <span className="min-w-0 flex-1">
-                            <span
-                              className={cn(
-                                "text-tn-ink group-hover:text-tn-red block text-[13.5px] font-extrabold tracking-tight transition-colors",
-                                isExpanded && "text-tn-red",
-                              )}
-                            >
+                            <span className="text-tn-ink group-hover:text-tn-red block text-[13.5px] font-extrabold tracking-tight transition-colors">
                               {c.label}
                             </span>
                             <span className="text-tn-mute block truncate text-[11px]">
@@ -762,65 +766,80 @@ function BrowseMenu({
                             </span>
                           </span>
                           {hasChildren && (
-                            <Icon
-                              name="chevd"
-                              size={14}
-                              className={cn(
-                                "text-tn-mute mt-3 shrink-0 transition-transform duration-150",
-                                isExpanded && "text-tn-red rotate-180",
-                              )}
-                            />
+                            <Icon name="chevd" size={14} className="text-tn-mute mt-3 shrink-0" />
                           )}
                         </Link>
 
-                        {/* The hovered parent's subcategories, full width under its row. */}
+                        {/* The tile grown in place into a floating card: anchored
+                            where the tile sits, on top of its neighbours, so
+                            nothing in the menu moves. */}
                         {hasChildren && isExpanded && (
                           <div
                             role="menu"
                             aria-label={c.label}
-                            onMouseEnter={() => expand(c.slug)}
-                            onMouseLeave={collapseSoon}
-                            className="border-tn-hair2 bg-tn-paper/60 col-span-2 rounded-2xl border p-2 animate-[tnRise_0.14s_ease_both]"
+                            className="absolute -top-1.5 -left-1.5 z-20 w-[calc(100%+12px)] min-w-[272px] rounded-[16px] border border-tn-hair bg-white p-1.5 shadow-[0_22px_54px_rgba(11,11,11,0.18)] animate-[tnRise_0.12s_ease_both]"
                           >
-                            <div className="flex flex-wrap gap-1">
-                              {c.children!.map((child) => (
-                                <Link
-                                  key={child.slug}
-                                  role="menuitem"
-                                  href={`/products?category=${child.slug}`}
-                                  onClick={() => setOpen(false)}
-                                  className="group flex items-center gap-2 rounded-lg px-2.5 py-2 transition-colors hover:bg-white hover:shadow-xs"
-                                >
-                                  <span className="text-tn-ink2 group-hover:text-tn-red whitespace-nowrap text-[12.5px] font-bold transition-colors">
-                                    {child.label}
-                                  </span>
-                                  {counts?.[child.slug] ? (
-                                    <span className="font-tn-mono text-tn-mute shrink-0 text-[10.5px]">
-                                      {formatCount(counts[child.slug])}
+                            <Link
+                              href={`/products?category=${c.slug}`}
+                              onClick={() => setOpen(false)}
+                              className="group flex items-start gap-3 rounded-xl bg-tn-paper p-2.5"
+                            >
+                              <span className="text-tn-red inline-flex size-10 shrink-0 items-center justify-center rounded-[11px] bg-white shadow-sm">
+                                <Icon name={c.icon} size={20} />
+                              </span>
+                              <span className="min-w-0 flex-1">
+                                <span className="text-tn-red block text-[13.5px] font-extrabold tracking-tight">
+                                  {c.label}
+                                </span>
+                                <span className="font-tn-mono text-tn-ink2/75 mt-0.5 block text-[11px] font-medium">
+                                  {countLabel(c.slug)}
+                                </span>
+                              </span>
+                              <Icon name="chevd" size={14} className="text-tn-red mt-3 shrink-0 rotate-180" />
+                            </Link>
+                            <div className="mt-1">
+                              {c.children!.map((child) => {
+                                const childCount = counts?.[child.slug];
+                                return (
+                                  <Link
+                                    key={child.slug}
+                                    role="menuitem"
+                                    href={`/products?category=${child.slug}`}
+                                    onClick={() => setOpen(false)}
+                                    className="group/sub hover:bg-tn-paper flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-colors"
+                                  >
+                                    <Icon name={child.icon} size={15} className="text-tn-mute group-hover/sub:text-tn-red" />
+                                    <span className="text-tn-ink2 group-hover/sub:text-tn-red flex-1 truncate text-[13px] font-bold transition-colors">
+                                      {child.label}
                                     </span>
-                                  ) : null}
-                                </Link>
-                              ))}
-                              <Link
-                                role="menuitem"
-                                href={`/products?category=${c.slug}`}
-                                onClick={() => setOpen(false)}
-                                className="text-tn-mute hover:text-tn-red ml-auto flex items-center gap-1 rounded-lg px-2.5 py-2 text-[12px] font-extrabold transition-colors"
-                              >
-                                Shop all
-                                <Icon name="arrow" size={12} />
-                              </Link>
+                                    {childCount ? (
+                                      <span className="font-tn-mono text-tn-mute text-[11px]">
+                                        {formatCount(childCount)}
+                                      </span>
+                                    ) : null}
+                                  </Link>
+                                );
+                              })}
                             </div>
+                            <Link
+                              role="menuitem"
+                              href={`/products?category=${c.slug}`}
+                              onClick={() => setOpen(false)}
+                              className="border-tn-hair2 text-tn-ink hover:text-tn-red mt-1 flex items-center gap-1.5 border-t px-2.5 pt-2.5 pb-1.5 text-[12px] font-extrabold transition-colors"
+                            >
+                              Shop all {c.label}
+                              <Icon name="arrow" size={12} />
+                            </Link>
                           </div>
                         )}
-                      </Fragment>
+                      </div>
                     );
                   })}
                 </div>
               </div>
 
               {/* Right 4 columns: Upcoming Verticals & Marketplace Shortcuts */}
-              <div className="col-span-4 border-l border-tn-hair2 bg-[#FAF8F5]/80 p-5 flex flex-col justify-between">
+              <div className="col-span-4 rounded-tr-[20px] border-l border-tn-hair2 bg-[#FAF8F5]/80 p-5 flex flex-col justify-between">
                 <div>
                   <p className="text-tn-mute text-[10.5px] font-extrabold tracking-[0.09em] uppercase mb-2.5 px-1">
                     Coming to Tinsae
@@ -899,7 +918,7 @@ function BrowseMenu({
             </div>
 
             {/* Bottom banner: View All Products */}
-            <div className="border-t border-tn-hair2 bg-tn-paper/70 px-5 py-3 flex items-center justify-between">
+            <div className="rounded-b-[20px] border-t border-tn-hair2 bg-tn-paper/70 px-5 py-3 flex items-center justify-between">
               <span className="text-[12px] text-tn-mute font-medium">
                 Browse verified listings across Addis Ababa
               </span>
