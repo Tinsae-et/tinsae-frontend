@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -426,6 +426,168 @@ function SearchField({
         </div>
       )}
     </div>
+  );
+}
+
+/** Gap between bar items (`gap-5`), in px, for the fit calculation. */
+const BAR_GAP = 20;
+
+/**
+ * The category bar under the header, "priority+" style: as many categories as
+ * fit the width, in order, and the rest under a "More" dropdown. It measures a
+ * hidden copy of every label, so it adapts to the screen and to however many
+ * categories the backend sends, instead of clipping the last one.
+ */
+function CategoryBar({ categories }: { categories: NavCategory[] }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLDivElement>(null);
+  // Every item until measured: the server cannot know the width.
+  const [visibleCount, setVisibleCount] = useState(categories.length);
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    const measure = measureRef.current;
+    if (!container || !measure) return;
+    const fit = () => {
+      const nodes = Array.from(measure.children) as HTMLElement[];
+      const more = nodes.pop();
+      const widths = nodes.map((n) => n.offsetWidth);
+      const moreWidth = more?.offsetWidth ?? 0;
+      const available = container.clientWidth;
+      const total = (n: number) =>
+        widths.slice(0, n).reduce((a, b) => a + b, 0) + BAR_GAP * Math.max(0, n - 1);
+      if (total(widths.length) <= available) {
+        setVisibleCount(widths.length);
+        return;
+      }
+      let n = widths.length - 1;
+      while (n > 0 && total(n) + BAR_GAP + moreWidth > available) n--;
+      setVisibleCount(n);
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [categories]);
+
+  const shown = categories.slice(0, visibleCount);
+  const hidden = categories.slice(visibleCount);
+  return (
+    <div ref={containerRef} className="relative flex min-w-0 flex-1 items-center gap-5 overflow-hidden py-1">
+      {shown.map((c) => (
+        <CategoryBarLink key={c.slug} category={c} />
+      ))}
+      {hidden.length > 0 && <CategoryBarMore categories={hidden} />}
+      {/* Invisible copy of every label (and "More") for measuring. */}
+      <div
+        ref={measureRef}
+        aria-hidden
+        className="pointer-events-none invisible absolute top-0 left-0 flex gap-5 whitespace-nowrap"
+      >
+        {categories.map((c) => (
+          <span key={c.slug} className="inline-flex items-center gap-1">
+            {c.label}
+            {c.children?.length ? <Icon name="chevd" size={12} /> : null}
+          </span>
+        ))}
+        <span className="inline-flex items-center gap-1">
+          More
+          <Icon name="chevd" size={12} />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** "More": the categories that did not fit the bar, each with its subcategories. */
+function CategoryBarMore({ categories }: { categories: NavCategory[] }) {
+  const anchorRef = useRef<HTMLButtonElement>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [position, setPosition] = useState<{ right: number; top: number } | null>(null);
+
+  const show = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    const rect = anchorRef.current?.getBoundingClientRect();
+    if (rect) setPosition({ right: window.innerWidth - rect.right, top: rect.bottom });
+  };
+  const hide = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setPosition(null), 150);
+  };
+
+  useEffect(
+    () => () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    },
+    [],
+  );
+  useEffect(() => {
+    if (!position) return;
+    const close = () => setPosition(null);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [position]);
+
+  return (
+    <>
+      <button
+        ref={anchorRef}
+        type="button"
+        onMouseEnter={show}
+        onMouseLeave={hide}
+        onFocus={show}
+        onClick={() => (position ? setPosition(null) : show())}
+        aria-haspopup="menu"
+        aria-expanded={position !== null}
+        className={cn(
+          "hover:text-tn-red inline-flex shrink-0 items-center gap-1 whitespace-nowrap bg-transparent text-tn-mute transition-colors hover:font-bold",
+          position && "text-tn-red",
+        )}
+      >
+        More
+        <Icon name="chevd" size={12} />
+      </button>
+      {position &&
+        createPortal(
+          <div
+            role="menu"
+            onMouseEnter={show}
+            onMouseLeave={hide}
+            style={{ position: "fixed", right: position.right, top: position.top + 6 }}
+            className="z-[60] max-h-[70vh] w-[260px] overflow-y-auto rounded-[14px] border border-tn-hair bg-white p-2 shadow-[0_18px_44px_rgba(11,11,11,0.14)]"
+          >
+            {categories.map((c, i) => (
+              <div key={c.slug} className={cn(i > 0 && "mt-1 border-t border-tn-hair2 pt-1")}>
+                <Link
+                  role="menuitem"
+                  href={`/products?category=${c.slug}`}
+                  onClick={() => setPosition(null)}
+                  className="text-tn-ink hover:bg-tn-paper hover:text-tn-red flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-extrabold transition-colors"
+                >
+                  <Icon name={c.icon} size={15} className="text-tn-mute" />
+                  {c.label}
+                </Link>
+                {c.children?.map((child) => (
+                  <Link
+                    key={child.slug}
+                    role="menuitem"
+                    href={`/products?category=${child.slug}`}
+                    onClick={() => setPosition(null)}
+                    className="text-tn-ink2 hover:bg-tn-paper hover:text-tn-red flex items-center rounded-lg py-1.5 pr-3 pl-[42px] text-[12.5px] font-semibold transition-colors"
+                  >
+                    {child.label}
+                  </Link>
+                ))}
+              </div>
+            ))}
+          </div>,
+          document.body,
+        )}
+    </>
   );
 }
 
@@ -1262,11 +1424,7 @@ export function SiteHeader({
               <span>All Categories</span>
             </Link>
             <div className="h-3.5 w-px bg-tn-hair shrink-0" />
-            <div className="flex items-center gap-5 overflow-x-auto scrollbar-none py-1 min-w-0">
-              {categories.map((c) => (
-                <CategoryBarLink key={c.slug} category={c} />
-              ))}
-            </div>
+            <CategoryBar categories={categories} />
             <div className="ml-auto flex items-center gap-4 text-xs font-bold shrink-0">
               <Link
                 href="/shops"
