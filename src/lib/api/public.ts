@@ -62,6 +62,10 @@ type CachePolicy = number | "no-store";
  */
 function readInit(policy: CachePolicy, init?: RequestInit): RequestInit {
   if (typeof window !== "undefined") return { ...init };
+  // Development reads Django fresh every time. The data cache persists across
+  // restarts, so a re-seed or a taxonomy sync otherwise stayed invisible for
+  // up to an hour (a new category missing from every menu).
+  if (process.env.NODE_ENV !== "production") policy = "no-store";
   // An explicit `cache` from the caller (e.g. the dashboard's editor wanting
   // what Django has right now) replaces the policy rather than conflicting.
   const cache: RequestInit =
@@ -91,13 +95,12 @@ export type ProductQuery = {
   verifiedOnly?: boolean;
   /** Backend-defined: only products confirmed within the 48h freshness window. */
   freshOnly?: boolean;
-  /**
-   * PLACEHOLDER: demo facets — sent for forward-compat, but the backend ignores
-   * them, so the filters look applied while results do not change.
-   */
+  /** Comma-separated: any of these brands (case-insensitive). */
   brand?: string;
+  /** Comma-separated conditions: new, used, refurbished. */
   condition?: string;
-  neighborhood?: string;
+  /** The category's spec filters as params: spec_<key>, spec_<key>_min/_max. */
+  specParams?: Record<string, string>;
 };
 
 function productSearchParams(query: ProductQuery): URLSearchParams {
@@ -113,8 +116,45 @@ function productSearchParams(query: ProductQuery): URLSearchParams {
   if (query.freshOnly) params.set("fresh", "true");
   if (query.brand) params.set("brand", query.brand);
   if (query.condition) params.set("condition", query.condition);
-  if (query.neighborhood) params.set("neighborhood", query.neighborhood);
+  for (const [key, value] of Object.entries(query.specParams ?? {})) params.set(key, value);
   return params;
+}
+
+/** How many listings each filter option would show (catalog ProductViewSet.facets). */
+export type ProductFacets = {
+  total: number;
+  brands: { value: string; count: number }[];
+  conditions: { value: string; count: number }[];
+  /** Per subcategory, when `category` is a parent. */
+  subcategories: { slug: string; count: number }[];
+  /** Every category's count under the other filters; parents include their subcategories. */
+  categories: Record<string, number>;
+  /** Listings across all categories under the other filters. */
+  category_total: number;
+  /** This category's price range under the other filters (its own bounds aside); null when empty. */
+  price: { min: number; max: number } | null;
+  /** Per spec key of the category's schema. */
+  specs: Record<
+    string,
+    { values?: { value: string; count: number }[]; range?: { min: number; max: number } | null }
+  >;
+};
+
+/** Facet counts for a filter set; the same params as the list, minus paging and sort. */
+export async function getProductFacets(
+  query: ProductQuery = {},
+  init?: RequestInit,
+): Promise<ProductFacets> {
+  const params = productSearchParams({ ...query, page: undefined, pageSize: undefined, ordering: undefined });
+  const qs = params.toString();
+  const res = await fetch(
+    `${CATALOG}/products/facets/${qs ? `?${qs}` : ""}`,
+    readInit(query.q ? "no-store" : REVALIDATE.listings, init),
+  );
+  if (!res.ok) {
+    throw new ApiError(`Could not load filter counts (${res.status})`, res.status);
+  }
+  return res.json();
 }
 
 function normalizeProduct(product: Product): Product {

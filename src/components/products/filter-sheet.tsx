@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { Product } from "@/lib/types";
+import type { ProductFacets } from "@/lib/api/public";
+import type { CategorySchema } from "@/lib/specs/schema";
 import { DEFAULT_FILTERS, type SearchFilters } from "@/lib/filters";
 import { FilterControls, type CategoryOption } from "./filter-controls";
 import { useModal } from "@/hooks/use-modal";
@@ -16,6 +18,8 @@ export function FilterSheet({
   categories,
   products,
   bounds,
+  schema,
+  facets,
   onApply,
   resultCount,
 }: {
@@ -25,6 +29,8 @@ export function FilterSheet({
   categories: CategoryOption[];
   products: Product[];
   bounds?: { min: number; max: number };
+  schema?: CategorySchema | null;
+  facets?: ProductFacets | null;
   onApply: (filters: SearchFilters) => void;
   resultCount: number | undefined;
 }) {
@@ -70,6 +76,10 @@ export function FilterSheet({
             categories={categories}
             products={products}
             bounds={bounds}
+            // The draft's category may differ from the URL's; its schema and
+            // counts are the URL's until applied, so only show them while they match.
+            schema={draft.category === filters.category ? schema : null}
+            facets={draft.category === filters.category ? facets : null}
             onChange={(patch) => setDraft((d) => ({ ...d, ...patch }))}
           />
         </div>

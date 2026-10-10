@@ -1,13 +1,15 @@
 import { Suspense } from "react";
-import { getCategories, getProducts } from "@/lib/api/public";
+import { getCategories, getCategorySchema, getProductFacets, getProducts } from "@/lib/api/public";
 import { ProductsBrowser } from "@/components/products/products-browser";
+import type { CategoryOption } from "@/components/products/filter-controls";
+import { toNavCategories } from "@/lib/nav-categories";
 import { ProductCardSkeleton } from "@/components/products/product-card";
 import { PRODUCTS_PAGE_SIZE } from "@/components/products/product-grid";
 import { filtersFromSearchParams, filtersToProductQuery } from "@/lib/filters";
 
 export const metadata = {
   title: "Browse listings — Tinsae",
-  description: "Electronics from verified shops across Bole, Addis Ababa.",
+  description: "Electronics and vehicles from verified shops across Addis Ababa.",
 };
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -22,7 +24,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   // The URL is the single source of truth: parse it into filters, server-render
   // the first page, and let the client take over for subsequent changes.
   const filters = filtersFromSearchParams(params);
-  const [data, categories, priceBounds] = await Promise.all([
+  const [data, categories, priceBounds, initialSchema, initialFacets] = await Promise.all([
     // Always page 1: the client owns the scroll cursor from here on, so an old
     // `?page=3` link degrades to the top of the list rather than desyncing it.
     getProducts({
@@ -45,18 +47,39 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
         ? { min: lo, max: hi }
         : undefined;
     })(),
+    // The spec filters' schema (null for a parent or no category) and the
+    // counts beside every option, so the rail renders complete on first paint.
+    filters.category ? getCategorySchema(filters.category).catch(() => null) : null,
+    getProductFacets(filtersToProductQuery(filters)).catch(() => null),
   ]);
 
   const initial = data ? { products: data.results, total: data.count } : null;
   // Backend-owned: an outage shows no category filter rather than a stale list.
-  const categoryOptions = (categories?.results ?? [])
-    .filter((c) => c.parent === null)
-    .map((c) => ({ slug: c.slug, name: c.name }));
+  // Each top-level category is followed by its subcategories, which carry
+  // their parent so the page can show chips and a breadcrumb for them.
+  const categoryOptions: CategoryOption[] = toNavCategories(categories?.results ?? []).flatMap(
+    (c) => [
+      { slug: c.slug, name: c.label, icon: c.icon },
+      ...(c.children ?? []).map((child) => ({
+        slug: child.slug,
+        name: child.label,
+        icon: child.icon,
+        parentSlug: c.slug,
+        parentName: c.label,
+      })),
+    ],
+  );
 
   return (
     <main>
       <Suspense fallback={<PageSkeleton />}>
-        <ProductsBrowser categories={categoryOptions} initial={initial} priceBounds={priceBounds} />
+        <ProductsBrowser
+          categories={categoryOptions}
+          initial={initial}
+          priceBounds={priceBounds}
+          initialSchema={initialSchema}
+          initialFacets={initialFacets}
+        />
       </Suspense>
     </main>
   );
