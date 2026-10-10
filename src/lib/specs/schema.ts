@@ -64,6 +64,10 @@ export const UNIT_SWITCHES: Record<"size" | "weight", { label: string; factor: n
 export type CategorySchema = {
   productType: string;
   brands: string[];
+  /** False for goods usually sold unbranded (furniture, décor); the form marks it optional. */
+  brandRequired?: boolean;
+  /** The category's own example name and variant for the listing form's placeholders. */
+  listingExamples?: { name?: string; variant?: string };
   fields: SpecField[];
 };
 
@@ -72,6 +76,8 @@ export type ApiCategorySchema = {
   category: string;
   product_type: string;
   brands: string[];
+  brand_required?: boolean;
+  listing_examples?: { name?: string; variant?: string };
   fields: {
     key: string;
     label: string;
@@ -95,6 +101,9 @@ export function fromApiSchema(raw: ApiCategorySchema): CategorySchema {
   return {
     productType: raw.product_type,
     brands: raw.brands,
+    // Older payloads predate both: brand required, no examples.
+    brandRequired: raw.brand_required ?? true,
+    listingExamples: raw.listing_examples ?? {},
     fields: raw.fields.map((f) => ({
       key: f.key,
       label: f.label,

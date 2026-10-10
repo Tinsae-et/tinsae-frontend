@@ -3,16 +3,21 @@
 // photo — the handoff says real images should be the norm and these are the
 // graceful no-image state, always on the #F7F6F2 letterbox background.
 
-export type ProductKind = "phone" | "laptop" | "audio" | "tablet" | "camera";
+export type ProductKind = "phone" | "laptop" | "audio" | "tablet" | "camera" | "other";
 
-/** Best-effort kind from the backend's category slug (catalog seed data). */
+/**
+ * Best-effort kind from the backend's category slug. Anything that is not a
+ * known device (a car, a sofa, a fridge) gets a neutral parcel rather than a
+ * phone silhouette.
+ */
 export function kindForSlug(slug: string | null | undefined): ProductKind {
   const s = (slug ?? "").toLowerCase();
-  if (/laptop|computer/.test(s)) return "laptop";
+  if (/laptop|computer|desktop|monitor/.test(s)) return "laptop";
   if (/audio|headphone|speaker/.test(s)) return "audio";
   if (/tablet/.test(s)) return "tablet";
   if (/camera|photo/.test(s)) return "camera";
-  return "phone";
+  if (/phone|wearable/.test(s)) return "phone";
+  return "other";
 }
 
 const common = {
@@ -57,6 +62,14 @@ export function ProdPlaceholder({ kind }: { kind: ProductKind }) {
           <circle cx="100" cy="110" r="32" fill="#0a0a0a" stroke="#555" strokeWidth="2" />
           <circle cx="100" cy="110" r="22" fill="#222" />
           <circle cx="155" cy="78" r="3" fill="#cc3000" />
+        </svg>
+      );
+    case "other":
+      return (
+        <svg {...common}>
+          <path d="M100 30 L170 62 L170 142 L100 174 L30 142 L30 62 Z" fill="#1a1a1a" stroke="#444" strokeWidth="1" />
+          <path d="M30 62 L100 94 L170 62 M100 94 L100 174" stroke="#444" strokeWidth="1" fill="none" />
+          <path d="M65 46 L135 78" stroke="#2a2a2a" strokeWidth="10" />
         </svg>
       );
     default:

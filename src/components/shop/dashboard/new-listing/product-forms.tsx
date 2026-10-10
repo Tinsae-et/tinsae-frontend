@@ -13,7 +13,7 @@ import {
   AlertCircle,
   Loader2,
 } from "lucide-react";
-import { Icon, IconName } from "@/components/tinsae/icon";
+import { Icon, isIconName } from "@/components/tinsae/icon";
 import {
   Category,
   NewProduct,
@@ -97,15 +97,6 @@ export function formatETB(amount: number): string {
   return "ETB " + amount.toLocaleString("en-US");
 }
 
-function getCategoryIconName(slug: string): IconName {
-  if (slug.includes("phone")) return "phone";
-  if (slug.includes("laptop")) return "laptop";
-  if (slug.includes("audio")) return "audio";
-  if (slug.includes("tablet")) return "tablet";
-  if (slug.includes("access") || slug.includes("plug")) return "plug";
-  if (slug.includes("camera")) return "camera";
-  return "tag";
-}
 
 function ProductCardSection({
   title,
@@ -198,7 +189,9 @@ export function Form({
     getCategories()
       .then((res) => {
         if (mounted) {
-          const available = res.results || [];
+          // A parent ("Vehicles & Auto") only groups its subcategories and
+          // takes no listings itself; the backend rejects one too.
+          const available = (res.results || []).filter((category) => !category.children?.length);
           setCategories(
             allowedCategorySlugs
               ? available.filter((category) =>
@@ -477,7 +470,11 @@ export function Form({
     if (!formData.name.trim() || formData.name.trim().length < 3) {
       errors.name = "Product name must be at least 3 characters";
     }
-    if (!formData.brand.trim()) {
+    // Unbranded goods (a locally made sofa, a rug) may leave it blank; the
+    // category's schema says which. Drafts can skip it, like the backend allows.
+    const brandRequired = schema?.brandRequired !== false;
+    const isDraft = formData.status === "draft";
+    if (brandRequired && !isDraft && !formData.brand.trim()) {
       errors.brand = "Brand is required";
     }
     if (!formData.category) {
@@ -763,7 +760,7 @@ export function Form({
                         )}
                       >
                         <Icon
-                          name={getCategoryIconName(c.slug)}
+                          name={isIconName(c.icon) ? c.icon : "tag"}
                           size={15}
                           className={isSelected ? "text-white" : "text-tn-mute"}
                         />
@@ -789,7 +786,9 @@ export function Form({
                   type="text"
                   value={formData.name}
                   onChange={(e) => updateField("name", e.target.value)}
-                  placeholder="e.g. iPhone 15 Pro"
+                  // The picked category's own example: "e.g. Corolla" for
+                  // cars, not an iPhone.
+                  placeholder={`e.g. ${schema?.listingExamples?.name ?? "the product's model name"}`}
                   className="w-full h-[46px] px-3.5 rounded-[11px] border border-tn-hair bg-white text-sm text-tn-ink placeholder:text-tn-mute/50 focus:outline-none focus:ring-2 focus:ring-tn-hair focus:border-tn-ink transition-colors"
                 />
                 {fieldErrors.name && (
@@ -805,6 +804,9 @@ export function Form({
                   className="text-[12.5px] font-bold text-tn-ink2 mb-1.5 block"
                 >
                   Brand
+                  {schema?.brandRequired === false && (
+                    <span className="font-medium text-tn-mute"> (optional)</span>
+                  )}
                 </label>
                 {/* Typed, with the category's common brands suggested: a list
                     with an "Other" entry saved the word "Other" as the brand. */}
@@ -815,7 +817,11 @@ export function Form({
                   suggestions={brandOptions}
                   maxLength={100}
                   placeholder={
-                    brandOptions.length ? `e.g. ${brandOptions[0]}` : "Brand"
+                    brandOptions.length
+                      ? `e.g. ${brandOptions[0]}`
+                      : schema?.brandRequired === false
+                        ? "Leave blank if unbranded"
+                        : "Brand"
                   }
                   className="font-semibold placeholder:font-normal"
                 />
@@ -835,7 +841,7 @@ export function Form({
                 type="text"
                 value={variant}
                 onChange={(e) => setVariant(e.target.value)}
-                placeholder="e.g. 256GB · Natural Ti"
+                placeholder={`e.g. ${schema?.listingExamples?.variant ?? "size, colour or edition"}`}
                 className="w-full h-[46px] px-3.5 rounded-[11px] border border-tn-hair bg-white text-sm text-tn-ink placeholder:text-tn-mute/50 focus:outline-none focus:ring-2 focus:ring-tn-hair focus:border-tn-ink transition-colors"
               />
             </div>

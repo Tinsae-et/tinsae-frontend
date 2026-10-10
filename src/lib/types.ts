@@ -14,6 +14,17 @@ export type Category = {
   slug: string;
   parent: number | null;
   display_order: number;
+  /**
+   * Listings here have a spec form and spec filters. False for a parent such
+   * as "Vehicles & Auto", which only groups its subcategories.
+   */
+  has_specs?: boolean;
+  /** Icon name from the frontend's icon set ("car", "sofa"); see isIconName. */
+  icon?: string;
+  /** One-line tagline for menus ("Cars · Motorcycles · Bicycles"). */
+  tagline?: string;
+  /** Subcategories, in order. Only the category list sends these. */
+  children?: Category[];
 };
 
 export type ProductImage = {

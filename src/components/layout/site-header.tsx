@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -429,6 +429,115 @@ function SearchField({
   );
 }
 
+/**
+ * One category in the bar under the header. A parent ("Vehicles & Auto")
+ * opens its subcategories on hover or focus.
+ *
+ * The dropdown is portalled to <body> with fixed coordinates: the bar scrolls
+ * horizontally, and an overflow container clips anything positioned inside it.
+ */
+function CategoryBarLink({ category }: { category: NavCategory }) {
+  const children = category.children ?? [];
+  const anchorRef = useRef<HTMLAnchorElement>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
+
+  const show = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    const rect = anchorRef.current?.getBoundingClientRect();
+    if (rect) setPosition({ left: rect.left, top: rect.bottom });
+  };
+  // A short grace period lets the pointer cross the gap into the dropdown.
+  const hide = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setPosition(null), 150);
+  };
+
+  useEffect(
+    () => () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    },
+    [],
+  );
+
+  // Fixed coordinates go stale when the page or the bar scrolls: close instead.
+  useEffect(() => {
+    if (!position) return;
+    const close = () => setPosition(null);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [position]);
+
+  const hasChildren = children.length > 0;
+  return (
+    <>
+      <Link
+        ref={anchorRef}
+        href={`/products?category=${category.slug}`}
+        onMouseEnter={hasChildren ? show : undefined}
+        onMouseLeave={hasChildren ? hide : undefined}
+        onFocus={hasChildren ? show : undefined}
+        aria-haspopup={hasChildren ? "menu" : undefined}
+        aria-expanded={hasChildren ? position !== null : undefined}
+        className={cn(
+          "hover:text-tn-red inline-flex items-center gap-1 whitespace-nowrap transition-colors text-tn-mute hover:font-bold",
+          position && "text-tn-red",
+        )}
+      >
+        {category.label}
+        {hasChildren && <Icon name="chevd" size={12} />}
+      </Link>
+      {position &&
+        createPortal(
+          <div
+            role="menu"
+            onMouseEnter={show}
+            onMouseLeave={hide}
+            style={{ position: "fixed", left: position.left, top: position.top + 6 }}
+            className="z-[60] min-w-[230px] rounded-[14px] border border-tn-hair bg-white p-2 shadow-[0_18px_44px_rgba(11,11,11,0.14)]"
+          >
+            {children.map((child) => (
+              <Link
+                key={child.slug}
+                role="menuitem"
+                href={`/products?category=${child.slug}`}
+                onClick={() => setPosition(null)}
+                className="text-tn-ink hover:bg-tn-paper hover:text-tn-red flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-bold transition-colors"
+              >
+                <Icon name={child.icon} size={15} className="text-tn-mute" />
+                {child.label}
+              </Link>
+            ))}
+            <div className="my-1.5 border-t border-tn-hair2" />
+            <Link
+              role="menuitem"
+              href={`/products?category=${category.slug}`}
+              onClick={() => setPosition(null)}
+              className="text-tn-ink hover:text-tn-red flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-extrabold transition-colors"
+            >
+              All {category.label}
+              <Icon name="arrow" size={13} />
+            </Link>
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+}
+
+/**
+ * The desktop "Browse" mega-menu: category tiles on the left, upcoming
+ * verticals and marketplace shortcuts on the right.
+ *
+ * A parent category ("Vehicles & Auto") is a tile like the others, marked
+ * with a chevron. Hovering it opens its subcategories in a panel right under
+ * it; leaving both closes the panel after a short grace period, so the
+ * pointer can travel from tile to panel.
+ */
 function BrowseMenu({
   categories,
   categoryCounts,
@@ -448,6 +557,19 @@ function BrowseMenu({
   const menuRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const openedByHoverRef = useRef(false);
+  // The parent tile whose subcategory panel is open, and its close timer.
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const collapseRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const expand = (slug: string | null) => {
+    if (collapseRef.current) clearTimeout(collapseRef.current);
+    collapseRef.current = null;
+    setExpanded(slug);
+  };
+  const collapseSoon = () => {
+    if (collapseRef.current) clearTimeout(collapseRef.current);
+    collapseRef.current = setTimeout(() => setExpanded(null), 160);
+  };
 
   // Client-side fallback to fetch live counts if not provided via SSR
   useEffect(() => {
@@ -457,17 +579,17 @@ function BrowseMenu({
     )
       return;
     hasAttemptedRef.current = true;
-    let active = true;
+    let alive = true;
     fetch("/api/public-stats")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (active && data?.category_product_count) {
+        if (alive && data?.category_product_count) {
           setFetchedCounts(data.category_product_count);
         }
       })
       .catch(() => {});
     return () => {
-      active = false;
+      alive = false;
     };
   }, [categoryCounts]);
 
@@ -488,6 +610,7 @@ function BrowseMenu({
     }
     timeoutRef.current = setTimeout(() => {
       setOpen(false);
+      setExpanded(null);
     }, 200);
   };
 
@@ -524,14 +647,20 @@ function BrowseMenu({
     };
   }, [open]);
 
-  // Clean up timeout on unmount
+  // Clean up timers on unmount
   useEffect(() => {
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (collapseRef.current) clearTimeout(collapseRef.current);
     };
   }, []);
+
+  const countLabel = (slug: string, fallback = "Browse all") => {
+    const count = counts?.[slug];
+    return count != null && count > 0
+      ? `${formatCount(count)} ${count === 1 ? "listing" : "listings"}`
+      : fallback;
+  };
 
   return (
     <div
@@ -569,7 +698,7 @@ function BrowseMenu({
           <div className="absolute -top-3 inset-x-0 h-3" />
           <div
             role="menu"
-            className="w-[740px] overflow-hidden rounded-[20px] border border-tn-hair bg-white shadow-[0_26px_64px_rgba(11,11,11,0.18)]"
+            className="w-[760px] overflow-hidden rounded-[20px] border border-tn-hair bg-white shadow-[0_26px_64px_rgba(11,11,11,0.18)]"
           >
             <div className="grid grid-cols-12">
               {/* Left 8 columns: All Live Categories */}
@@ -588,35 +717,103 @@ function BrowseMenu({
                     Verified Addis Inventory
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+
+                <div className="grid grid-cols-2 gap-1.5">
                   {categories.map((c) => {
-                    const count = counts?.[c.slug];
-                    const countLabel =
-                      count != null && count > 0
-                        ? `${formatCount(count)} ${count === 1 ? "listing" : "listings"}`
-                        : "Browse all";
+                    const hasChildren = !!c.children?.length;
+                    const isExpanded = expanded === c.slug;
                     return (
-                      <Link
-                        key={c.slug}
-                        href={`/products?category=${c.slug}`}
-                        onClick={() => setOpen(false)}
-                        className="group flex items-start gap-3 rounded-xl p-2.5 transition-colors hover:bg-tn-paper"
-                      >
-                        <span className="bg-tn-paper text-tn-ink group-hover:bg-white group-hover:shadow-sm inline-flex size-10 shrink-0 items-center justify-center rounded-[11px] transition-all">
-                          <Icon name={c.icon} size={20} />
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="text-tn-ink group-hover:text-tn-red block text-[13.5px] font-extrabold tracking-tight transition-colors">
-                            {c.label}
+                      <Fragment key={c.slug}>
+                        <Link
+                          href={`/products?category=${c.slug}`}
+                          onClick={() => setOpen(false)}
+                          onMouseEnter={() => expand(hasChildren ? c.slug : null)}
+                          onMouseLeave={hasChildren ? collapseSoon : undefined}
+                          onFocus={() => expand(hasChildren ? c.slug : null)}
+                          aria-haspopup={hasChildren ? "menu" : undefined}
+                          aria-expanded={hasChildren ? isExpanded : undefined}
+                          className={cn(
+                            "group flex items-start gap-3 rounded-xl p-2.5 transition-colors hover:bg-tn-paper",
+                            isExpanded && "bg-tn-paper",
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "bg-tn-paper text-tn-ink group-hover:bg-white group-hover:shadow-sm inline-flex size-10 shrink-0 items-center justify-center rounded-[11px] transition-all",
+                              isExpanded && "bg-white shadow-sm",
+                            )}
+                          >
+                            <Icon name={c.icon} size={20} />
                           </span>
-                          <span className="text-tn-mute line-clamp-1 text-[11px]">
-                            {c.subtitle}
+                          <span className="min-w-0 flex-1">
+                            <span
+                              className={cn(
+                                "text-tn-ink group-hover:text-tn-red block text-[13.5px] font-extrabold tracking-tight transition-colors",
+                                isExpanded && "text-tn-red",
+                              )}
+                            >
+                              {c.label}
+                            </span>
+                            <span className="text-tn-mute block truncate text-[11px]">
+                              {c.subtitle}
+                            </span>
+                            <span className="font-tn-mono text-tn-ink2/75 mt-0.5 block text-[11px] font-medium">
+                              {countLabel(c.slug)}
+                            </span>
                           </span>
-                          <span className="font-tn-mono text-tn-ink2/75 mt-0.5 block text-[11px] font-medium">
-                            {countLabel}
-                          </span>
-                        </span>
-                      </Link>
+                          {hasChildren && (
+                            <Icon
+                              name="chevd"
+                              size={14}
+                              className={cn(
+                                "text-tn-mute mt-3 shrink-0 transition-transform duration-150",
+                                isExpanded && "text-tn-red rotate-180",
+                              )}
+                            />
+                          )}
+                        </Link>
+
+                        {/* The hovered parent's subcategories, full width under its row. */}
+                        {hasChildren && isExpanded && (
+                          <div
+                            role="menu"
+                            aria-label={c.label}
+                            onMouseEnter={() => expand(c.slug)}
+                            onMouseLeave={collapseSoon}
+                            className="border-tn-hair2 bg-tn-paper/60 col-span-2 rounded-2xl border p-2 animate-[tnRise_0.14s_ease_both]"
+                          >
+                            <div className="flex flex-wrap gap-1">
+                              {c.children!.map((child) => (
+                                <Link
+                                  key={child.slug}
+                                  role="menuitem"
+                                  href={`/products?category=${child.slug}`}
+                                  onClick={() => setOpen(false)}
+                                  className="group flex items-center gap-2 rounded-lg px-2.5 py-2 transition-colors hover:bg-white hover:shadow-xs"
+                                >
+                                  <span className="text-tn-ink2 group-hover:text-tn-red whitespace-nowrap text-[12.5px] font-bold transition-colors">
+                                    {child.label}
+                                  </span>
+                                  {counts?.[child.slug] ? (
+                                    <span className="font-tn-mono text-tn-mute shrink-0 text-[10.5px]">
+                                      {formatCount(counts[child.slug])}
+                                    </span>
+                                  ) : null}
+                                </Link>
+                              ))}
+                              <Link
+                                role="menuitem"
+                                href={`/products?category=${c.slug}`}
+                                onClick={() => setOpen(false)}
+                                className="text-tn-mute hover:text-tn-red ml-auto flex items-center gap-1 rounded-lg px-2.5 py-2 text-[12px] font-extrabold transition-colors"
+                              >
+                                Shop all
+                                <Icon name="arrow" size={12} />
+                              </Link>
+                            </div>
+                          </div>
+                        )}
+                      </Fragment>
                     );
                   })}
                 </div>
@@ -704,7 +901,7 @@ function BrowseMenu({
             {/* Bottom banner: View All Products */}
             <div className="border-t border-tn-hair2 bg-tn-paper/70 px-5 py-3 flex items-center justify-between">
               <span className="text-[12px] text-tn-mute font-medium">
-                Browse verified electronics and tech across Addis Ababa
+                Browse verified listings across Addis Ababa
               </span>
               <Link
                 href="/products"
@@ -1048,13 +1245,7 @@ export function SiteHeader({
             <div className="h-3.5 w-px bg-tn-hair shrink-0" />
             <div className="flex items-center gap-5 overflow-x-auto scrollbar-none py-1 min-w-0">
               {categories.map((c) => (
-                <Link
-                  key={c.slug}
-                  href={`/products?category=${c.slug}`}
-                  className="hover:text-tn-red whitespace-nowrap transition-colors text-tn-mute hover:font-bold"
-                >
-                  {c.label}
-                </Link>
+                <CategoryBarLink key={c.slug} category={c} />
               ))}
             </div>
             <div className="ml-auto flex items-center gap-4 text-xs font-bold shrink-0">
@@ -1144,24 +1335,44 @@ export function SiteHeader({
                 {categories.map((c) => {
                   const count = stats?.category_product_count?.[c.slug];
                   return (
-                    <Link
-                      key={c.slug}
-                      href={`/products?category=${c.slug}`}
-                      onClick={() => setDrawerOpen(false)}
-                      className="border-tn-hair2 text-tn-ink flex items-center gap-3 border-b py-3"
-                    >
-                      <span className="bg-tn-paper inline-flex size-9 shrink-0 items-center justify-center rounded-[10px]">
-                        <Icon name={c.icon} size={18} className="text-tn-ink" />
-                      </span>
-                      <span className="flex-1 text-[15px] font-bold">
-                        {c.label}
-                      </span>
-                      {count != null && (
-                        <span className="font-tn-mono text-tn-mute text-xs">
-                          {formatCount(count)}
+                    <div key={c.slug} className="border-tn-hair2 border-b">
+                      <Link
+                        href={`/products?category=${c.slug}`}
+                        onClick={() => setDrawerOpen(false)}
+                        className="text-tn-ink flex items-center gap-3 py-3"
+                      >
+                        <span className="bg-tn-paper inline-flex size-9 shrink-0 items-center justify-center rounded-[10px]">
+                          <Icon name={c.icon} size={18} className="text-tn-ink" />
                         </span>
-                      )}
-                    </Link>
+                        <span className="flex-1 text-[15px] font-bold">
+                          {c.label}
+                        </span>
+                        {count != null && (
+                          <span className="font-tn-mono text-tn-mute text-xs">
+                            {formatCount(count)}
+                          </span>
+                        )}
+                      </Link>
+                      {/* Subcategories, indented under their parent. */}
+                      {c.children?.map((child) => {
+                        const childCount = stats?.category_product_count?.[child.slug];
+                        return (
+                          <Link
+                            key={child.slug}
+                            href={`/products?category=${child.slug}`}
+                            onClick={() => setDrawerOpen(false)}
+                            className="text-tn-ink2 flex items-center py-2 pl-12 text-[14px] font-semibold"
+                          >
+                            <span className="flex-1">{child.label}</span>
+                            {childCount != null && (
+                              <span className="font-tn-mono text-tn-mute text-xs">
+                                {formatCount(childCount)}
+                              </span>
+                            )}
+                          </Link>
+                        );
+                      })}
+                    </div>
                   );
                 })}
                 <p className="text-tn-mute mt-6 mb-2 text-[10.5px] font-extrabold tracking-[0.09em] uppercase">

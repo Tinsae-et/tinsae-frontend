@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCategorySchema, getProduct } from "@/lib/api/public";
+import { getCategories, getCategorySchema, getProduct } from "@/lib/api/public";
 import { formatSpecSections, type SpecRow, type SpecSections } from "@/lib/specs/display";
 import { parseSizeGb } from "@/lib/specs/schema";
 import { SITE_URL } from "@/lib/config";
@@ -294,7 +294,7 @@ function ShopComparison({
           </div>
 
           <p className="text-tn-mute text-xs font-bold tracking-[0.06em] uppercase">
-            {product.category?.name ?? "Electronics"}
+            {product.category?.name ?? "Listing"}
           </p>
           <h1 className="text-tn-ink mt-1.5 text-[42px] leading-[1.04] font-extrabold tracking-[-0.035em]">
             {(() => {
@@ -483,6 +483,14 @@ export default async function ProductDetailPage({ params }: Props) {
     : null;
   const specSections = formatSpecSections(schema, product.specs);
 
+  // A subcategory's group ("Vehicles & Auto" for Cars) for the breadcrumb; the
+  // product carries only the parent's id, the category list (cached) its name.
+  const parentId = product.category?.parent ?? null;
+  const parentCategory = parentId
+    ? ((await getCategories().catch(() => null))?.results.find((c) => c.id === parentId) ??
+      null)
+    : null;
+
   // Server component: freshness is relative to request time, rendered once.
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
@@ -517,6 +525,17 @@ export default async function ProductDetailPage({ params }: Props) {
         <Link href="/" className="text-tn-mute hover:text-tn-ink">
           Home
         </Link>
+        {parentCategory && (
+          <>
+            <Icon name="chevron" size={11} className="text-[#B7B5AD]" />
+            <Link
+              href={`/products?category=${parentCategory.slug}`}
+              className="text-tn-mute hover:text-tn-ink"
+            >
+              {parentCategory.name}
+            </Link>
+          </>
+        )}
         <Icon name="chevron" size={11} className="text-[#B7B5AD]" />
         <Link
           href={

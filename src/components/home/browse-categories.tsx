@@ -5,6 +5,9 @@ import type { NavCategory } from "@/lib/nav-categories";
 import { formatCount } from "@/lib/format";
 import type { ShopMetrics } from "@/lib/types";
 
+/** One row of tiles; the section's "All categories" link lists everything. */
+const FEATURED_COUNT = 6;
+
 export function BrowseCategories({
   stats,
   categories,
@@ -13,6 +16,10 @@ export function BrowseCategories({
   categories: NavCategory[];
 }) {
   const categoryCounts = stats?.category_product_count;
+  // The busiest categories first; ties keep the backend's order.
+  const featured = [...categories]
+    .sort((a, b) => (categoryCounts?.[b.slug] ?? 0) - (categoryCounts?.[a.slug] ?? 0))
+    .slice(0, FEATURED_COUNT);
 
   return (
     <section className="mx-auto mt-16 max-w-[1480px] px-6 sm:px-8 lg:mt-[92px] lg:px-12 xl:px-16">
@@ -23,7 +30,7 @@ export function BrowseCategories({
         link="All categories"
       />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 lg:gap-3.5">
-        {categories.map((c) => {
+        {featured.map((c) => {
           const count = categoryCounts?.[c.slug];
           const hasCount = count != null && count > 0;
           return (
@@ -50,4 +57,3 @@ export function BrowseCategories({
     </section>
   );
 }
-
