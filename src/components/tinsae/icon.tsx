@@ -48,6 +48,9 @@ export const ICON_NAMES = [
   "fridge",
   "pan",
   "lamp",
+  "generator",
+  "sun",
+  "battery",
   "msg",
   "tag",
   "home",
@@ -392,6 +395,28 @@ export function Icon({ name, size = 18, className, strokeWidth = 1.6 }: IconProp
         <svg {...stroke}>
           <path d="M3 11h14v2a5 5 0 01-5 5H8a5 5 0 01-5-5z" />
           <path d="M17 12h4M8 8c0-1 1-1.5 1-2.5M12 8c0-1 1-1.5 1-2.5" />
+        </svg>
+      );
+    case "generator":
+      return (
+        <svg {...stroke}>
+          <rect x="3" y="7" width="18" height="11" rx="1.5" />
+          <path d="M6 7V5h5v2M5 18v2M19 18v2M7 11h4M7 14h4" />
+          <path d="M16.5 10l-2 3h3l-2 3" />
+        </svg>
+      );
+    case "sun":
+      return (
+        <svg {...stroke}>
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" />
+        </svg>
+      );
+    case "battery":
+      return (
+        <svg {...stroke}>
+          <rect x="2.5" y="7" width="17" height="10" rx="2" />
+          <path d="M21.5 10.5v3M6 10v4M9.5 10v4M13 10v4" />
         </svg>
       );
     case "lamp":
