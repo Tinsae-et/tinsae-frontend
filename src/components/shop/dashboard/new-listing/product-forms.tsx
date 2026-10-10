@@ -165,7 +165,7 @@ export function Form({
   });
   const { schema, context: specContext, errors: specErrors } = specs;
 
-  const updateSpec = (key: string, value: string) => {
+  const updateSpec = (key: string, value: string | string[]) => {
     specs.setValue(key, value);
     const errorKey = `spec.${key}`;
     if (fieldErrors[errorKey]) {

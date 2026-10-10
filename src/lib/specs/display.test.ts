@@ -142,3 +142,28 @@ describe("formatSpecSections", () => {
     ]);
   });
 });
+
+describe("multiple values", () => {
+  it("joins a list's labels on one line", () => {
+    const watch: CategorySchema = {
+      productType: "wearable",
+      brands: [],
+      fields: [
+        {
+          key: "sensors",
+          label: "Health sensors",
+          type: "enum",
+          multiple: true,
+          options: [
+            { value: "heart_rate", label: "Heart rate" },
+            { value: "ecg", label: "ECG" },
+          ],
+        },
+      ],
+    };
+    expect(formatSpecs(watch, { sensors: ["heart_rate", "ecg"] })).toEqual([
+      { key: "sensors", label: "Health sensors", value: "Heart rate · ECG" },
+    ]);
+    expect(formatSpecs(watch, { sensors: [] })).toEqual([]);
+  });
+});
