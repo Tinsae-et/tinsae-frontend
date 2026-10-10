@@ -51,6 +51,11 @@ export const ICON_NAMES = [
   "generator",
   "sun",
   "battery",
+  "shirt",
+  "dress",
+  "shoe",
+  "bag",
+  "gem",
   "msg",
   "tag",
   "home",
@@ -417,6 +422,39 @@ export function Icon({ name, size = 18, className, strokeWidth = 1.6 }: IconProp
         <svg {...stroke}>
           <rect x="2.5" y="7" width="17" height="10" rx="2" />
           <path d="M21.5 10.5v3M6 10v4M9.5 10v4M13 10v4" />
+        </svg>
+      );
+    case "shirt":
+      return (
+        <svg {...stroke}>
+          <path d="M9 3.5L3.5 6.5l2 4 2-1V20.5h9V9.5l2 1 2-4L15 3.5c-.5 1.5-1.6 2.5-3 2.5s-2.5-1-3-2.5z" />
+        </svg>
+      );
+    case "dress":
+      return (
+        <svg {...stroke}>
+          <path d="M9.5 3v3.5L8 10l-3.5 10.5h15L16 10l-1.5-3.5V3M9.5 6.5h5M8 10h8" />
+        </svg>
+      );
+    case "shoe":
+      return (
+        <svg {...stroke}>
+          <path d="M3 8v9.5h18v-1.5c0-1.7-1.2-3-3-3.3l-4.5-.9L10 8.5c-.8.8-2.3 1.2-3.5 1.2S4 9.2 3 8z" />
+          <path d="M3 14.5h18M11.5 10.5l1.2-1.2M13.3 11.5l1.2-1.2" />
+        </svg>
+      );
+    case "bag":
+      return (
+        <svg {...stroke}>
+          <path d="M5 8h14l-1 12.5H6z" />
+          <path d="M9 10.5V6.5a3 3 0 016 0v4" />
+        </svg>
+      );
+    case "gem":
+      return (
+        <svg {...stroke}>
+          <path d="M7 4h10l4 5-9 11L3 9z" />
+          <path d="M3 9h18M9.5 4L12 9l2.5-5M12 9v11" />
         </svg>
       );
     case "lamp":
