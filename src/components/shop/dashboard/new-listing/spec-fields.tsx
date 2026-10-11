@@ -323,7 +323,8 @@ function FieldControl({
         value={value}
         onChange={onChange}
         suggestions={field.options.map((o) => o.label)}
-        placeholder={field.placeholder}
+        // Says what the box allows: one of the list, or anything typed.
+        placeholder={field.placeholder ?? `Pick or type a ${field.label.toLowerCase()}`}
         maxLength={TEXT_MAX_LENGTH}
       />
     );
