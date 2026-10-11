@@ -55,3 +55,18 @@ describe("listableCategories", () => {
     expect(listable.map((c) => c.slug)).toEqual(["phones", "cars", "bicycles"]);
   });
 });
+
+describe("sale or rent", () => {
+  it("marks property so menus can link to each side", () => {
+    const property = category({
+      id: 20,
+      slug: "property",
+      sale_or_rent: true,
+      children: [category({ id: 21, slug: "land", parent: 20, sale_or_rent: true })],
+    });
+    const [nav] = toNavCategories([property, vehicles]).filter((c) => c.slug === "property");
+    expect(nav.saleOrRent).toBe(true);
+    expect(nav.children?.[0].saleOrRent).toBe(true);
+    expect(toNavCategories([vehicles])[0].saleOrRent).toBeUndefined();
+  });
+});

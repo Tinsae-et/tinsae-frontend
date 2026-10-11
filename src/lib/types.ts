@@ -19,6 +19,11 @@ export type Category = {
    * as "Vehicles & Auto", which only groups its subcategories.
    */
   has_specs?: boolean;
+  /**
+   * Listings here are for sale or for rent (property): pages offer a
+   * "For rent | For sale" switch. Only the category list sends it.
+   */
+  sale_or_rent?: boolean;
   /** Icon name from the frontend's icon set ("car", "sofa"); see isIconName. */
   icon?: string;
   /** One-line tagline for menus ("Cars · Motorcycles · Bicycles"). */

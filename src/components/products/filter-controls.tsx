@@ -30,6 +30,8 @@ export type CategoryOption = {
   icon?: IconName;
   parentSlug?: string;
   parentName?: string;
+  /** Property: the page offers a "For rent | For sale" switch. */
+  saleOrRent?: boolean;
 };
 
 /** Options shown before "Show all". */

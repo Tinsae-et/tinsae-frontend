@@ -11,6 +11,8 @@ export type NavCategory = {
   badge?: string;
   /** Subcategories; a category with any only groups them and takes no listings. */
   children?: NavCategory[];
+  /** Listings are for sale or for rent: menus link straight to each side. */
+  saleOrRent?: boolean;
 };
 
 function toNavCategory(c: Category): NavCategory {
@@ -24,6 +26,7 @@ function toNavCategory(c: Category): NavCategory {
     subtitle: c.tagline || children.map((child) => child.label).join(" · "),
     status: "live" as const,
     ...(children.length ? { children } : {}),
+    ...(c.sale_or_rent ? { saleOrRent: true } : {}),
   };
 }
 

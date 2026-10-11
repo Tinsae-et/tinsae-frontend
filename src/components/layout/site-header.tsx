@@ -983,6 +983,25 @@ function BrowseMenu({
                                 );
                               })}
                             </div>
+                            {/* Property: renters and buyers go straight to their side. */}
+                            {c.saleOrRent && (
+                              <div className="mt-1 grid grid-cols-2 gap-1.5 px-1">
+                                {[
+                                  ["rent", "For rent"],
+                                  ["sale", "For sale"],
+                                ].map(([value, label]) => (
+                                  <Link
+                                    key={value}
+                                    role="menuitem"
+                                    href={`/products?category=${c.slug}&spec_listing_type=${value}`}
+                                    onClick={() => setOpen(false)}
+                                    className="border-tn-hair text-tn-ink hover:border-tn-ink rounded-full border py-1.5 text-center text-[12px] font-bold transition-colors"
+                                  >
+                                    {label}
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
                             <Link
                               role="menuitem"
                               href={`/products?category=${c.slug}`}

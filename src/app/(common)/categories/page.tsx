@@ -276,6 +276,24 @@ export default async function CategoriesPage() {
                       })}
                     </div>
 
+                    {/* Property: renters and buyers go straight to their side. */}
+                    {cat.saleOrRent && (
+                      <div className="mt-2 grid grid-cols-2 gap-2">
+                        {[
+                          ["rent", "For rent"],
+                          ["sale", "For sale"],
+                        ].map(([value, label]) => (
+                          <Link
+                            key={value}
+                            href={`/products?category=${cat.slug}&spec_listing_type=${value}`}
+                            className="border-tn-hair text-tn-ink hover:border-tn-ink rounded-full border py-2 text-center text-[13px] font-bold transition-colors"
+                          >
+                            {label}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+
                     <Link
                       href={`/products?category=${cat.slug}`}
                       className="mt-2 flex items-center justify-between border-t border-tn-hair2 pt-3.5 text-[13px] font-extrabold text-tn-ink transition-colors hover:text-tn-red"

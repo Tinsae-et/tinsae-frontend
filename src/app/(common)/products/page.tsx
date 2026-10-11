@@ -60,13 +60,14 @@ export default async function ProductsPage({ searchParams }: { searchParams: Sea
   // their parent so the page can show chips and a breadcrumb for them.
   const categoryOptions: CategoryOption[] = toNavCategories(categories?.results ?? []).flatMap(
     (c) => [
-      { slug: c.slug, name: c.label, icon: c.icon },
+      { slug: c.slug, name: c.label, icon: c.icon, saleOrRent: c.saleOrRent },
       ...(c.children ?? []).map((child) => ({
         slug: child.slug,
         name: child.label,
         icon: child.icon,
         parentSlug: c.slug,
         parentName: c.label,
+        saleOrRent: child.saleOrRent,
       })),
     ],
   );

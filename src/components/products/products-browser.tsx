@@ -130,6 +130,16 @@ export function ProductsBrowser({
     // A new category clears the old one's spec, brand and condition filters.
     const base = "category" in patch ? withCategory(current, patch.category) : current;
     const next = { ...base, ...patch };
+    // Rent or sale is the buyer's side, not one category's vocabulary: it
+    // stays when they move from Apartments to Houses.
+    const side = current.specs.listing_type;
+    if (
+      "category" in patch &&
+      side?.length &&
+      categories.find((c) => c.slug === patch.category)?.saleOrRent
+    ) {
+      next.specs = { ...next.specs, listing_type: side };
+    }
     next.page = undefined; // any filter change resets infinite scroll
     navigate(filtersToSearchParams(next), "push");
   }
@@ -150,9 +160,20 @@ export function ProductsBrowser({
   // Every category's count under the other filters: the same numbers on a
   // group's page and on each of its subcategories' pages.
   const subCounts = new Map(Object.entries(facets?.categories ?? {}));
+  // Property: renters and buyers each get their own side of the page.
+  const saleOrRent = Boolean(selectedCategory?.saleOrRent);
+  const side =
+    saleOrRent && filters.specs.listing_type?.length === 1 ? filters.specs.listing_type[0] : undefined;
+  const pickSide = (value?: string) => {
+    const specs = { ...filters.specs };
+    if (value) specs.listing_type = [value];
+    else delete specs.listing_type;
+    applyPatch({ specs });
+  };
   const title = filters.q
     ? `“${filters.q}”`
-    : categoryName ?? (filters.category ? filters.category.replace(/-/g, " ") : "All listings");
+    : (categoryName ?? (filters.category ? filters.category.replace(/-/g, " ") : "All listings")) +
+      (side === "rent" ? " for rent" : side === "sale" ? " for sale" : "");
   const activeCount = activeFilterCount(filters);
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -182,6 +203,8 @@ export function ProductsBrowser({
   // schema's labels; before it loads, the raw key and value.
   const fieldOf = (key: string) => schema?.fields.find((f) => f.key === key);
   for (const [key, values] of Object.entries(filters.specs)) {
+    // The rent / sale switch shows that one itself.
+    if (saleOrRent && key === "listing_type") continue;
     const field = fieldOf(key);
     for (const value of values)
       chips.push({
@@ -304,6 +327,43 @@ export function ProductsBrowser({
               </button>
             </div>
           </div>
+
+          {/* property: rent or buy first, as renters and buyers never mix */}
+          {saleOrRent && (
+            <div className="mt-5">
+              <div
+                role="radiogroup"
+                aria-label="For rent or for sale"
+                className="inline-flex rounded-full border border-tn-hair bg-white p-1"
+              >
+                {[
+                  { value: undefined, label: "All" },
+                  { value: "rent", label: "For rent" },
+                  { value: "sale", label: "For sale" },
+                ].map((o) => (
+                  <button
+                    key={o.label}
+                    type="button"
+                    role="radio"
+                    aria-checked={side === o.value}
+                    onClick={() => side !== o.value && pickSide(o.value)}
+                    className={cn(
+                      "h-10 rounded-full px-5 text-[14px] font-bold transition-colors",
+                      side === o.value ? "bg-tn-ink text-white" : "text-tn-ink2 hover:text-tn-ink",
+                    )}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+              {!side && filters.sort.startsWith("price") && (
+                <p className="text-tn-mute mt-2.5 text-[13px]">
+                  Monthly rents and sale prices are mixed here: pick For rent or For sale to compare
+                  prices.
+                </p>
+              )}
+            </div>
+          )}
 
           {/* the group's subcategories: switch between them in one click */}
           {group && groupChildren.length > 0 && (
