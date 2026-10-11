@@ -204,9 +204,7 @@ export default async function ShopProfilePage({ params }: Props) {
                     size={14}
                     className="text-tn-mute shrink-0"
                   />
-                  {shop.city
-                    ? `${shop.city} · Addis Ababa`
-                    : "Bole · Addis Ababa"}
+                  {shop.city || "Ethiopia"}
                 </span>
               </div>
             </div>

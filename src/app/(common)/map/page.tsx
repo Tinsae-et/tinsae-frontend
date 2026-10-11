@@ -183,7 +183,7 @@ function MapContent() {
         <div className="mx-auto flex max-w-[1480px] flex-wrap items-center justify-between gap-4 px-6 sm:px-8 lg:px-12 xl:px-16 py-4">
           <div>
             <h1 className="text-tn-ink text-2xl font-extrabold tracking-[-0.03em]">
-              Verified shops in Bole
+              Verified shops on the map
             </h1>
             <p className="text-tn-mute mt-0.5 text-[13px] font-medium">
               <b className="text-tn-ink2">{filteredShops.length} shops</b> on the map · all reconfirmed within 24h
@@ -337,7 +337,7 @@ function MapContent() {
               )}
             </div>
             <div className="p-3 border-t border-tn-hair2 bg-tn-paper text-center text-[11px] font-tn-mono text-tn-mute">
-              Showing {filteredShops.length} shops in Bole
+              Showing {filteredShops.length} shops
             </div>
           </aside>
 

@@ -421,12 +421,6 @@ function ShopComparison({
                   )}
                   {product.shop_verified && <VerifiedBadge size={12} />}
                 </div>
-                <div className="flex items-center gap-1">
-                  <Icon name="pin" size={11} className="text-tn-mute" />
-                  <span className="text-tn-mute text-[11.5px]">
-                    Bole · Addis Ababa
-                  </span>
-                </div>
               </div>
             </div>
 
