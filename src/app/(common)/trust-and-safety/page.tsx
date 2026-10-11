@@ -12,7 +12,7 @@ import { VerificationSection } from "@/components/trust-safety/verification-sect
 export const metadata: Metadata = {
   title: "Trust & Safety — Tinsae",
   description:
-    "What the Tinsae verified badge means: a three-part shop check, daily stock re-confirmation, and how to buy safely in person in Bole, Addis Ababa.",
+    "What the Tinsae verified badge means: a three-part shop check, daily stock re-confirmation, and how to buy safely in person anywhere in Ethiopia.",
 };
 
 export default function TrustAndSafetyPage() {

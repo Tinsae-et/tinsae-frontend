@@ -6,7 +6,7 @@ const safetyHabits: { icon: IconName; title: string; description: string }[] = [
     icon: "building",
     title: "Meet at the shop",
     description:
-      "Always complete the deal at the shop’s verified Bole address — never a street corner, car park or someone’s home.",
+      "Always complete the deal at the shop’s verified address — never a street corner, car park or someone’s home.",
   },
   {
     icon: "eye",

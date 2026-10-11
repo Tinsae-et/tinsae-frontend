@@ -27,7 +27,7 @@ const SECTIONS: Section[] = [
     number: 2,
     title: "What Tinsae is",
     paragraphs: [
-      "Tinsae is a marketplace that helps people in Addis Ababa discover verified electronics shops and compare live, in-stock listings. We are an intermediary that connects buyers and shops.",
+      "Tinsae is a marketplace that helps people across Ethiopia discover verified electronics shops and compare live, in-stock listings. We are an intermediary that connects buyers and shops.",
       "We are not the seller of any item listed. Every sale is a direct agreement between you and the shop. We do not own, hold, ship, or take possession of any inventory.",
     ],
   },
