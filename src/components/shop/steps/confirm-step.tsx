@@ -2,7 +2,12 @@
 
 import { Icon } from "@/components/tinsae/icon";
 import { FieldError } from "@/components/shop/fields";
-import { CONFIRM, type OnboardingAction, type OnboardingState } from "@/lib/shop/onboarding-state";
+import {
+  CONFIRM,
+  shopLocation,
+  type OnboardingAction,
+  type OnboardingState,
+} from "@/lib/shop/onboarding-state";
 import { cn } from "@/lib/utils";
 
 /**
@@ -38,7 +43,7 @@ export function ConfirmStep({
 
       <dl className="border-tn-hair divide-tn-hair divide-y rounded-2xl border bg-white">
         <Row label="Shop name" value={state.name} />
-        <Row label="Area" value={`Bole · ${state.area}`} />
+        <Row label="Location" value={shopLocation(state)} />
         <Row label="Phone" value={state.phone} mono />
         <Row label="Categories" value={state.cats.join(", ") || "—"} />
         {state.address.trim() ? <Row label="Address" value={state.address} /> : null}

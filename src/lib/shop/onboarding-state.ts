@@ -1,13 +1,32 @@
 import { validatePhone } from "@/lib/auth/phone";
 
-export const AREAS = [
-  "Atlas",
-  "Friendship",
-  "Olympia",
-  "Japan",
-  "Medhanialem",
-  "Rwanda",
-  "Bulgaria",
+/**
+ * Suggestions for the city field, not a whitelist: shops anywhere in Ethiopia
+ * can register, so the field takes any city typed in.
+ */
+export const CITIES = [
+  "Addis Ababa",
+  "Adama",
+  "Arba Minch",
+  "Asosa",
+  "Bahir Dar",
+  "Bishoftu",
+  "Debre Birhan",
+  "Debre Markos",
+  "Dessie",
+  "Dire Dawa",
+  "Gambela",
+  "Gondar",
+  "Harar",
+  "Hawassa",
+  "Hosaena",
+  "Jijiga",
+  "Jimma",
+  "Mekelle",
+  "Nekemte",
+  "Semera",
+  "Shashamane",
+  "Wolaita Sodo",
 ];
 
 export const CATEGORIES = ["Phones", "Laptops", "Audio", "Tablets", "Accessories", "Cameras"];
@@ -47,6 +66,8 @@ export type OnboardingState = {
   step: number;
   name: string;
   cats: string[];
+  city: string;
+  /** Neighbourhood within the city, e.g. "Bole" or "Piassa". */
   area: string;
   phone: string;
   address: string;
@@ -66,7 +87,8 @@ export const initialState: OnboardingState = {
   step: DETAILS,
   name: "",
   cats: ["Phones"],
-  area: AREAS[0],
+  city: "",
+  area: "",
   phone: "",
   address: "",
   days: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
@@ -139,6 +161,8 @@ export function errorsFor(state: OnboardingState): Record<string, string> {
   if (state.step === DETAILS) {
     if (!state.name.trim()) errors.name = "Your shop needs a name buyers will recognise.";
     if (state.cats.length === 0) errors.cats = "Pick at least one category.";
+    if (!state.city.trim()) errors.city = "Which city is your shop in?";
+    if (!state.area.trim()) errors.area = "Add the neighbourhood so buyers can find you.";
     const phoneError = validatePhone(state.phone);
     if (phoneError) errors.phone = phoneError;
     if (state.days.length === 0) errors.days = "Pick the days you're open.";
@@ -174,12 +198,22 @@ export function loadDraft(userId: string): OnboardingState | null {
     const raw = window.localStorage.getItem(keyFor(userId));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<OnboardingState>;
+    // Drafts from before the city field picked an area from a Bole-only list.
+    if (parsed.city === undefined && parsed.area) {
+      parsed.city = "Addis Ababa";
+      parsed.area = `Bole, ${parsed.area}`;
+    }
     // Merge onto the defaults so a draft written by an older build — missing a
     // field this one reads — restores instead of rendering undefined.
     return { ...initialState, ...parsed, showErrors: false, hydrated: true, restored: false };
   } catch {
     return null;
   }
+}
+
+/** "City · Neighbourhood", the shape the shop's `city` column is read back in. */
+export function shopLocation(state: Pick<OnboardingState, "city" | "area">): string {
+  return `${state.city.trim()} · ${state.area.trim()}`;
 }
 
 export function saveDraft(userId: string, state: OnboardingState): void {

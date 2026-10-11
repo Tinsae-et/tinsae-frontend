@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 
 import { Icon } from "@/components/tinsae/icon";
 import { Pill } from "@/components/tinsae/pill";
-import type { OnboardingState } from "@/lib/shop/onboarding-state";
+import { shopLocation, type OnboardingState } from "@/lib/shop/onboarding-state";
 
 export function DoneStep({ state }: { state: OnboardingState }) {
   const router = useRouter();
@@ -40,7 +40,7 @@ export function DoneStep({ state }: { state: OnboardingState }) {
         ))}
         <span className="bg-tn-paper text-tn-ink2 inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold">
           <Icon name="pin" size={11} />
-          Bole · {state.area}
+          {shopLocation(state)}
         </span>
       </div>
 

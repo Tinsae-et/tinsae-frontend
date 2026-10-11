@@ -22,6 +22,7 @@ import {
   loadDraft,
   reducer,
   saveDraft,
+  shopLocation,
 } from "@/lib/shop/onboarding-state";
 
 export function ShopOnboarding({ userId }: { userId: string }) {
@@ -76,9 +77,9 @@ export function ShopOnboarding({ userId }: { userId: string }) {
     // see docs/registration.md §3.4.
     const res = await postAuth<{ ok: true }>("/api/auth/shop", {
       name: state.name.trim(),
-      city: `Bole · ${state.area}`,
+      city: shopLocation(state),
       phone: toE164(state.phone),
-      description: `${state.cats.join(", ")} in ${state.area}, Bole.`,
+      description: `${state.cats.join(", ")} in ${state.area.trim()}, ${state.city.trim()}.`,
     });
 
     setSubmitting(false);

@@ -1,12 +1,12 @@
 "use client";
 
 import { Icon } from "@/components/tinsae/icon";
-import { Chip, FieldError, SelectField, TextField } from "@/components/shop/fields";
+import { Chip, FieldError, TextField } from "@/components/shop/fields";
 import { FormSelect } from "@/components/tinsae/form-select";
 import { formatAsTyped } from "@/lib/auth/phone";
 import {
-  AREAS,
   CATEGORIES,
+  CITIES,
   DAYS,
   TIMES,
   type OnboardingAction,
@@ -36,7 +36,7 @@ export function DetailsStep({
           value={state.name}
           error={state.showErrors ? errors.name : undefined}
           onChange={(e) => dispatch({ type: "set", field: "name", value: e.target.value })}
-          placeholder="e.g. Bole Electronics Hub"
+          placeholder="e.g. Selam Electronics Hub"
           autoComplete="organization"
         />
 
@@ -67,14 +67,34 @@ export function DetailsStep({
         </div>
 
         <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-          <SelectField
-            id="shop-area"
-            label="Area in Bole"
-            value={state.area}
-            onChange={(value) => dispatch({ type: "set", field: "area", value })}
-            options={AREAS.map((area) => ({ value: area, label: `Bole · ${area}` }))}
+          <TextField
+            id="shop-city"
+            label="City"
+            list="shop-city-options"
+            autoComplete="address-level2"
+            value={state.city}
+            error={state.showErrors ? errors.city : undefined}
+            onChange={(e) => dispatch({ type: "set", field: "city", value: e.target.value })}
+            placeholder="e.g. Addis Ababa, Hawassa"
           />
+          <datalist id="shop-city-options">
+            {CITIES.map((city) => (
+              <option key={city} value={city} />
+            ))}
+          </datalist>
 
+          <TextField
+            id="shop-area"
+            label="Neighbourhood"
+            autoComplete="address-level3"
+            value={state.area}
+            error={state.showErrors ? errors.area : undefined}
+            onChange={(e) => dispatch({ type: "set", field: "area", value: e.target.value })}
+            placeholder="e.g. Bole, Piassa, Kebele 04"
+          />
+        </div>
+
+        <div>
           <TextField
             id="shop-phone"
             label="Phone (buyers contact)"
