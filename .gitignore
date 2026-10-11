@@ -39,3 +39,21 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Design reference bundles (Claude design handoff) — not app code
+/design_handoff_*
+.agents/
+.claude/
+/docs/
+/.next_bak/
+
+# Agent-generated reports and guides (kept local, not app code)
+/*AUDIT*.md
+/tinsae-agent-guide-*.md
+/tinsae-project-overview.md
+skills-lock.json
+
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
