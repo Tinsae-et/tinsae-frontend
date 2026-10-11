@@ -6,6 +6,7 @@ import { normalizeImageUrl } from "@/lib/format";
 import { getInitials, getShopColor, mapShopToDirectoryShop } from "@/lib/shops-data";
 import type { Shop } from "@/lib/types";
 import { SectionHead } from "./section-head";
+import { RotatingGrid } from "./rotating-grid";
 
 // Design block 6: top-rated shops. PLACEHOLDER: the API doesn't serve ratings,
 // reply time or distance yet, so those come from mapShopToDirectoryShop's
@@ -39,8 +40,11 @@ export function TopShops({ shops }: { shops: Shop[] }) {
         href="/shops"
         link="All shops"
       />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-[18px]">
-        {shops.slice(0, 4).map((shop) => {
+      <RotatingGrid
+        label="top shops"
+        pageSize={{ base: 1, sm: 2, lg: 4 }}
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-[18px]"
+        items={shops.map((shop) => {
           const color = getShopColor(shop.name);
           const logo = normalizeImageUrl(shop.logo);
           const products = shop.active_listings_count ?? 0;
@@ -110,7 +114,7 @@ export function TopShops({ shops }: { shops: Shop[] }) {
             </Link>
           );
         })}
-      </div>
+      />
     </section>
   );
 }
