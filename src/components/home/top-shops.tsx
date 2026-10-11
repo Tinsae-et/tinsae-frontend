@@ -3,13 +3,30 @@ import Link from "next/link";
 import { Icon } from "@/components/tinsae/icon";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { normalizeImageUrl } from "@/lib/format";
-import { getInitials, getShopColor } from "@/lib/shops-data";
+import { getInitials, getShopColor, mapShopToDirectoryShop } from "@/lib/shops-data";
 import type { Shop } from "@/lib/types";
 import { SectionHead } from "./section-head";
 
-// Design block 6: verified shops with the most products. Real data only — the
-// design's stars, reply time and distance have nothing behind them yet — and
-// the section hides itself when there are no verified shops to show.
+// Design block 6: top-rated shops. PLACEHOLDER: the API doesn't serve ratings,
+// reply time or distance yet, so those come from mapShopToDirectoryShop's
+// stand-ins until the backend does. The section hides itself when there are no
+// verified shops to show.
+
+function Stars({ rating }: { rating: number }) {
+  const filled = Math.round(rating);
+  return (
+    <span className="flex gap-px" aria-hidden>
+      {Array.from({ length: 5 }, (_, i) => (
+        <Icon
+          key={i}
+          name="star"
+          size={12}
+          className={i < filled ? "text-[#E8A317]" : "text-[#E2DFD6]"}
+        />
+      ))}
+    </span>
+  );
+}
 
 export function TopShops({ shops }: { shops: Shop[] }) {
   if (shops.length === 0) return null;
@@ -18,15 +35,16 @@ export function TopShops({ shops }: { shops: Shop[] }) {
     <section className="mx-auto mt-16 max-w-[1480px] px-6 sm:px-8 lg:mt-[88px] lg:px-12 xl:px-16">
       <SectionHead
         eyebrow="Verified sellers"
-        title="Verified shops with the most in stock"
+        title="Top-rated shops across Ethiopia"
         href="/shops"
-        link="See all verified shops"
+        link="All shops"
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-[18px]">
         {shops.slice(0, 4).map((shop) => {
           const color = getShopColor(shop.name);
           const logo = normalizeImageUrl(shop.logo);
           const products = shop.active_listings_count ?? 0;
+          const placeholder = mapShopToDirectoryShop(shop);
           return (
             <Link
               key={shop.id}
@@ -62,15 +80,31 @@ export function TopShops({ shops }: { shops: Shop[] }) {
                   </span>
                   <VerifiedBadge size={12} />
                 </div>
-                {shop.city && (
-                  <div className="text-tn-ink2 mt-2 flex items-center gap-1.5 text-[13px]">
-                    <Icon name="pin" size={14} className="text-tn-mute" />
-                    <span className="truncate">{shop.city}</span>
-                  </div>
-                )}
-                <div className="font-tn-mono text-tn-ink2 mt-3.5 border-t border-tn-hair2 pt-3.5 text-xs">
-                  <b className="text-tn-ink">{products.toLocaleString()}</b>{" "}
-                  {products === 1 ? "product" : "products"}
+                <div
+                  className="mt-[7px] flex items-center gap-2.5"
+                  aria-label={`Rated ${placeholder.rating.toFixed(1)} out of 5 from ${placeholder.ratings} reviews`}
+                >
+                  <Stars rating={placeholder.rating} />
+                  <span className="text-tn-ink text-[12.5px] font-extrabold">
+                    {placeholder.rating.toFixed(1)}
+                  </span>
+                  <span className="font-tn-mono text-tn-mute text-xs">({placeholder.ratings})</span>
+                </div>
+                <div className="text-tn-ink2 mt-2 flex items-center gap-1.5 text-[13px]">
+                  <Icon name="pin" size={14} className="text-tn-mute shrink-0" />
+                  <span className="truncate">{shop.city || "Ethiopia"}</span>
+                  <span className="text-tn-mute shrink-0">· {placeholder.dist} km</span>
+                </div>
+                <div className="font-tn-mono text-tn-ink2 mt-[13px] flex items-center gap-3.5 border-t border-tn-hair2 pt-[13px] text-xs">
+                  <span>
+                    <b className="text-tn-ink">{products.toLocaleString()}</b>{" "}
+                    {products === 1 ? "listing" : "listings"}
+                  </span>
+                  <span className="bg-tn-hair h-3 w-px" aria-hidden />
+                  <span className="flex items-center gap-1.5">
+                    <span className="size-1.5 rounded-full bg-[#1F8A5B]" aria-hidden />~
+                    {placeholder.responseTime}m reply
+                  </span>
                 </div>
               </div>
             </Link>
