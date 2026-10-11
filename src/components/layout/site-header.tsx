@@ -242,7 +242,7 @@ function SearchField({
             }}
             onBlur={() => setFocused(false)}
             onKeyDown={handleKeyDown}
-            placeholder="Search verified shops & products in Bole"
+            placeholder="Search verified shops & products across Ethiopia"
             aria-label="Search products"
             className="text-tn-ink placeholder:text-tn-mute min-w-0 flex-1 bg-transparent text-[14.5px] font-medium outline-none"
           />
@@ -890,7 +890,7 @@ function BrowseMenu({
                   </Link>
                   <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-tn-green">
                     <span className="size-1.5 rounded-full bg-tn-green animate-pulse" />
-                    Verified Addis Inventory
+                    Verified Inventory Across Ethiopia
                   </span>
                 </div>
 
@@ -1101,7 +1101,7 @@ function BrowseMenu({
             {/* Bottom banner: View All Products */}
             <div className="rounded-b-[20px] border-t border-tn-hair2 bg-tn-paper/70 px-5 py-3 flex items-center justify-between">
               <span className="text-[12px] text-tn-mute font-medium">
-                Browse verified listings across Addis Ababa
+                Browse verified listings across Ethiopia
               </span>
               <Link
                 href="/products"
@@ -1329,7 +1329,7 @@ export function SiteHeader({
                       </div>
                       <p className="font-tn-mono text-tn-mute mt-0.5 text-[11px]">
                         {isOwner
-                          ? shop?.city || "Bole · Atlas"
+                          ? shop?.city || "Ethiopia"
                           : "Buyer account"}
                       </p>
                     </div>

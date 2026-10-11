@@ -26,7 +26,7 @@ export function SiteFooter() {
             </Link>
           </div>
           <p className="text-tn-mute max-w-xs text-sm leading-relaxed">
-            The verified electronics marketplace for Addis Ababa. Compare,
+            The verified electronics marketplace for Ethiopia. Compare,
             confirm, and buy in person.
           </p>
         </div>

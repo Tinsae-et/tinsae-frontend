@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: "Tinsae — verified shops",
   description:
-    "Compare electronics prices across verified Bole shops that reconfirm their stock every day. No more wasted trips.",
+    "Compare electronics prices across verified shops all over Ethiopia that reconfirm their stock every day. No more wasted trips.",
 };
 
 export default function RootLayout({

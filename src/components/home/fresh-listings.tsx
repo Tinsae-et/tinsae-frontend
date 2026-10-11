@@ -7,7 +7,7 @@ export function FreshListings({ products }: { products: Product[] }) {
     <section className="mx-auto mt-16 max-w-[1480px] px-6 sm:px-8 lg:mt-[88px] lg:px-12 xl:px-16">
       <SectionHead
         eyebrow="Confirmed today"
-        title="Freshest listings in Bole"
+        title="Freshest listings across Ethiopia"
         href="/products"
         link="Browse all"
       />
