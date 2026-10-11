@@ -104,7 +104,7 @@ export function CompareEmptyState({
       {/* Preset Suggestions */}
       <div className="mt-14 border-t border-tn-hair pt-10">
         <p className="text-tn-mute text-[11px] font-extrabold tracking-[0.08em] uppercase">
-          Popular comparisons in Addis Ababa
+          Popular comparisons in Ethiopia
         </p>
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
           {popularPresets.map((preset) => (

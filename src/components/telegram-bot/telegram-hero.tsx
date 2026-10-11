@@ -24,7 +24,7 @@ export function TelegramHero() {
           {/* Intro Paragraph */}
           <p className="mt-5 max-w-[480px] text-base leading-relaxed font-medium text-tn-mute sm:text-[17px]">
             The Tinsae bot sends you a weekly digest on Telegram. Confirm your stock in a
-            single tap, and fresh listings rank higher for buyers across Bole.
+            single tap, and fresh listings rank higher for buyers across Ethiopia.
           </p>
 
           {/* CTAs */}

@@ -5,7 +5,7 @@ import { Pill } from "@/components/tinsae/pill";
 export const metadata: Metadata = {
   title: "How It Works — Tinsae",
   description:
-    "How Tinsae's verified and daily-confirmed local marketplace model works for buyers and shop owners in Bole, Addis Ababa.",
+    "How Tinsae's verified and daily-confirmed local marketplace model works for buyers and shop owners across Ethiopia.",
 };
 
 function Eyebrow({ children, color = "text-tn-red" }: { children: React.ReactNode; color?: string }) {
@@ -51,7 +51,7 @@ function SectionHead({
 function BeforeAfter() {
   const oldSteps = [
     { title: "Call around", desc: "Prices are hearsay" },
-    { title: "Taxi to Bole", desc: "Maybe in stock" },
+    { title: "Taxi across town", desc: "Maybe in stock" },
     { title: "Shop 1", desc: "Sold out", failed: true },
     { title: "Shop 2", desc: "Wrong variant", failed: true },
     { title: "Shop 3", desc: "In stock — overpriced", failed: true },
@@ -209,7 +209,7 @@ export default function HowItWorksPage() {
               before you <span className="text-tn-red">cross town.</span>
             </h1>
             <p className="text-tn-mute mt-6 max-w-[500px] text-base leading-relaxed font-medium sm:text-[18.5px]">
-              Tinsae is a verified electronics marketplace for Addis Ababa. Every shop is checked in
+              Tinsae is a verified electronics marketplace for Ethiopia. Every shop is checked in
               person, and every listing is re-confirmed in stock — so the price you see is the one
               that&apos;s actually on the shelf.
             </p>
@@ -254,7 +254,7 @@ export default function HowItWorksPage() {
               color: "text-tn-green",
               bg: "bg-tn-green-soft",
               title: "Verified in person",
-              desc: "Before a shop appears on Tinsae, our team confirms a real business at a real address in Bole — phone, documents, and a physical store visit.",
+              desc: "Before a shop appears on Tinsae, our team confirms a real business at a real address — phone, documents, and a physical store visit.",
             },
             {
               icon: "bolt" as IconName,
@@ -497,7 +497,7 @@ export default function HowItWorksPage() {
           <div className="relative grid grid-cols-2 gap-8 lg:grid-cols-4">
             {[
               ["8,920", "listings live today"],
-              ["412", "verified shops in Bole"],
+              ["412", "verified shops across Ethiopia"],
               ["96%", "reconfirmed within 24h"],
               ["~3.4h", "average shop response"],
             ].map(([figure, label], i) => (
@@ -531,17 +531,17 @@ export default function HowItWorksPage() {
           <div>
             <Eyebrow>Why we built it</Eyebrow>
             <h2 className="text-tn-ink text-[32px] leading-[1.08] font-extrabold tracking-[-0.03em] sm:text-[40px]">
-              Bole runs on trust between people. We just made it visible.
+              Ethiopia runs on trust between people. We just made it visible.
             </h2>
             <p className="text-tn-ink2 mt-5 text-base leading-relaxed sm:text-[16.5px]">
-              Addis already has hundreds of honest electronics shops. What it lacked was a way to{" "}
+              Ethiopia already has so many honest electronics shops. What it lacked was a way to{" "}
               <i>prove</i> it before you spend an afternoon in traffic — a shared, public record of
               who&apos;s real and what&apos;s actually in stock.
             </p>
             <p className="text-tn-mute mt-4 text-base leading-relaxed sm:text-[16.5px]">
               <b className="text-tn-ink font-bold">Tinsae</b> — Amharic for <i>&ldquo;rising&rdquo;</i>{" "}
               — is that record. We verify the shops, the bot keeps them honest about stock, and you
-              keep buying in person, the way Addis has always done business. We never touch the money.
+              keep buying in person, the way Ethiopia has always done business. We never touch the money.
               We just make the trust legible.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">

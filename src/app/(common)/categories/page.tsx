@@ -12,7 +12,7 @@ import { getNavCategories } from "@/lib/nav-categories";
 export const metadata: Metadata = {
   title: "Everything on Tinsae — All Categories",
   description:
-    "Every verified category in Addis Ababa, in one marketplace. Electronics and vehicles are live now — more verticals are on the way.",
+    "Every verified category across Ethiopia, in one marketplace. Electronics and vehicles are live now — more verticals are on the way.",
 };
 
 type RoadmapCategory = {
@@ -91,7 +91,7 @@ export default async function CategoriesPage() {
               Everything on Tinsae
             </h1>
             <p className="mt-4 max-w-[600px] text-base sm:text-[17px] leading-[1.55] text-tn-ink2">
-              Every verified category in Addis Ababa, in one marketplace. Electronics and vehicles are
+              Every verified category across Ethiopia, in one marketplace. Electronics and vehicles are
               live now — more verticals are on the way.
             </p>
           </div>
@@ -129,7 +129,7 @@ export default async function CategoriesPage() {
               Shop by category
             </h2>
             <p className="mt-2.5 text-[15px] text-tn-mute leading-[1.6]">
-              Electronics and vehicles from verified shops across Addis, with stock confirmed every
+              Electronics and vehicles from verified shops across Ethiopia, with stock confirmed every
               day.
             </p>
           </div>
@@ -353,7 +353,7 @@ export default async function CategoriesPage() {
               On the roadmap
             </p>
             <h2 className="text-[28px] sm:text-[34px] font-extrabold tracking-[-0.03em] leading-[1.05] text-tn-ink">
-              More marketplaces, coming to Addis
+              More marketplaces, coming to Ethiopia
             </h2>
             <p className="mt-2.5 text-[15px] text-tn-mute leading-[1.6]">
               Tinsae is built category-agnostic. Each new vertical launches with the same verified

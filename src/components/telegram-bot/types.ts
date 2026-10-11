@@ -47,7 +47,7 @@ export const HOW_IT_WORKS_STEPS: HowItWorksStep[] = [
     iconBg: "bg-[#EDF8F2]",
     iconColor: "text-[#1F8A5B]",
     title: "Higher ranking",
-    body: "Fresh listings appear first when buyers browse across Bole.",
+    body: "Fresh listings appear first when buyers browse across Ethiopia.",
     stepLabel: "STEP 3",
   },
 ];

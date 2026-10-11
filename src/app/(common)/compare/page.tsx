@@ -6,7 +6,7 @@ import type { CompareItem } from "@/lib/compare-helpers";
 export const metadata: Metadata = {
   title: "Compare — Tinsae",
   description:
-    "Compare price, verified shops, stock freshness, and full technical specifications side by side across Bole, Addis Ababa.",
+    "Compare price, verified shops, stock freshness, and full technical specifications side by side across Ethiopia.",
 };
 
 export const dynamic = "force-dynamic";
