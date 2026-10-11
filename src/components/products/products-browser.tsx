@@ -147,7 +147,9 @@ export function ProductsBrowser({
     selectedCategory?.parentSlug ?? (isParentCategory ? filters.category : undefined);
   const group = groupSlug ? categories.find((c) => c.slug === groupSlug) : undefined;
   const groupChildren = groupSlug ? categories.filter((c) => c.parentSlug === groupSlug) : [];
-  const subCounts = new Map(facets?.subcategories.map((s) => [s.slug, s.count]) ?? []);
+  // Every category's count under the other filters: the same numbers on a
+  // group's page and on each of its subcategories' pages.
+  const subCounts = new Map(Object.entries(facets?.categories ?? {}));
   const title = filters.q
     ? `“${filters.q}”`
     : categoryName ?? (filters.category ? filters.category.replace(/-/g, " ") : "All listings");

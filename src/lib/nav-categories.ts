@@ -65,13 +65,6 @@ export const UPCOMING_CATEGORIES: NavCategory[] = [
     status: "soon",
   },
   {
-    icon: "tag",
-    label: "Fashion & Apparel",
-    slug: "fashion",
-    subtitle: "Clothing · Shoes · Bags · Watches",
-    status: "soon",
-  },
-  {
     icon: "shield",
     label: "Services & Repairs",
     slug: "services",

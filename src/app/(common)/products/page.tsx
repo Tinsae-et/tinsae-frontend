@@ -9,7 +9,8 @@ import { filtersFromSearchParams, filtersToProductQuery } from "@/lib/filters";
 
 export const metadata = {
   title: "Browse listings — Tinsae",
-  description: "Electronics and vehicles from verified shops across Addis Ababa.",
+  description:
+    "Electronics, vehicles, furniture, power and fashion from verified shops across Addis Ababa.",
 };
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
