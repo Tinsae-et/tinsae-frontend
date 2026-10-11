@@ -5,7 +5,6 @@ import { Chip, FieldError, TextField } from "@/components/shop/fields";
 import { FormSelect } from "@/components/tinsae/form-select";
 import { formatAsTyped } from "@/lib/auth/phone";
 import {
-  CATEGORIES,
   CITIES,
   DAYS,
   TIMES,
@@ -17,10 +16,12 @@ export function DetailsStep({
   state,
   dispatch,
   errors,
+  categories,
 }: {
   state: OnboardingState;
   dispatch: React.Dispatch<OnboardingAction>;
   errors: Record<string, string>;
+  categories: string[];
 }) {
   return (
     <div>
@@ -48,7 +49,12 @@ export function DetailsStep({
             <span className="text-tn-mute text-xs font-semibold">{state.cats.length} selected</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {CATEGORIES.map((category) => {
+            {categories.length === 0 && (
+              <p className="text-tn-mute text-[13px]">
+                Couldn&apos;t load categories. Refresh the page to try again.
+              </p>
+            )}
+            {categories.map((category) => {
               const selected = state.cats.includes(category);
               return (
                 <Chip

@@ -29,8 +29,6 @@ export const CITIES = [
   "Wolaita Sodo",
 ];
 
-export const CATEGORIES = ["Phones", "Laptops", "Audio", "Tablets", "Accessories", "Cameras"];
-
 export const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export const TIMES = [
@@ -86,7 +84,7 @@ export type OnboardingState = {
 export const initialState: OnboardingState = {
   step: DETAILS,
   name: "",
-  cats: ["Phones"],
+  cats: [],
   city: "",
   area: "",
   phone: "",

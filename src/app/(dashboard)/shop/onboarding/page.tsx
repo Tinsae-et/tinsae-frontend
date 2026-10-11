@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { ShopOnboarding } from "@/components/shop/shop-onboarding";
 import { hasShop } from "@/lib/auth/roles";
 import { requireSession } from "@/lib/auth/session";
+import { getNavCategories } from "@/lib/nav-categories";
 
 export const metadata: Metadata = { title: "List your shop — Tinsae" };
 
@@ -25,5 +26,9 @@ export default async function ShopOnboardingPage() {
 
   if (hasShop(user)) redirect("/shop/dashboard/overview");
 
-  return <ShopOnboarding userId={user.id} />;
+  // Top-level categories only: a shop says what it sells broadly ("Electronics"),
+  // its listings pick the subcategory.
+  const categories = (await getNavCategories()).map((c) => c.label);
+
+  return <ShopOnboarding userId={user.id} categories={categories} />;
 }
