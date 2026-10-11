@@ -21,6 +21,10 @@ export interface ProductPreviewProps {
   brand?: string;
   variant?: string;
   price?: string;
+  /** "/ month" for a rent listing; see `priceUnit`. */
+  priceUnit?: string;
+  /** The badge while available: "In stock", or "Available" for property. */
+  availableLabel?: string;
   isAvailable?: boolean;
   coverPhoto?: ShopProductImage | null;
 }
@@ -31,6 +35,8 @@ export function ProductPreview({
   brand = "",
   variant = "",
   price = "",
+  priceUnit = "",
+  availableLabel = "In stock",
   isAvailable = true,
   coverPhoto = null,
 }: ProductPreviewProps) {
@@ -83,7 +89,7 @@ export function ProductPreview({
             )}
           >
             <Icon name="check" size={12} className={isAvailable ? "text-tn-green" : "text-tn-mute"} />
-            {isAvailable ? "In stock" : "Unavailable"}
+            {isAvailable ? availableLabel : "Unavailable"}
           </span>
 
           <span className="bg-white/95 text-tn-ink2 absolute top-3 right-3 z-10 inline-flex size-8 items-center justify-center rounded-[10px] shadow-[0_2px_8px_rgba(11,11,11,0.06)]">
@@ -109,6 +115,7 @@ export function ProductPreview({
             <span className="font-tn-mono text-tn-ink text-lg font-bold tracking-[-0.02em]">
               {displayPrice}
             </span>
+            {priceUnit && <span className="text-tn-mute text-xs font-semibold">{priceUnit}</span>}
           </p>
 
           <div className="border-t border-tn-hair2 text-tn-ink2 mt-3 flex justify-between items-center gap-1.5 pt-3 text-[11.5px]">
@@ -178,6 +185,7 @@ export function BeforePublication({
   name,
   price,
   condition,
+  showCondition = true,
   specsComplete,
   coverPhoto,
   extraPhotos,
@@ -187,6 +195,8 @@ export function BeforePublication({
   name: string;
   price: string;
   condition: string;
+  /** False for property, which has no condition to set. */
+  showCondition?: boolean;
   /** Every required spec for the chosen category is filled in and valid. */
   specsComplete: boolean;
   coverPhoto: ShopProductImage | null;
@@ -205,7 +215,7 @@ export function BeforePublication({
     { id: "photo", label: "At least one photo", done: hasPhoto },
     { id: "price", label: "Price set", done: isPriceSet },
     { id: "specs", label: "Required specs", done: specsComplete },
-    { id: "condition", label: "Condition", done: isConditionSet },
+    ...(showCondition ? [{ id: "condition", label: "Condition", done: isConditionSet }] : []),
   ];
 
   const allDone = CHECKLIST.every((item) => item.done);

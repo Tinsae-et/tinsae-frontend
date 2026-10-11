@@ -8,7 +8,15 @@ import { formatSpecSections, type SpecRow, type SpecSections } from "@/lib/specs
 import { parseSizeGb } from "@/lib/specs/schema";
 import { SITE_URL } from "@/lib/config";
 import { JsonLd } from "@/components/json-ld";
-import { formatETB, freshness, normalizeImageUrl, type FreshnessTone } from "@/lib/format";
+import {
+  formatETB,
+  freshness,
+  normalizeImageUrl,
+  priceUnit,
+  stockBadge,
+  type FreshnessTone,
+} from "@/lib/format";
+import { CONDITION_OPTIONS } from "@/lib/filters";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/lib/types";
 import { kindForSlug } from "@/components/tinsae/prod-placeholder";
@@ -239,10 +247,13 @@ function ShopComparison({
   product,
   now,
   specs,
+  hasCondition,
 }: {
   product: Product;
   now: number;
   specs: SpecSections;
+  /** False for property: the row says "For sale" / "For rent" instead. */
+  hasCondition: boolean;
 }) {
   const f = freshness(
     product.last_confirmed_at,
@@ -271,7 +282,7 @@ function ShopComparison({
           kind={kindForSlug(product.category?.slug)}
           categorySlug={product.category?.slug}
           tone={tone}
-          label={f.badge}
+          label={stockBadge(f, product.specs)}
         />
 
         <div className="min-w-0">
@@ -328,6 +339,11 @@ function ShopComparison({
               </p>
               <p className="font-tn-mono text-tn-red text-[40px] leading-none font-semibold tracking-[-0.03em]">
                 {formatETB(product.price)}
+                {priceUnit(product.specs) && (
+                  <span className="text-tn-mute ml-2 font-sans text-base font-semibold tracking-normal">
+                    {priceUnit(product.specs)}
+                  </span>
+                )}
               </p>
               <p className="text-tn-ink2 mt-2 text-[13.5px]">
                 across{" "}
@@ -414,15 +430,26 @@ function ShopComparison({
               </div>
             </div>
 
-            <span className="text-tn-ink2 text-[13px] font-semibold">New</span>
+            <span className="text-tn-ink2 text-[13px] font-semibold">
+              {hasCondition
+                ? (CONDITION_OPTIONS.find((o) => o.value === product.condition)?.label ?? "New")
+                : product.specs?.listing_type === "rent"
+                  ? "For rent"
+                  : "For sale"}
+            </span>
             <span className="text-tn-ink2 flex items-center gap-1.5 text-[13px] font-semibold">
               <Icon name="shield" size={13} className="text-tn-mute" />
               {f.age}
             </span>
 
             <div className="flex items-center justify-between gap-3">
-              <span className="font-tn-mono text-tn-red text-[19px] font-semibold tracking-[-0.02em]">
+              <span className="font-tn-mono text-tn-red text-[19px] font-semibold tracking-[-0.02em] whitespace-nowrap">
                 {formatETB(product.price)}
+                {priceUnit(product.specs) && (
+                  <span className="text-tn-mute block text-right font-sans text-xs font-semibold tracking-normal">
+                    {priceUnit(product.specs)}
+                  </span>
+                )}
               </span>
               {/* The shop page carries the real contact details (Telegram or
                   phone); this button used to have no href at all. */}
@@ -560,7 +587,12 @@ export default async function ProductDetailPage({ params }: Props) {
       </nav>
 
       <div className="pt-5">
-        <ShopComparison product={product} now={now} specs={specSections} />
+        <ShopComparison
+          product={product}
+          now={now}
+          specs={specSections}
+          hasCondition={schema?.hasCondition !== false}
+        />
       </div>
 
       {/* Similar & infinite scrolling suggestion feed. Streamed: the tiered

@@ -58,13 +58,6 @@ export async function getNavCategories(): Promise<NavCategory[]> {
 // this list until categories carry a status there.
 export const UPCOMING_CATEGORIES: NavCategory[] = [
   {
-    icon: "building",
-    label: "Property & Rentals",
-    slug: "property",
-    subtitle: "Apartments · Villas · Commercial",
-    status: "soon",
-  },
-  {
     icon: "shield",
     label: "Services & Repairs",
     slug: "services",

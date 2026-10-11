@@ -70,6 +70,10 @@ export type CategorySchema = {
   brandRequired?: boolean;
   /** The category's own example name and variant for the listing form's placeholders. */
   listingExamples?: { name?: string; variant?: string };
+  /** False where "New / Used" means nothing (property): the form and filters hide it. */
+  hasCondition?: boolean;
+  /** What the brand box asks for: "Brand", or "Developer" for property. */
+  brandLabel?: string;
   fields: SpecField[];
 };
 
@@ -80,6 +84,8 @@ export type ApiCategorySchema = {
   brands: string[];
   brand_required?: boolean;
   listing_examples?: { name?: string; variant?: string };
+  has_condition?: boolean;
+  brand_label?: string;
   fields: {
     key: string;
     label: string;
@@ -107,6 +113,8 @@ export function fromApiSchema(raw: ApiCategorySchema): CategorySchema {
     // Older payloads predate both: brand required, no examples.
     brandRequired: raw.brand_required ?? true,
     listingExamples: raw.listing_examples ?? {},
+    hasCondition: raw.has_condition ?? true,
+    brandLabel: raw.brand_label ?? "Brand",
     fields: raw.fields.map((f) => ({
       key: f.key,
       label: f.label,

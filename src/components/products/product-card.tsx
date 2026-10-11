@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Icon } from "@/components/tinsae/icon";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
-import { formatETB, freshness, type FreshnessTone } from "@/lib/format";
+import { formatETB, freshness, priceUnit, stockBadge, type FreshnessTone } from "@/lib/format";
 import { resolvePrimaryProductImage } from "@/lib/product-images";
 import type { Product } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -79,7 +79,7 @@ function ProductCardInner({
           )}
         >
           {tone === "fresh" && <Icon name="check" size={12} />}
-          {fresh.badge}
+          {stockBadge(fresh, product.specs)}
         </span>
 
         {/* Top-right action buttons */}
@@ -130,13 +130,16 @@ function ProductCardInner({
           {product.title}
         </h3>
 
-        <p className="mt-3 flex items-baseline gap-1.5">
+        <p className="mt-3 flex flex-wrap items-baseline gap-x-1.5">
           <span className="text-tn-mute text-[10.5px] font-semibold tracking-[0.04em] uppercase">
             From
           </span>
-          <span className="font-tn-mono text-tn-red text-base font-semibold tracking-[-0.02em]">
+          <span className="font-tn-mono text-tn-red text-base font-semibold tracking-[-0.02em] whitespace-nowrap">
             {formatETB(product.price)}
           </span>
+          {priceUnit(product.specs) && (
+            <span className="text-tn-mute text-xs font-semibold">{priceUnit(product.specs)}</span>
+          )}
         </p>
 
         {/* Stacked rather than side-by-side: "Confirmed 20d ago" is long enough
@@ -238,8 +241,13 @@ export function ProductRow({ product }: { product: Product }) {
       </div>
 
       <div className="shrink-0 text-right">
-        <p className="font-tn-mono text-tn-red text-[17px] font-semibold tracking-[-0.02em]">
+        <p className="font-tn-mono text-tn-red text-[17px] font-semibold tracking-[-0.02em] whitespace-nowrap">
           {formatETB(product.price)}
+          {priceUnit(product.specs) && (
+            <span className="text-tn-mute ml-1 font-sans text-xs font-semibold">
+              {priceUnit(product.specs)}
+            </span>
+          )}
         </p>
         <p className="font-tn-mono text-tn-mute mt-1 flex items-center justify-end gap-1.5 text-[11.5px]">
           <span className={cn("size-1.5 rounded-full", TONE_DOT[tone])} />

@@ -502,7 +502,7 @@ export function FilterControls({
         <Group
           open={isOpen("brand")}
           onToggle={() => toggle("brand")}
-          title="Brand"
+          title={schema?.brandLabel ?? "Brand"}
           badge={filters.brands.length}
         >
           <OptionList

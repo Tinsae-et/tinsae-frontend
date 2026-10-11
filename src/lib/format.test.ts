@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatCount, formatETB, freshness } from "./format";
+import { formatCount, formatETB, freshness, priceUnit } from "./format";
 
 // A fixed "now" so an age never depends on when the suite runs.
 const NOW = Date.parse("2026-08-31T12:00:00Z");
@@ -94,5 +94,14 @@ describe("formatCount", () => {
     expect(formatCount(undefined)).toBe("");
     expect(formatCount(Number.NaN)).toBe("");
     expect(formatCount("invalid")).toBe("");
+  });
+});
+
+describe("priceUnit", () => {
+  it("marks a rent price as monthly and nothing else", () => {
+    expect(priceUnit({ listing_type: "rent" })).toBe("/ month");
+    expect(priceUnit({ listing_type: "sale" })).toBe("");
+    expect(priceUnit({ storage: 256 })).toBe("");
+    expect(priceUnit(null)).toBe("");
   });
 });

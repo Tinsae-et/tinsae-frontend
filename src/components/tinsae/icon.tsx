@@ -56,6 +56,8 @@ export const ICON_NAMES = [
   "shoe",
   "bag",
   "gem",
+  "land",
+  "store",
   "msg",
   "tag",
   "home",
@@ -455,6 +457,21 @@ export function Icon({ name, size = 18, className, strokeWidth = 1.6 }: IconProp
         <svg {...stroke}>
           <path d="M7 4h10l4 5-9 11L3 9z" />
           <path d="M3 9h18M9.5 4L12 9l2.5-5M12 9v11" />
+        </svg>
+      );
+    case "land":
+      return (
+        <svg {...stroke}>
+          <path d="M3 18.5l5-9 4 6 3-4 6 7z" />
+          <path d="M15.5 4.5v5M15.5 4.5h4l-1 1.2 1 1.3h-4" />
+        </svg>
+      );
+    case "store":
+      return (
+        <svg {...stroke}>
+          <path d="M3.5 9.5L5 4h14l1.5 5.5" />
+          <path d="M3.5 9.5a2.8 2.8 0 005.7 0 2.8 2.8 0 005.6 0 2.8 2.8 0 005.7 0" />
+          <path d="M5 11.5V20h14v-8.5M10 20v-5h4v5" />
         </svg>
       );
     case "lamp":

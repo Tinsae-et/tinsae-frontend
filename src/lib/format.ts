@@ -4,6 +4,22 @@
  * Money, matching the design's `ETB` helper: prefix, grouped, no decimals.
  * `price` arrives from DRF as a decimal string ("142500.00").
  */
+/**
+ * The image badge for a listing: a house or a plot is "Available", not
+ * "In stock" (property specs carry `listing_type`).
+ */
+export function stockBadge(f: Freshness, specs?: Record<string, unknown> | null): string {
+  return f.tone === "fresh" && specs?.listing_type ? "Available" : f.badge;
+}
+
+/**
+ * What a price is per: "/ month" for a listing for rent (property specs carry
+ * `listing_type`), "" for everything sold outright.
+ */
+export function priceUnit(specs?: Record<string, unknown> | null): string {
+  return specs?.listing_type === "rent" ? "/ month" : "";
+}
+
 export function formatETB(price: string | number): string {
   const n = typeof price === "number" ? price : Number.parseFloat(price);
   if (!Number.isFinite(n)) return "—";
