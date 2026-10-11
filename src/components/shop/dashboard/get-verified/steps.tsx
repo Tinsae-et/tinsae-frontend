@@ -497,14 +497,14 @@ function StoreFront({
         status={status}
         number={3}
         title="Storefront & location"
-        description="A map pin in Bole and two photos of your physical shop."
+        description="A map pin at your shop and two photos of your physical shop."
         isOpen={isOpen}
         setOpenStep={setOpenStep}
       />
       {isOpen && (
         <div className="border-t border-neutral-100 px-5 pb-5 pt-4 text-xs text-neutral-600 leading-relaxed">
           <p>
-            Physical retail stores in Addis Ababa (Bole, Piazza, Mercato, etc.)
+            Physical retail stores anywhere in Ethiopia
             are verified on-site to confirm walk-in availability and stock
             authenticity.
           </p>

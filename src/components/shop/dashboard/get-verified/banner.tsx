@@ -66,7 +66,7 @@ export default function Banner({
             </h1>
             <p className="max-w-lg text-sm text-neutral-400 leading-relaxed">
               {verified
-                ? "Your listings display the verified trust badge and appear higher in search results across Addis Ababa."
+                ? "Your listings display the verified trust badge and appear higher in search results across Ethiopia."
                 : pending
                   ? "Our compliance team is manually inspecting your documents and storefront location. Review takes 24–48 hours."
                   : rejected
