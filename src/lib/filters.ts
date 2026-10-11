@@ -28,25 +28,50 @@ export type SearchFilters = {
    * Single-select: pick one window, or none.
    */
   freshness?: FreshnessKey;
-  /**
-   * Demo facets (design's Brand / Condition / Neighborhood groups). The backend
-   * doesn't filter on these yet — toggling them re-queries and round-trips the
-   * URL, but results only change once a facets endpoint lands (TIN-16/18).
-   */
+  /** Brands picked in the rail; ORed by the backend. */
   brands: string[];
+  /** `new` / `used` / `refurbished` (catalog.models.ProductCondition). */
   conditions: string[];
-  neighborhoods: string[];
+  /**
+   * The category's spec filters, keyed by spec key: picked option values
+   * (enum and text specs) and number ranges. They belong to the category, so
+   * changing category clears them (see `withCategory`).
+   */
+  specs: Record<string, string[]>;
+  ranges: Record<string, SpecRange>;
   sort: SortKey;
   /** 1-based page. Reset to 1 whenever a non-page filter changes. */
   page?: number;
 };
 
+export type SpecRange = { min?: number; max?: number };
+
 export const DEFAULT_FILTERS: SearchFilters = {
   sort: "newest",
   brands: [],
   conditions: [],
-  neighborhoods: [],
+  specs: {},
+  ranges: {},
 };
+
+/** Spec filters travel as `spec_<key>` and `spec_<key>_min` / `_max`. */
+const SPEC_PREFIX = "spec_";
+
+export const CONDITION_OPTIONS: { value: string; label: string }[] = [
+  { value: "new", label: "New" },
+  { value: "used", label: "Used" },
+  { value: "refurbished", label: "Refurbished" },
+];
+
+/**
+ * The filters with a different category. Spec filters, brands and conditions
+ * are the old category's vocabulary ("Diesel" means nothing on Phones), so
+ * they go; price, freshness, trust, search and sort carry over.
+ */
+export function withCategory(f: SearchFilters, category: string | undefined): SearchFilters {
+  if (category === f.category) return f;
+  return { ...f, category, specs: {}, ranges: {}, brands: [], conditions: [] };
+}
 
 const SORT_TO_ORDERING: Record<SortKey, string | undefined> = {
   newest: "-created_at",
@@ -81,8 +106,30 @@ export function filtersToSearchParams(f: SearchFilters): URLSearchParams {
   if (f.sort && f.sort !== "newest") p.set("sort", f.sort);
   if (f.brands?.length) p.set("brand", f.brands.join(","));
   if (f.conditions?.length) p.set("condition", f.conditions.join(","));
-  if (f.neighborhoods?.length) p.set("neighborhood", f.neighborhoods.join(","));
+  for (const [key, value] of Object.entries(specParams(f))) p.set(key, value);
   return p;
+}
+
+/**
+ * A spec number for display. A quantity with a unit reads with separators
+ * ("85,000 km"); a bare number is an identifier-like value such as a year,
+ * which never takes one ("2015", not "2,015").
+ */
+export function formatSpecNumber(value: number, unit?: string): string {
+  return unit ? value.toLocaleString("en-US") : String(value);
+}
+
+/** The spec filters as query params, ready for the URL and the API alike. */
+export function specParams(f: Pick<SearchFilters, "specs" | "ranges">): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, values] of Object.entries(f.specs ?? {})) {
+    if (values.length) out[`${SPEC_PREFIX}${key}`] = values.join(",");
+  }
+  for (const [key, range] of Object.entries(f.ranges ?? {})) {
+    if (range.min !== undefined) out[`${SPEC_PREFIX}${key}_min`] = String(range.min);
+    if (range.max !== undefined) out[`${SPEC_PREFIX}${key}_max`] = String(range.max);
+  }
+  return out;
 }
 
 function parseNum(v: string | null): number | undefined {
@@ -93,6 +140,27 @@ function parseNum(v: string | null): number | undefined {
 
 function parseList(v: string | null): string[] {
   return v ? v.split(",").map((x) => x.trim()).filter(Boolean) : [];
+}
+
+function parseSpecs(params: URLSearchParams) {
+  const specs: Record<string, string[]> = {};
+  const ranges: Record<string, SpecRange> = {};
+  params.forEach((value, name) => {
+    if (!name.startsWith(SPEC_PREFIX)) return;
+    const key = name.slice(SPEC_PREFIX.length);
+    const bound = key.endsWith("_min") ? "min" : key.endsWith("_max") ? "max" : null;
+    if (bound) {
+      const n = Number(value);
+      if (value !== "" && Number.isFinite(n)) {
+        const specKey = key.slice(0, -4);
+        ranges[specKey] = { ...ranges[specKey], [bound]: n };
+      }
+    } else {
+      const values = parseList(value);
+      if (values.length) specs[key] = values;
+    }
+  });
+  return { specs, ranges };
 }
 
 export function filtersFromSearchParams(params: URLSearchParams): SearchFilters {
@@ -113,7 +181,7 @@ export function filtersFromSearchParams(params: URLSearchParams): SearchFilters 
     freshness,
     brands: parseList(params.get("brand")),
     conditions: parseList(params.get("condition")),
-    neighborhoods: parseList(params.get("neighborhood")),
+    ...parseSpecs(params),
     sort: (SORT_KEYS as string[]).includes(sort ?? "") ? (sort as SortKey) : "newest",
     page: parseNum(params.get("page")) || 1,
   };
@@ -128,11 +196,9 @@ export function filtersToProductQuery(f: SearchFilters): ProductQuery {
     maxPrice: f.maxPrice,
     verifiedOnly: f.verifiedOnly,
     freshOnly: f.freshness !== undefined,
-    // Demo facets: sent to the API for forward-compat; the backend ignores them
-    // until the facets endpoint exists.
     brand: f.brands.length ? f.brands.join(",") : undefined,
     condition: f.conditions.length ? f.conditions.join(",") : undefined,
-    neighborhood: f.neighborhoods.length ? f.neighborhoods.join(",") : undefined,
+    specParams: specParams(f),
     ordering: SORT_TO_ORDERING[f.sort],
     page: f.page && f.page > 1 ? f.page : undefined,
   };
@@ -154,7 +220,9 @@ export function activeFilterCount(f: SearchFilters): number {
   if (f.freshness) n++;
   if (f.brands?.length) n++;
   if (f.conditions?.length) n++;
-  if (f.neighborhoods?.length) n++;
+  n += Object.values(f.specs ?? {}).filter((v) => v.length).length;
+  n += Object.values(f.ranges ?? {}).filter((r) => r.min !== undefined || r.max !== undefined)
+    .length;
   if (f.sort !== "newest") n++;
   return n;
 }

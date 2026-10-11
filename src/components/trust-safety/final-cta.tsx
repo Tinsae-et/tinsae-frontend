@@ -18,7 +18,7 @@ export function FinalCTA() {
             is already proven.
           </h2>
           <p className="mx-auto mt-[18px] max-w-[520px] text-base leading-[1.5] text-white/[0.92] sm:text-lg">
-            412 verified shops in Bole, every listing confirmed daily.
+            412 verified shops across Ethiopia, every listing confirmed daily.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Pill kind="light" size="lg" iconAfter="arrow" href="/products">

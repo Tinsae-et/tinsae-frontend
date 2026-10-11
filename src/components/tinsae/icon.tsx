@@ -1,47 +1,80 @@
 // Icon set ported from the Claude Design project (shared/tinsae-shared.jsx).
 // Same 24x24 grid and 1.6 stroke weight as the design so the visual rhythm matches.
 
-export type IconName =
-  | "search"
-  | "filter"
-  | "heart"
-  | "check"
-  | "tg"
-  | "pin"
-  | "clock"
-  | "shield"
-  | "chevron"
-  | "chevd"
-  | "star"
-  | "eye"
-  | "menu"
-  | "close"
-  | "phone"
-  | "laptop"
-  | "audio"
-  | "tablet"
-  | "plug"
-  | "camera"
-  | "arrow"
-  | "bell"
-  | "sort"
-  | "pulse"
-  | "box"
-  | "spec"
-  | "building"
-  | "bolt"
-  | "plus"
-  | "minus"
-  | "sliders"
-  | "car"
-  | "msg"
-  | "tag"
-  | "home"
-  | "user"
-  | "back"
-  | "gallery"
-  | "trash"
-  | "ellipsis";
+// The names categories may use as their icon (Category.icon from the API);
+// `isIconName` guards a value coming from the backend.
+export const ICON_NAMES = [
+  "search",
+  "filter",
+  "heart",
+  "check",
+  "tg",
+  "pin",
+  "clock",
+  "shield",
+  "chevron",
+  "chevd",
+  "star",
+  "eye",
+  "menu",
+  "close",
+  "phone",
+  "laptop",
+  "audio",
+  "tablet",
+  "plug",
+  "camera",
+  "arrow",
+  "bell",
+  "sort",
+  "pulse",
+  "box",
+  "spec",
+  "building",
+  "bolt",
+  "plus",
+  "minus",
+  "sliders",
+  "car",
+  "motorbike",
+  "bicycle",
+  "truck",
+  "tv",
+  "monitor",
+  "desktop",
+  "watch",
+  "sofa",
+  "bed",
+  "fridge",
+  "pan",
+  "lamp",
+  "generator",
+  "sun",
+  "battery",
+  "shirt",
+  "dress",
+  "shoe",
+  "bag",
+  "gem",
+  "land",
+  "store",
+  "msg",
+  "tag",
+  "home",
+  "user",
+  "back",
+  "gallery",
+  "trash",
+  "ellipsis",
+] as const;
+
+export type IconName = (typeof ICON_NAMES)[number];
+
+const ICON_NAME_SET: ReadonlySet<string> = new Set(ICON_NAMES);
+
+export function isIconName(value: unknown): value is IconName {
+  return typeof value === "string" && ICON_NAME_SET.has(value);
+}
 
 type IconProps = {
   name: IconName;
@@ -302,6 +335,165 @@ export function Icon({ name, size = 18, className, strokeWidth = 1.6 }: IconProp
           <path d="M5 11l1.6-4.3A2 2 0 018.5 5.4h7a2 2 0 011.9 1.3L19 11M4 11h16a1 1 0 011 1v4h-2M5 16H3v-4a1 1 0 011-1M5 16v1.5M19 16v1.5M5 16h14" />
           <circle cx="7.5" cy="16.5" r="1.6" />
           <circle cx="16.5" cy="16.5" r="1.6" />
+        </svg>
+      );
+    case "motorbike":
+      return (
+        <svg {...stroke}>
+          <circle cx="5.5" cy="16" r="3" />
+          <circle cx="18.5" cy="16" r="3" />
+          <path d="M5.5 16h5l3-5h3.5l2 5M13.5 11l-1.5-3H9.5M16 8h2.5" />
+        </svg>
+      );
+    case "bicycle":
+      return (
+        <svg {...stroke}>
+          <circle cx="5.5" cy="16" r="3.5" />
+          <circle cx="18.5" cy="16" r="3.5" />
+          <path d="M5.5 16l3.5-7h6l3.5 7M9 9l3 7h-6.5M15 9l-1-2.5h2.5M9 9H7.5" />
+        </svg>
+      );
+    case "tv":
+      return (
+        <svg {...stroke}>
+          <rect x="2.5" y="4.5" width="19" height="12.5" rx="1.5" />
+          <path d="M8 20.5h8M12 17v3.5" />
+        </svg>
+      );
+    case "monitor":
+      return (
+        <svg {...stroke}>
+          <rect x="3" y="4" width="18" height="12" rx="1.5" />
+          <path d="M9 20h6M12 16v4" />
+        </svg>
+      );
+    case "desktop":
+      return (
+        <svg {...stroke}>
+          <rect x="2.5" y="5" width="13" height="9.5" rx="1.2" />
+          <path d="M6.5 18.5h5M9 14.5v4M18 4.5h3.5v15H18z" />
+          <path d="M19.75 16.5v.01" />
+        </svg>
+      );
+    case "sofa":
+      return (
+        <svg {...stroke}>
+          <path d="M5 11V8.5A2.5 2.5 0 017.5 6h9A2.5 2.5 0 0119 8.5V11" />
+          <path d="M3 12.5a1.5 1.5 0 013 0V14h12v-1.5a1.5 1.5 0 013 0V17a1 1 0 01-1 1H4a1 1 0 01-1-1z" />
+          <path d="M5.5 18v1.5M18.5 18v1.5" />
+        </svg>
+      );
+    case "bed":
+      return (
+        <svg {...stroke}>
+          <path d="M3 18V6M3 13h18v5M21 18v-5a3 3 0 00-3-3h-7v3" />
+          <circle cx="7" cy="10.5" r="1.6" />
+        </svg>
+      );
+    case "fridge":
+      return (
+        <svg {...stroke}>
+          <rect x="6" y="2.5" width="12" height="19" rx="2" />
+          <path d="M6 9.5h12M9 5.5v2M9 12.5v3" />
+        </svg>
+      );
+    case "pan":
+      return (
+        <svg {...stroke}>
+          <path d="M3 11h14v2a5 5 0 01-5 5H8a5 5 0 01-5-5z" />
+          <path d="M17 12h4M8 8c0-1 1-1.5 1-2.5M12 8c0-1 1-1.5 1-2.5" />
+        </svg>
+      );
+    case "generator":
+      return (
+        <svg {...stroke}>
+          <rect x="3" y="7" width="18" height="11" rx="1.5" />
+          <path d="M6 7V5h5v2M5 18v2M19 18v2M7 11h4M7 14h4" />
+          <path d="M16.5 10l-2 3h3l-2 3" />
+        </svg>
+      );
+    case "sun":
+      return (
+        <svg {...stroke}>
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" />
+        </svg>
+      );
+    case "battery":
+      return (
+        <svg {...stroke}>
+          <rect x="2.5" y="7" width="17" height="10" rx="2" />
+          <path d="M21.5 10.5v3M6 10v4M9.5 10v4M13 10v4" />
+        </svg>
+      );
+    case "shirt":
+      return (
+        <svg {...stroke}>
+          <path d="M9 3.5L3.5 6.5l2 4 2-1V20.5h9V9.5l2 1 2-4L15 3.5c-.5 1.5-1.6 2.5-3 2.5s-2.5-1-3-2.5z" />
+        </svg>
+      );
+    case "dress":
+      return (
+        <svg {...stroke}>
+          <path d="M9.5 3v3.5L8 10l-3.5 10.5h15L16 10l-1.5-3.5V3M9.5 6.5h5M8 10h8" />
+        </svg>
+      );
+    case "shoe":
+      return (
+        <svg {...stroke}>
+          <path d="M3 8v9.5h18v-1.5c0-1.7-1.2-3-3-3.3l-4.5-.9L10 8.5c-.8.8-2.3 1.2-3.5 1.2S4 9.2 3 8z" />
+          <path d="M3 14.5h18M11.5 10.5l1.2-1.2M13.3 11.5l1.2-1.2" />
+        </svg>
+      );
+    case "bag":
+      return (
+        <svg {...stroke}>
+          <path d="M5 8h14l-1 12.5H6z" />
+          <path d="M9 10.5V6.5a3 3 0 016 0v4" />
+        </svg>
+      );
+    case "gem":
+      return (
+        <svg {...stroke}>
+          <path d="M7 4h10l4 5-9 11L3 9z" />
+          <path d="M3 9h18M9.5 4L12 9l2.5-5M12 9v11" />
+        </svg>
+      );
+    case "land":
+      return (
+        <svg {...stroke}>
+          <path d="M3 18.5l5-9 4 6 3-4 6 7z" />
+          <path d="M15.5 4.5v5M15.5 4.5h4l-1 1.2 1 1.3h-4" />
+        </svg>
+      );
+    case "store":
+      return (
+        <svg {...stroke}>
+          <path d="M3.5 9.5L5 4h14l1.5 5.5" />
+          <path d="M3.5 9.5a2.8 2.8 0 005.7 0 2.8 2.8 0 005.6 0 2.8 2.8 0 005.7 0" />
+          <path d="M5 11.5V20h14v-8.5M10 20v-5h4v5" />
+        </svg>
+      );
+    case "lamp":
+      return (
+        <svg {...stroke}>
+          <path d="M8 3h8l3 8H5z" />
+          <path d="M12 11v8M8 21h8" />
+        </svg>
+      );
+    case "watch":
+      return (
+        <svg {...stroke}>
+          <rect x="6.5" y="6.5" width="11" height="11" rx="3" />
+          <path d="M9 6.5l.7-3.5h4.6l.7 3.5M9 17.5l.7 3.5h4.6l.7-3.5M12 9.5V12l1.5 1" />
+        </svg>
+      );
+    case "truck":
+      return (
+        <svg {...stroke}>
+          <path d="M2.5 6.5h11v9h-11zM13.5 9.5h4l3 3.5v2.5h-7" />
+          <circle cx="6.5" cy="16.5" r="1.8" />
+          <circle cx="17" cy="16.5" r="1.8" />
         </svg>
       );
     case "tag":

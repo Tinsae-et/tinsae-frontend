@@ -13,7 +13,7 @@ import {
   AlertCircle,
   Loader2,
 } from "lucide-react";
-import { Icon, IconName } from "@/components/tinsae/icon";
+import { Icon, isIconName } from "@/components/tinsae/icon";
 import {
   Category,
   NewProduct,
@@ -97,16 +97,6 @@ export function formatETB(amount: number): string {
   return "ETB " + amount.toLocaleString("en-US");
 }
 
-function getCategoryIconName(slug: string): IconName {
-  if (slug.includes("phone")) return "phone";
-  if (slug.includes("laptop")) return "laptop";
-  if (slug.includes("audio")) return "audio";
-  if (slug.includes("tablet")) return "tablet";
-  if (slug.includes("access") || slug.includes("plug")) return "plug";
-  if (slug.includes("camera")) return "camera";
-  return "tag";
-}
-
 function ProductCardSection({
   title,
   hint,
@@ -173,8 +163,12 @@ export function Form({
     initialProduct,
   });
   const { schema, context: specContext, errors: specErrors } = specs;
+  // Property: no "New / Used", the brand is the developer, rent is per month.
+  const hasCondition = schema?.hasCondition !== false;
+  const brandLabel = schema?.brandLabel ?? "Brand";
+  const isRent = specContext.listing_type === "rent";
 
-  const updateSpec = (key: string, value: string) => {
+  const updateSpec = (key: string, value: string | string[]) => {
     specs.setValue(key, value);
     const errorKey = `spec.${key}`;
     if (fieldErrors[errorKey]) {
@@ -198,7 +192,11 @@ export function Form({
     getCategories()
       .then((res) => {
         if (mounted) {
-          const available = res.results || [];
+          // A parent ("Vehicles & Auto") only groups its subcategories and
+          // takes no listings itself; the backend rejects one too.
+          const available = (res.results || []).filter(
+            (category) => !category.children?.length,
+          );
           setCategories(
             allowedCategorySlugs
               ? available.filter((category) =>
@@ -477,8 +475,12 @@ export function Form({
     if (!formData.name.trim() || formData.name.trim().length < 3) {
       errors.name = "Product name must be at least 3 characters";
     }
-    if (!formData.brand.trim()) {
-      errors.brand = "Brand is required";
+    // Unbranded goods (a locally made sofa, a rug) may leave it blank; the
+    // category's schema says which. Drafts can skip it, like the backend allows.
+    const brandRequired = schema?.brandRequired !== false;
+    const isDraft = formData.status === "draft";
+    if (brandRequired && !isDraft && !formData.brand.trim()) {
+      errors.brand = `${brandLabel} is required`;
     }
     if (!formData.category) {
       errors.category = "Please select a category";
@@ -763,7 +765,7 @@ export function Form({
                         )}
                       >
                         <Icon
-                          name={getCategoryIconName(c.slug)}
+                          name={isIconName(c.icon) ? c.icon : "tag"}
                           size={15}
                           className={isSelected ? "text-white" : "text-tn-mute"}
                         />
@@ -789,7 +791,9 @@ export function Form({
                   type="text"
                   value={formData.name}
                   onChange={(e) => updateField("name", e.target.value)}
-                  placeholder="e.g. iPhone 15 Pro"
+                  // The picked category's own example: "e.g. Corolla" for
+                  // cars, not an iPhone.
+                  placeholder={`e.g. ${schema?.listingExamples?.name ?? "the product's model name"}`}
                   className="w-full h-[46px] px-3.5 rounded-[11px] border border-tn-hair bg-white text-sm text-tn-ink placeholder:text-tn-mute/50 focus:outline-none focus:ring-2 focus:ring-tn-hair focus:border-tn-ink transition-colors"
                 />
                 {fieldErrors.name && (
@@ -804,7 +808,13 @@ export function Form({
                   htmlFor="listing-brand"
                   className="text-[12.5px] font-bold text-tn-ink2 mb-1.5 block"
                 >
-                  Brand
+                  {brandLabel}
+                  {schema?.brandRequired === false && (
+                    <span className="font-medium text-tn-mute">
+                      {" "}
+                      (optional)
+                    </span>
+                  )}
                 </label>
                 {/* Typed, with the category's common brands suggested: a list
                     with an "Other" entry saved the word "Other" as the brand. */}
@@ -815,7 +825,11 @@ export function Form({
                   suggestions={brandOptions}
                   maxLength={100}
                   placeholder={
-                    brandOptions.length ? `e.g. ${brandOptions[0]}` : "Brand"
+                    brandOptions.length
+                      ? `e.g. ${brandOptions[0]}`
+                      : schema?.brandRequired === false
+                        ? "Leave blank if unbranded"
+                        : brandLabel
                   }
                   className="font-semibold placeholder:font-normal"
                 />
@@ -835,7 +849,7 @@ export function Form({
                 type="text"
                 value={variant}
                 onChange={(e) => setVariant(e.target.value)}
-                placeholder="e.g. 256GB · Natural Ti"
+                placeholder={`e.g. ${schema?.listingExamples?.variant ?? "size, colour or edition"}`}
                 className="w-full h-[46px] px-3.5 rounded-[11px] border border-tn-hair bg-white text-sm text-tn-ink placeholder:text-tn-mute/50 focus:outline-none focus:ring-2 focus:ring-tn-hair focus:border-tn-ink transition-colors"
               />
             </div>
@@ -847,7 +861,11 @@ export function Form({
               <textarea
                 value={formData.description}
                 onChange={(e) => updateField("description", e.target.value)}
-                placeholder="Condition details, what's included, warranty..."
+                placeholder={
+                  hasCondition
+                    ? "Condition details, what's included, warranty..."
+                    : "Layout, view, access road, what's nearby, viewing times..."
+                }
                 rows={3}
                 className="w-full p-3.5 rounded-[11px] border border-tn-hair bg-white text-sm text-tn-ink placeholder:text-tn-mute/50 focus:outline-none focus:ring-2 focus:ring-tn-hair focus:border-tn-ink resize-y leading-relaxed transition-colors"
               />
@@ -1061,7 +1079,7 @@ export function Form({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-4">
               <div>
                 <label className="text-[12.5px] font-bold text-tn-ink2 mb-1.5 block">
-                  Price (ETB)
+                  {isRent ? "Rent per month (ETB)" : "Price (ETB)"}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-tn-mono text-xs font-bold text-tn-mute select-none">
@@ -1083,27 +1101,30 @@ export function Form({
                 )}
               </div>
 
-              <div>
-                <label className="text-[12.5px] font-bold text-tn-ink2 mb-1.5 block">
-                  Stock count
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  placeholder="1"
-                  value={formData.stock}
-                  onChange={(e) =>
-                    updateField("stock", parseInt(e.target.value) || 0)
-                  }
-                  className="w-full h-[46px] px-3.5 rounded-[11px] border border-tn-hair bg-white font-tn-mono text-sm font-semibold text-tn-ink placeholder:text-tn-mute/50 focus:outline-none focus:ring-2 focus:ring-tn-hair focus:border-tn-ink transition-colors"
-                />
-                {fieldErrors.stock && (
-                  <span className="text-xs text-tn-red mt-1 block">
-                    {fieldErrors.stock}
-                  </span>
-                )}
-              </div>
+              {/* One house is one listing: no stock to count for property. */}
+              {hasCondition && (
+                <div>
+                  <label className="text-[12.5px] font-bold text-tn-ink2 mb-1.5 block">
+                    Stock count
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    placeholder="1"
+                    value={formData.stock}
+                    onChange={(e) =>
+                      updateField("stock", parseInt(e.target.value) || 0)
+                    }
+                    className="w-full h-[46px] px-3.5 rounded-[11px] border border-tn-hair bg-white font-tn-mono text-sm font-semibold text-tn-ink placeholder:text-tn-mute/50 focus:outline-none focus:ring-2 focus:ring-tn-hair focus:border-tn-ink transition-colors"
+                  />
+                  {fieldErrors.stock && (
+                    <span className="text-xs text-tn-red mt-1 block">
+                      {fieldErrors.stock}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Market Comparison */}
@@ -1128,37 +1149,39 @@ export function Form({
               </div>
             </div>
 
-            {/* Condition */}
-            <div className="mb-4">
-              <label className="text-[12.5px] font-bold text-tn-ink2 mb-2 block">
-                Condition
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {CONDITION_OPTIONS.map((c) => {
-                  const active = formData.condition === c.value;
-                  return (
-                    <button
-                      key={c.value}
-                      type="button"
-                      onClick={() => updateField("condition", c.value)}
-                      className={cn(
-                        "h-9 px-3.5 rounded-full text-xs font-bold border transition-colors cursor-pointer",
-                        active
-                          ? "border-tn-ink bg-tn-ink text-white"
-                          : "border-tn-hair bg-white text-tn-ink2 hover:bg-tn-paper",
-                      )}
-                    >
-                      {c.label}
-                    </button>
-                  );
-                })}
+            {/* Condition: goods only; property says sale or rent instead */}
+            {hasCondition && (
+              <div className="mb-4">
+                <label className="text-[12.5px] font-bold text-tn-ink2 mb-2 block">
+                  Condition
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {CONDITION_OPTIONS.map((c) => {
+                    const active = formData.condition === c.value;
+                    return (
+                      <button
+                        key={c.value}
+                        type="button"
+                        onClick={() => updateField("condition", c.value)}
+                        className={cn(
+                          "h-9 px-3.5 rounded-full text-xs font-bold border transition-colors cursor-pointer",
+                          active
+                            ? "border-tn-ink bg-tn-ink text-white"
+                            : "border-tn-hair bg-white text-tn-ink2 hover:bg-tn-paper",
+                        )}
+                      >
+                        {c.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {fieldErrors.condition && (
+                  <span className="text-xs text-tn-red mt-1 block">
+                    {fieldErrors.condition}
+                  </span>
+                )}
               </div>
-              {fieldErrors.condition && (
-                <span className="text-xs text-tn-red mt-1 block">
-                  {fieldErrors.condition}
-                </span>
-              )}
-            </div>
+            )}
 
             {/* Availability */}
             <div className="pt-3 border-t border-tn-hair2 flex items-center justify-between">
@@ -1203,6 +1226,8 @@ export function Form({
           brand={formData.brand}
           variant={variant}
           price={formData.price}
+          priceUnit={isRent ? "/ month" : ""}
+          availableLabel={hasCondition ? "In stock" : "Available"}
           isAvailable={formData.is_available}
           coverPhoto={coverPhoto}
         />
@@ -1213,6 +1238,7 @@ export function Form({
           name={formData.name}
           price={formData.price}
           condition={formData.condition}
+          showCondition={hasCondition}
           specsComplete={
             !specs.loading &&
             !specs.loadFailed &&

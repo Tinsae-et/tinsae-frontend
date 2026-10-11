@@ -81,6 +81,8 @@ function titleCase(key: string): string {
 }
 
 function present(value: unknown): boolean {
+  // A list (sizes, sensors) shows when it holds anything; other objects never.
+  if (Array.isArray(value)) return value.some((v) => v !== null && v !== "");
   return value !== null && value !== undefined && value !== "" && typeof value !== "object";
 }
 
@@ -88,6 +90,9 @@ const grouped = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits
 
 /** A spec value as text: option labels, units, thousands separators. */
 export function formatSpecValue(field: SpecField, value: unknown): string {
+  if (Array.isArray(value)) {
+    return value.map((v) => formatSpecValue(field, v)).join(" · ");
+  }
   if (field.type === "enum") {
     return field.options?.find((o) => o.value === value)?.label ?? String(value);
   }

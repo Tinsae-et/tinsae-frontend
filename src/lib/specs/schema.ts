@@ -42,6 +42,8 @@ export type SpecField = {
   section?: SpecSection;
   /** Not required, but counted by the completeness meter and shown first. */
   recommended?: boolean;
+  /** Holds a list of values (sizes, colours, sensors) instead of one. */
+  multiple?: boolean;
 };
 
 export type SpecSection = "key" | "details" | "item";
@@ -64,6 +66,14 @@ export const UNIT_SWITCHES: Record<"size" | "weight", { label: string; factor: n
 export type CategorySchema = {
   productType: string;
   brands: string[];
+  /** False for goods usually sold unbranded (furniture, décor); the form marks it optional. */
+  brandRequired?: boolean;
+  /** The category's own example name and variant for the listing form's placeholders. */
+  listingExamples?: { name?: string; variant?: string };
+  /** False where "New / Used" means nothing (property): the form and filters hide it. */
+  hasCondition?: boolean;
+  /** What the brand box asks for: "Brand", or "Developer" for property. */
+  brandLabel?: string;
   fields: SpecField[];
 };
 
@@ -72,6 +82,10 @@ export type ApiCategorySchema = {
   category: string;
   product_type: string;
   brands: string[];
+  brand_required?: boolean;
+  listing_examples?: { name?: string; variant?: string };
+  has_condition?: boolean;
+  brand_label?: string;
   fields: {
     key: string;
     label: string;
@@ -87,6 +101,7 @@ export type ApiCategorySchema = {
     control: "chips" | "select" | "size" | "weight" | null;
     section: SpecSection;
     recommended: boolean;
+    multiple?: boolean;
     options: SpecOption[] | null;
   }[];
 };
@@ -95,6 +110,11 @@ export function fromApiSchema(raw: ApiCategorySchema): CategorySchema {
   return {
     productType: raw.product_type,
     brands: raw.brands,
+    // Older payloads predate both: brand required, no examples.
+    brandRequired: raw.brand_required ?? true,
+    listingExamples: raw.listing_examples ?? {},
+    hasCondition: raw.has_condition ?? true,
+    brandLabel: raw.brand_label ?? "Brand",
     fields: raw.fields.map((f) => ({
       key: f.key,
       label: f.label,
@@ -111,18 +131,37 @@ export function fromApiSchema(raw: ApiCategorySchema): CategorySchema {
       control: f.control ?? undefined,
       section: f.section,
       recommended: f.recommended,
+      multiple: f.multiple || undefined,
     })),
   };
 }
 
 /**
  * Values the conditions can read: the specs plus the product fields a
- * condition may depend on (`condition` today).
+ * condition may depend on (`condition` today). A multiple field holds a list.
  */
-export type SpecValues = Record<string, string>;
+export type SpecValues = Record<string, string | string[]>;
 
 /** Longest text value the backend accepts (catalog/specs.py TEXT_MAX_LENGTH). */
 export const TEXT_MAX_LENGTH = 120;
+/** Most values a multiple field may hold (catalog/specs.py MAX_VALUES). */
+export const MAX_VALUES = 30;
+
+/** A multiple field's values: trimmed, empties dropped. */
+export function listValue(value: string | string[] | undefined): string[] {
+  const items = Array.isArray(value) ? value : value ? [value] : [];
+  return items.map((v) => v.trim()).filter(Boolean);
+}
+
+/** A single field's value, trimmed; "" when empty. */
+function oneValue(value: string | string[] | undefined): string {
+  return (Array.isArray(value) ? (value[0] ?? "") : (value ?? "")).trim();
+}
+
+/** Whether a field has a value: any item for a multiple field. */
+export function hasValue(field: SpecField, value: string | string[] | undefined): boolean {
+  return field.multiple ? listValue(value).length > 0 : oneValue(value) !== "";
+}
 
 /**
  * A text field's stored value as it should read: an option value from before
@@ -152,7 +191,11 @@ export function formatGb(gb: number): string {
 
 function matches(cond: SpecCondition | undefined, values: SpecValues): boolean {
   if (!cond) return true;
-  return Object.entries(cond).every(([key, allowed]) => allowed.includes(values[key] ?? ""));
+  // A list meets the condition when any of its values does.
+  return Object.entries(cond).every(([key, allowed]) => {
+    const value = values[key] ?? "";
+    return Array.isArray(value) ? value.some((v) => allowed.includes(v)) : allowed.includes(value);
+  });
 }
 
 export function isVisible(field: SpecField, values: SpecValues): boolean {
@@ -179,28 +222,43 @@ export function validateSpecs(schema: CategorySchema, values: SpecValues): Recor
   const errors: Record<string, string> = {};
   for (const field of schema.fields) {
     if (!isVisible(field, values)) continue;
-    const raw = (values[field.key] ?? "").trim();
-
-    if (!raw) {
+    if (!hasValue(field, values[field.key])) {
       if (isRequired(field, values)) errors[field.key] = `${field.label} is required`;
       continue;
     }
-    if (field.type === "enum" && !field.options?.some((o) => o.value === raw)) {
-      errors[field.key] = `Choose a ${field.label.toLowerCase()} from the list`;
-    }
-    if (field.type === "text" && raw.length > TEXT_MAX_LENGTH) {
-      errors[field.key] = `${field.label} must be ${TEXT_MAX_LENGTH} characters or fewer`;
-    }
-    if (field.type === "number") {
-      const n = Number(raw);
-      if (!Number.isFinite(n)) errors[field.key] = `${field.label} must be a number`;
-      else if (field.min !== undefined && n < field.min)
-        errors[field.key] = `${field.label} must be at least ${field.min}`;
-      else if (field.max !== undefined && n > field.max)
-        errors[field.key] = `${field.label} must be at most ${field.max}`;
-    }
+    const message = field.multiple
+      ? checkList(field, listValue(values[field.key]))
+      : checkOne(field, oneValue(values[field.key]));
+    if (message) errors[field.key] = message;
   }
   return errors;
+}
+
+function checkList(field: SpecField, items: string[]): string | null {
+  if (items.length > MAX_VALUES) return `${field.label}: at most ${MAX_VALUES} values`;
+  const folded = items.map((v) => (field.type === "text" ? v.toLowerCase() : v));
+  if (new Set(folded).size !== folded.length) return `${field.label}: each value once`;
+  for (const item of items) {
+    const message = checkOne(field, item);
+    if (message) return message;
+  }
+  return null;
+}
+
+function checkOne(field: SpecField, raw: string): string | null {
+  if (field.type === "enum" && !field.options?.some((o) => o.value === raw)) {
+    return `Choose a ${field.label.toLowerCase()} from the list`;
+  }
+  if (field.type === "text" && raw.length > TEXT_MAX_LENGTH) {
+    return `${field.label} must be ${TEXT_MAX_LENGTH} characters or fewer`;
+  }
+  if (field.type === "number") {
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return `${field.label} must be a number`;
+    if (field.min !== undefined && n < field.min) return `${field.label} must be at least ${field.min}`;
+    if (field.max !== undefined && n > field.max) return `${field.label} must be at most ${field.max}`;
+  }
+  return null;
 }
 
 /**
@@ -220,9 +278,12 @@ export function buildSpecs(
     if (!defined.has(key)) out[key] = value;
   }
   for (const field of schema.fields) {
-    if (!isVisible(field, values)) continue;
-    const raw = (values[field.key] ?? "").trim();
-    if (!raw) continue;
+    if (!isVisible(field, values) || !hasValue(field, values[field.key])) continue;
+    if (field.multiple) {
+      out[field.key] = listValue(values[field.key]);
+      continue;
+    }
+    const raw = oneValue(values[field.key]);
     out[field.key] = field.type === "number" ? Number(raw) : raw;
   }
   return out;
@@ -245,6 +306,12 @@ export function initialSpecValues(
   for (const field of schema.fields) {
     const raw = specs[field.key];
     if (raw === undefined || raw === null || raw === "") continue;
+    if (field.multiple) {
+      // A single value saved before the field took lists reads as one item.
+      const items = (Array.isArray(raw) ? raw : [raw]).map(String);
+      values[field.key] = field.type === "text" ? items.map((v) => asText(field, v)) : items;
+      continue;
+    }
     const text = String(raw);
     if (field.type === "number" && field.unit === "GB" && typeof raw === "string") {
       // Sizes stored as text before they were numbers ("256GB").

@@ -131,7 +131,7 @@ export function GuidedFirstRun({
               <h3 className="text-sm font-bold text-tn-ink">Get verified</h3>
               <p className="text-xs text-tn-mute mt-1.5 leading-relaxed">
                 Upload your business registration to get the verified badge and
-                build trust with shoppers across Addis Ababa.
+                build trust with shoppers across Ethiopia.
               </p>
             </div>
             <Link

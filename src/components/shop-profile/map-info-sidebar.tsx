@@ -107,7 +107,7 @@ export function MapInfoSidebar({ shop }: { shop: Shop }) {
           {shop.description && shop.description.trim()
             ? shop.description
             : `${shop.name} is an electronics merchant in ${
-                shop.city || "Bole, Addis Ababa"
+                shop.city || "Ethiopia"
               }. All listings are confirmed and in stock.`}
         </p>
 

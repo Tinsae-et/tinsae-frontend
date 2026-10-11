@@ -37,7 +37,7 @@ describe("About Page Content and Constraints", () => {
       "Trust is earned in person",
       "A price is only true today",
       "The shop keeps the relationship",
-      "Built for how Addis actually shops",
+      "Built for how Ethiopia actually shops",
     ]);
 
     for (const principle of PRINCIPLES) {
@@ -88,7 +88,7 @@ describe("About Page Content and Constraints", () => {
 
   it("defines accurate stat figures and labels", () => {
     expect(ABOUT_STATS).toHaveLength(4);
-    expect(ABOUT_STATS[0]).toEqual(["412", "verified shops in Bole"]);
+    expect(ABOUT_STATS[0]).toEqual(["412", "verified shops across Ethiopia"]);
     expect(ABOUT_STATS[1]).toEqual(["8,920", "listings live today"]);
     expect(ABOUT_STATS[2]).toEqual(["96%", "reconfirmed within 24h"]);
     expect(ABOUT_STATS[3]).toEqual(["0%", "commission, ever"]);

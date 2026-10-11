@@ -50,7 +50,7 @@ export function Hero({
           </h1>
 
           <p className="text-tn-mute mt-6 max-w-[500px] text-[17px] leading-relaxed font-medium sm:text-[18.5px]">
-            Compare electronics prices across verified Bole shops that reconfirm their stock every
+            Compare electronics prices across verified shops all over Ethiopia that reconfirm their stock every
             single day. No more wasted trips.
           </p>
 
@@ -106,7 +106,7 @@ export function Hero({
               ) : (
                 <b className="text-tn-ink">Verified shops</b>
               )}{" "}
-              in Bole
+              across Ethiopia
               <br />
               <span className="text-tn-mute">Stock reconfirmed daily</span>
             </p>

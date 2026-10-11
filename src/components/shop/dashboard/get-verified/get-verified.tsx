@@ -100,7 +100,7 @@ export default function VerificationPage({ slug = "", shop }: Props) {
         <div className="space-y-4">
           <HowBuyersSee
             shopName={shop?.name}
-            location={shop?.city ? `${shop.city} · Addis Ababa` : undefined}
+            location={shop?.city || undefined}
             isVerified={isVerified}
           />
           <WhyVerification />

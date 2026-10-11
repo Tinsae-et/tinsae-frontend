@@ -63,7 +63,7 @@ export const PRICING = {
     {
       id: "premium",
       name: "Premium",
-      tagline: "Maximum reach in Bole",
+      tagline: "Maximum reach across Ethiopia",
       monthly: 3500,
       annual: 35000,
       cta: "Sign up free",

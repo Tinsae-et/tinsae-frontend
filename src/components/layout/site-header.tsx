@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -242,7 +242,7 @@ function SearchField({
             }}
             onBlur={() => setFocused(false)}
             onKeyDown={handleKeyDown}
-            placeholder="Search verified shops & products in Bole"
+            placeholder="Search verified shops & products across Ethiopia"
             aria-label="Search products"
             className="text-tn-ink placeholder:text-tn-mute min-w-0 flex-1 bg-transparent text-[14.5px] font-medium outline-none"
           />
@@ -429,6 +429,277 @@ function SearchField({
   );
 }
 
+/** Gap between bar items (`gap-5`), in px, for the fit calculation. */
+const BAR_GAP = 20;
+
+/**
+ * The category bar under the header, "priority+" style: as many categories as
+ * fit the width, in order, and the rest under a "More" dropdown. It measures a
+ * hidden copy of every label, so it adapts to the screen and to however many
+ * categories the backend sends, instead of clipping the last one.
+ */
+function CategoryBar({ categories }: { categories: NavCategory[] }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLDivElement>(null);
+  // Every item until measured: the server cannot know the width.
+  const [visibleCount, setVisibleCount] = useState(categories.length);
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    const measure = measureRef.current;
+    if (!container || !measure) return;
+    const fit = () => {
+      const nodes = Array.from(measure.children) as HTMLElement[];
+      const more = nodes.pop();
+      const widths = nodes.map((n) => n.offsetWidth);
+      const moreWidth = more?.offsetWidth ?? 0;
+      const available = container.clientWidth;
+      const total = (n: number) =>
+        widths.slice(0, n).reduce((a, b) => a + b, 0) + BAR_GAP * Math.max(0, n - 1);
+      if (total(widths.length) <= available) {
+        setVisibleCount(widths.length);
+        return;
+      }
+      let n = widths.length - 1;
+      while (n > 0 && total(n) + BAR_GAP + moreWidth > available) n--;
+      setVisibleCount(n);
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [categories]);
+
+  const shown = categories.slice(0, visibleCount);
+  const hidden = categories.slice(visibleCount);
+  return (
+    <div ref={containerRef} className="relative flex min-w-0 flex-1 items-center gap-5 overflow-hidden py-1">
+      {shown.map((c) => (
+        <CategoryBarLink key={c.slug} category={c} />
+      ))}
+      {hidden.length > 0 && <CategoryBarMore categories={hidden} />}
+      {/* Invisible copy of every label (and "More") for measuring. */}
+      <div
+        ref={measureRef}
+        aria-hidden
+        className="pointer-events-none invisible absolute top-0 left-0 flex gap-5 whitespace-nowrap"
+      >
+        {categories.map((c) => (
+          <span key={c.slug} className="inline-flex items-center gap-1">
+            {c.label}
+            {c.children?.length ? <Icon name="chevd" size={12} /> : null}
+          </span>
+        ))}
+        <span className="inline-flex items-center gap-1">
+          More
+          <Icon name="chevd" size={12} />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** "More": the categories that did not fit the bar, each with its subcategories. */
+function CategoryBarMore({ categories }: { categories: NavCategory[] }) {
+  const anchorRef = useRef<HTMLButtonElement>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [position, setPosition] = useState<{ right: number; top: number } | null>(null);
+
+  const show = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    const rect = anchorRef.current?.getBoundingClientRect();
+    if (rect) setPosition({ right: window.innerWidth - rect.right, top: rect.bottom });
+  };
+  const hide = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setPosition(null), 150);
+  };
+
+  useEffect(
+    () => () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    },
+    [],
+  );
+  useEffect(() => {
+    if (!position) return;
+    const close = () => setPosition(null);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [position]);
+
+  return (
+    <>
+      <button
+        ref={anchorRef}
+        type="button"
+        onMouseEnter={show}
+        onMouseLeave={hide}
+        onFocus={show}
+        onClick={() => (position ? setPosition(null) : show())}
+        aria-haspopup="menu"
+        aria-expanded={position !== null}
+        className={cn(
+          "hover:text-tn-red inline-flex shrink-0 items-center gap-1 whitespace-nowrap bg-transparent text-tn-mute transition-colors hover:font-bold",
+          position && "text-tn-red",
+        )}
+      >
+        More
+        <Icon name="chevd" size={12} />
+      </button>
+      {position &&
+        createPortal(
+          <div
+            role="menu"
+            onMouseEnter={show}
+            onMouseLeave={hide}
+            style={{ position: "fixed", right: position.right, top: position.top + 6 }}
+            className="z-[60] max-h-[70vh] w-[260px] overflow-y-auto rounded-[14px] border border-tn-hair bg-white p-2 shadow-[0_18px_44px_rgba(11,11,11,0.14)]"
+          >
+            {categories.map((c, i) => (
+              <div key={c.slug} className={cn(i > 0 && "mt-1 border-t border-tn-hair2 pt-1")}>
+                <Link
+                  role="menuitem"
+                  href={`/products?category=${c.slug}`}
+                  onClick={() => setPosition(null)}
+                  className="text-tn-ink hover:bg-tn-paper hover:text-tn-red flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-extrabold transition-colors"
+                >
+                  <Icon name={c.icon} size={15} className="text-tn-mute" />
+                  {c.label}
+                </Link>
+                {c.children?.map((child) => (
+                  <Link
+                    key={child.slug}
+                    role="menuitem"
+                    href={`/products?category=${child.slug}`}
+                    onClick={() => setPosition(null)}
+                    className="text-tn-ink2 hover:bg-tn-paper hover:text-tn-red flex items-center rounded-lg py-1.5 pr-3 pl-[42px] text-[12.5px] font-semibold transition-colors"
+                  >
+                    {child.label}
+                  </Link>
+                ))}
+              </div>
+            ))}
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+}
+
+/**
+ * One category in the bar under the header. A parent ("Vehicles & Auto")
+ * opens its subcategories on hover or focus.
+ *
+ * The dropdown is portalled to <body> with fixed coordinates: the bar scrolls
+ * horizontally, and an overflow container clips anything positioned inside it.
+ */
+function CategoryBarLink({ category }: { category: NavCategory }) {
+  const children = category.children ?? [];
+  const anchorRef = useRef<HTMLAnchorElement>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
+
+  const show = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    const rect = anchorRef.current?.getBoundingClientRect();
+    if (rect) setPosition({ left: rect.left, top: rect.bottom });
+  };
+  // A short grace period lets the pointer cross the gap into the dropdown.
+  const hide = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setPosition(null), 150);
+  };
+
+  useEffect(
+    () => () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    },
+    [],
+  );
+
+  // Fixed coordinates go stale when the page or the bar scrolls: close instead.
+  useEffect(() => {
+    if (!position) return;
+    const close = () => setPosition(null);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [position]);
+
+  const hasChildren = children.length > 0;
+  return (
+    <>
+      <Link
+        ref={anchorRef}
+        href={`/products?category=${category.slug}`}
+        onMouseEnter={hasChildren ? show : undefined}
+        onMouseLeave={hasChildren ? hide : undefined}
+        onFocus={hasChildren ? show : undefined}
+        aria-haspopup={hasChildren ? "menu" : undefined}
+        aria-expanded={hasChildren ? position !== null : undefined}
+        className={cn(
+          "hover:text-tn-red inline-flex items-center gap-1 whitespace-nowrap transition-colors text-tn-mute hover:font-bold",
+          position && "text-tn-red",
+        )}
+      >
+        {category.label}
+        {hasChildren && <Icon name="chevd" size={12} />}
+      </Link>
+      {position &&
+        createPortal(
+          <div
+            role="menu"
+            onMouseEnter={show}
+            onMouseLeave={hide}
+            style={{ position: "fixed", left: position.left, top: position.top + 6 }}
+            className="z-[60] min-w-[230px] rounded-[14px] border border-tn-hair bg-white p-2 shadow-[0_18px_44px_rgba(11,11,11,0.14)]"
+          >
+            {children.map((child) => (
+              <Link
+                key={child.slug}
+                role="menuitem"
+                href={`/products?category=${child.slug}`}
+                onClick={() => setPosition(null)}
+                className="text-tn-ink hover:bg-tn-paper hover:text-tn-red flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-bold transition-colors"
+              >
+                <Icon name={child.icon} size={15} className="text-tn-mute" />
+                {child.label}
+              </Link>
+            ))}
+            <div className="my-1.5 border-t border-tn-hair2" />
+            <Link
+              role="menuitem"
+              href={`/products?category=${category.slug}`}
+              onClick={() => setPosition(null)}
+              className="text-tn-ink hover:text-tn-red flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-extrabold transition-colors"
+            >
+              All {category.label}
+              <Icon name="arrow" size={13} />
+            </Link>
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+}
+
+/**
+ * The desktop "Browse" mega-menu: category tiles on the left, upcoming
+ * verticals and marketplace shortcuts on the right.
+ *
+ * A parent category ("Vehicles & Auto") is a tile like the others, marked
+ * with a chevron. Hovering it opens its subcategories in a panel right under
+ * it; leaving both closes the panel after a short grace period, so the
+ * pointer can travel from tile to panel.
+ */
 function BrowseMenu({
   categories,
   categoryCounts,
@@ -448,6 +719,30 @@ function BrowseMenu({
   const menuRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const openedByHoverRef = useRef(false);
+  // The group tile ("Vehicles & Auto") expanded into its floating card. It
+  // opens after a short rest (hover intent), so sweeping across the grid
+  // never flashes a card, and closes shortly after the pointer leaves.
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const openRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const collapseRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearTimers = () => {
+    if (openRef.current) clearTimeout(openRef.current);
+    if (collapseRef.current) clearTimeout(collapseRef.current);
+    openRef.current = collapseRef.current = null;
+  };
+  const expandSoon = (slug: string) => {
+    clearTimers();
+    if (expanded !== slug) openRef.current = setTimeout(() => setExpanded(slug), 120);
+  };
+  const expandNow = (slug: string | null) => {
+    clearTimers();
+    setExpanded(slug);
+  };
+  const collapseSoon = () => {
+    clearTimers();
+    collapseRef.current = setTimeout(() => setExpanded(null), 150);
+  };
 
   // Client-side fallback to fetch live counts if not provided via SSR
   useEffect(() => {
@@ -457,17 +752,17 @@ function BrowseMenu({
     )
       return;
     hasAttemptedRef.current = true;
-    let active = true;
+    let alive = true;
     fetch("/api/public-stats")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (active && data?.category_product_count) {
+        if (alive && data?.category_product_count) {
           setFetchedCounts(data.category_product_count);
         }
       })
       .catch(() => {});
     return () => {
-      active = false;
+      alive = false;
     };
   }, [categoryCounts]);
 
@@ -488,6 +783,7 @@ function BrowseMenu({
     }
     timeoutRef.current = setTimeout(() => {
       setOpen(false);
+      setExpanded(null);
     }, 200);
   };
 
@@ -524,14 +820,21 @@ function BrowseMenu({
     };
   }, [open]);
 
-  // Clean up timeout on unmount
+  // Clean up timers on unmount
   useEffect(() => {
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (collapseRef.current) clearTimeout(collapseRef.current);
+      if (openRef.current) clearTimeout(openRef.current);
     };
   }, []);
+
+  const countLabel = (slug: string, fallback = "Browse all") => {
+    const count = counts?.[slug];
+    return count != null && count > 0
+      ? `${formatCount(count)} ${count === 1 ? "listing" : "listings"}`
+      : fallback;
+  };
 
   return (
     <div
@@ -569,7 +872,9 @@ function BrowseMenu({
           <div className="absolute -top-3 inset-x-0 h-3" />
           <div
             role="menu"
-            className="w-[740px] overflow-hidden rounded-[20px] border border-tn-hair bg-white shadow-[0_26px_64px_rgba(11,11,11,0.18)]"
+            // No overflow clipping: an expanded group card may float past the
+            // menu's edge. The rounded corners live on the edge sections instead.
+            className="w-[760px] rounded-[20px] border border-tn-hair bg-white shadow-[0_26px_64px_rgba(11,11,11,0.18)]"
           >
             <div className="grid grid-cols-12">
               {/* Left 8 columns: All Live Categories */}
@@ -585,45 +890,137 @@ function BrowseMenu({
                   </Link>
                   <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-tn-green">
                     <span className="size-1.5 rounded-full bg-tn-green animate-pulse" />
-                    Verified Addis Inventory
+                    Verified Inventory Across Ethiopia
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+
+                <div className="grid grid-cols-2 gap-1.5">
                   {categories.map((c) => {
-                    const count = counts?.[c.slug];
-                    const countLabel =
-                      count != null && count > 0
-                        ? `${formatCount(count)} ${count === 1 ? "listing" : "listings"}`
-                        : "Browse all";
+                    const hasChildren = !!c.children?.length;
+                    const isExpanded = expanded === c.slug;
                     return (
-                      <Link
+                      <div
                         key={c.slug}
-                        href={`/products?category=${c.slug}`}
-                        onClick={() => setOpen(false)}
-                        className="group flex items-start gap-3 rounded-xl p-2.5 transition-colors hover:bg-tn-paper"
+                        className="relative"
+                        onMouseEnter={() => (hasChildren ? expandSoon(c.slug) : expandNow(null))}
+                        onMouseLeave={hasChildren ? collapseSoon : undefined}
                       >
-                        <span className="bg-tn-paper text-tn-ink group-hover:bg-white group-hover:shadow-sm inline-flex size-10 shrink-0 items-center justify-center rounded-[11px] transition-all">
-                          <Icon name={c.icon} size={20} />
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="text-tn-ink group-hover:text-tn-red block text-[13.5px] font-extrabold tracking-tight transition-colors">
-                            {c.label}
+                        <Link
+                          href={`/products?category=${c.slug}`}
+                          onClick={() => setOpen(false)}
+                          onFocus={() => expandNow(hasChildren ? c.slug : null)}
+                          aria-haspopup={hasChildren ? "menu" : undefined}
+                          aria-expanded={hasChildren ? isExpanded : undefined}
+                          className="group flex items-start gap-3 rounded-xl p-2.5 transition-colors hover:bg-tn-paper"
+                        >
+                          <span className="bg-tn-paper text-tn-ink group-hover:bg-white group-hover:shadow-sm inline-flex size-10 shrink-0 items-center justify-center rounded-[11px] transition-all">
+                            <Icon name={c.icon} size={20} />
                           </span>
-                          <span className="text-tn-mute line-clamp-1 text-[11px]">
-                            {c.subtitle}
+                          <span className="min-w-0 flex-1">
+                            <span className="text-tn-ink group-hover:text-tn-red block text-[13.5px] font-extrabold tracking-tight transition-colors">
+                              {c.label}
+                            </span>
+                            <span className="text-tn-mute block truncate text-[11px]">
+                              {c.subtitle}
+                            </span>
+                            <span className="font-tn-mono text-tn-ink2/75 mt-0.5 block text-[11px] font-medium">
+                              {countLabel(c.slug)}
+                            </span>
                           </span>
-                          <span className="font-tn-mono text-tn-ink2/75 mt-0.5 block text-[11px] font-medium">
-                            {countLabel}
-                          </span>
-                        </span>
-                      </Link>
+                          {hasChildren && (
+                            <Icon name="chevd" size={14} className="text-tn-mute mt-3 shrink-0" />
+                          )}
+                        </Link>
+
+                        {/* The tile grown in place into a floating card: anchored
+                            where the tile sits, on top of its neighbours, so
+                            nothing in the menu moves. */}
+                        {hasChildren && isExpanded && (
+                          <div
+                            role="menu"
+                            aria-label={c.label}
+                            className="absolute -top-1.5 -left-1.5 z-20 w-[calc(100%+12px)] min-w-[272px] rounded-[16px] border border-tn-hair bg-white p-1.5 shadow-[0_22px_54px_rgba(11,11,11,0.18)] animate-[tnRise_0.12s_ease_both]"
+                          >
+                            <Link
+                              href={`/products?category=${c.slug}`}
+                              onClick={() => setOpen(false)}
+                              className="group flex items-start gap-3 rounded-xl bg-tn-paper p-2.5"
+                            >
+                              <span className="text-tn-red inline-flex size-10 shrink-0 items-center justify-center rounded-[11px] bg-white shadow-sm">
+                                <Icon name={c.icon} size={20} />
+                              </span>
+                              <span className="min-w-0 flex-1">
+                                <span className="text-tn-red block text-[13.5px] font-extrabold tracking-tight">
+                                  {c.label}
+                                </span>
+                                <span className="font-tn-mono text-tn-ink2/75 mt-0.5 block text-[11px] font-medium">
+                                  {countLabel(c.slug)}
+                                </span>
+                              </span>
+                              <Icon name="chevd" size={14} className="text-tn-red mt-3 shrink-0 rotate-180" />
+                            </Link>
+                            <div className="mt-1">
+                              {c.children!.map((child) => {
+                                const childCount = counts?.[child.slug];
+                                return (
+                                  <Link
+                                    key={child.slug}
+                                    role="menuitem"
+                                    href={`/products?category=${child.slug}`}
+                                    onClick={() => setOpen(false)}
+                                    className="group/sub hover:bg-tn-paper flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-colors"
+                                  >
+                                    <Icon name={child.icon} size={15} className="text-tn-mute group-hover/sub:text-tn-red" />
+                                    <span className="text-tn-ink2 group-hover/sub:text-tn-red flex-1 truncate text-[13px] font-bold transition-colors">
+                                      {child.label}
+                                    </span>
+                                    {childCount ? (
+                                      <span className="font-tn-mono text-tn-mute text-[11px]">
+                                        {formatCount(childCount)}
+                                      </span>
+                                    ) : null}
+                                  </Link>
+                                );
+                              })}
+                            </div>
+                            {/* Property: renters and buyers go straight to their side. */}
+                            {c.saleOrRent && (
+                              <div className="mt-1 grid grid-cols-2 gap-1.5 px-1">
+                                {[
+                                  ["rent", "For rent"],
+                                  ["sale", "For sale"],
+                                ].map(([value, label]) => (
+                                  <Link
+                                    key={value}
+                                    role="menuitem"
+                                    href={`/products?category=${c.slug}&spec_listing_type=${value}`}
+                                    onClick={() => setOpen(false)}
+                                    className="border-tn-hair text-tn-ink hover:border-tn-ink rounded-full border py-1.5 text-center text-[12px] font-bold transition-colors"
+                                  >
+                                    {label}
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
+                            <Link
+                              role="menuitem"
+                              href={`/products?category=${c.slug}`}
+                              onClick={() => setOpen(false)}
+                              className="border-tn-hair2 text-tn-ink hover:text-tn-red mt-1 flex items-center gap-1.5 border-t px-2.5 pt-2.5 pb-1.5 text-[12px] font-extrabold transition-colors"
+                            >
+                              Shop all {c.label}
+                              <Icon name="arrow" size={12} />
+                            </Link>
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
               </div>
 
               {/* Right 4 columns: Upcoming Verticals & Marketplace Shortcuts */}
-              <div className="col-span-4 border-l border-tn-hair2 bg-[#FAF8F5]/80 p-5 flex flex-col justify-between">
+              <div className="col-span-4 rounded-tr-[20px] border-l border-tn-hair2 bg-[#FAF8F5]/80 p-5 flex flex-col justify-between">
                 <div>
                   <p className="text-tn-mute text-[10.5px] font-extrabold tracking-[0.09em] uppercase mb-2.5 px-1">
                     Coming to Tinsae
@@ -702,9 +1099,9 @@ function BrowseMenu({
             </div>
 
             {/* Bottom banner: View All Products */}
-            <div className="border-t border-tn-hair2 bg-tn-paper/70 px-5 py-3 flex items-center justify-between">
+            <div className="rounded-b-[20px] border-t border-tn-hair2 bg-tn-paper/70 px-5 py-3 flex items-center justify-between">
               <span className="text-[12px] text-tn-mute font-medium">
-                Browse verified electronics and tech across Addis Ababa
+                Browse verified listings across Ethiopia
               </span>
               <Link
                 href="/products"
@@ -932,7 +1329,7 @@ export function SiteHeader({
                       </div>
                       <p className="font-tn-mono text-tn-mute mt-0.5 text-[11px]">
                         {isOwner
-                          ? shop?.city || "Bole · Atlas"
+                          ? shop?.city || "Ethiopia"
                           : "Buyer account"}
                       </p>
                     </div>
@@ -1046,17 +1443,7 @@ export function SiteHeader({
               <span>All Categories</span>
             </Link>
             <div className="h-3.5 w-px bg-tn-hair shrink-0" />
-            <div className="flex items-center gap-5 overflow-x-auto scrollbar-none py-1 min-w-0">
-              {categories.map((c) => (
-                <Link
-                  key={c.slug}
-                  href={`/products?category=${c.slug}`}
-                  className="hover:text-tn-red whitespace-nowrap transition-colors text-tn-mute hover:font-bold"
-                >
-                  {c.label}
-                </Link>
-              ))}
-            </div>
+            <CategoryBar categories={categories} />
             <div className="ml-auto flex items-center gap-4 text-xs font-bold shrink-0">
               <Link
                 href="/shops"
@@ -1144,24 +1531,44 @@ export function SiteHeader({
                 {categories.map((c) => {
                   const count = stats?.category_product_count?.[c.slug];
                   return (
-                    <Link
-                      key={c.slug}
-                      href={`/products?category=${c.slug}`}
-                      onClick={() => setDrawerOpen(false)}
-                      className="border-tn-hair2 text-tn-ink flex items-center gap-3 border-b py-3"
-                    >
-                      <span className="bg-tn-paper inline-flex size-9 shrink-0 items-center justify-center rounded-[10px]">
-                        <Icon name={c.icon} size={18} className="text-tn-ink" />
-                      </span>
-                      <span className="flex-1 text-[15px] font-bold">
-                        {c.label}
-                      </span>
-                      {count != null && (
-                        <span className="font-tn-mono text-tn-mute text-xs">
-                          {formatCount(count)}
+                    <div key={c.slug} className="border-tn-hair2 border-b">
+                      <Link
+                        href={`/products?category=${c.slug}`}
+                        onClick={() => setDrawerOpen(false)}
+                        className="text-tn-ink flex items-center gap-3 py-3"
+                      >
+                        <span className="bg-tn-paper inline-flex size-9 shrink-0 items-center justify-center rounded-[10px]">
+                          <Icon name={c.icon} size={18} className="text-tn-ink" />
                         </span>
-                      )}
-                    </Link>
+                        <span className="flex-1 text-[15px] font-bold">
+                          {c.label}
+                        </span>
+                        {count != null && (
+                          <span className="font-tn-mono text-tn-mute text-xs">
+                            {formatCount(count)}
+                          </span>
+                        )}
+                      </Link>
+                      {/* Subcategories, indented under their parent. */}
+                      {c.children?.map((child) => {
+                        const childCount = stats?.category_product_count?.[child.slug];
+                        return (
+                          <Link
+                            key={child.slug}
+                            href={`/products?category=${child.slug}`}
+                            onClick={() => setDrawerOpen(false)}
+                            className="text-tn-ink2 flex items-center py-2 pl-12 text-[14px] font-semibold"
+                          >
+                            <span className="flex-1">{child.label}</span>
+                            {childCount != null && (
+                              <span className="font-tn-mono text-tn-mute text-xs">
+                                {formatCount(childCount)}
+                              </span>
+                            )}
+                          </Link>
+                        );
+                      })}
+                    </div>
                   );
                 })}
                 <p className="text-tn-mute mt-6 mb-2 text-[10.5px] font-extrabold tracking-[0.09em] uppercase">

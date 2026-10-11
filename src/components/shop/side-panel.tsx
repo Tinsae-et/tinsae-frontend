@@ -25,7 +25,7 @@ export function SidePanel({ step }: { step: number }) {
         List your shop on Tinsae
       </h2>
       <p className="mt-3.5 text-[14.5px] leading-relaxed text-white/60">
-        Get verified, reach buyers across Bole, and keep your stock current with a daily Telegram
+        Get verified, reach buyers across Ethiopia, and keep your stock current with a daily Telegram
         check-in.
       </p>
 
@@ -48,7 +48,7 @@ export function SidePanel({ step }: { step: number }) {
           </div>
           {/* Hard-coded, like the count on the auth frames. Both need the API. */}
           <span className="ml-3 text-[13px] font-semibold text-white/85">
-            412 verified shops in Bole
+            412 verified shops across Ethiopia
           </span>
         </div>
       </div>

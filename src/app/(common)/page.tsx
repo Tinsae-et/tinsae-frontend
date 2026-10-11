@@ -30,7 +30,8 @@ export default async function Home() {
     getShops({
       verifiedOnly: true,
       ordering: "-active_listings_count",
-      pageSize: 4,
+      // Enough for the shops section to rotate through a few pages.
+      pageSize: 12,
     }).catch(() => null),
     getNavCategories(),
   ]);

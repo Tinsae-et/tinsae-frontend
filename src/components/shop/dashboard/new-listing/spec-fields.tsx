@@ -6,8 +6,11 @@ import { FormCombobox, FormSelect, fieldClass } from "@/components/tinsae/form-s
 import { cn } from "@/lib/utils";
 import {
   controlFor,
+  hasValue,
   isRequired,
   isVisible,
+  listValue,
+  MAX_VALUES,
   TEXT_MAX_LENGTH,
   UNIT_SWITCHES,
   type CategorySchema,
@@ -37,7 +40,7 @@ export function SpecFields({
   /** Spec values plus the product fields conditions read (`condition`). */
   values: SpecValues;
   errors: Record<string, string>;
-  onChange: (key: string, value: string) => void;
+  onChange: (key: string, value: string | string[]) => void;
 }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const visible = schema.fields.filter((f) => isVisible(f, values));
@@ -46,7 +49,7 @@ export function SpecFields({
 
   const details = inSection("details");
   const recommended = details.filter((f) => f.recommended);
-  const filled = recommended.filter((f) => (values[f.key] ?? "").trim() !== "").length;
+  const filled = recommended.filter((f) => hasValue(f, values[f.key])).length;
   // An error inside the spec sheet must never be hidden behind the fold.
   const showDetails = detailsOpen || details.some((f) => errors[f.key]);
 
@@ -55,11 +58,19 @@ export function SpecFields({
       {fields.map((field) => (
         <div key={field.key}>
           <FieldLabel field={field} required={isRequired(field, values)} />
-          <FieldControl
-            field={field}
-            value={values[field.key] ?? ""}
-            onChange={(v) => onChange(field.key, v)}
-          />
+          {field.multiple ? (
+            <MultiControl
+              field={field}
+              value={listValue(values[field.key])}
+              onChange={(v) => onChange(field.key, v)}
+            />
+          ) : (
+            <FieldControl
+              field={field}
+              value={String(values[field.key] ?? "")}
+              onChange={(v) => onChange(field.key, v)}
+            />
+          )}
           {errors[field.key] ? (
             <span className="text-xs text-tn-red mt-1 block">{errors[field.key]}</span>
           ) : (
@@ -147,6 +158,112 @@ function FieldLabel({ field, required }: { field: SpecField; required: boolean }
   );
 }
 
+const chipClass = (on: boolean) =>
+  cn(
+    "h-[38px] px-3.5 rounded-full text-[13px] font-bold border-[1.5px] transition-colors cursor-pointer",
+    on ? "border-tn-ink bg-tn-ink text-white" : "border-tn-hair bg-white text-tn-ink2 hover:bg-tn-paper",
+  );
+
+/**
+ * A field holding several values: every option a toggle chip. Text fields
+ * (sizes, colours) also take a typed value, added on Enter, since their
+ * options are suggestions rather than the full list.
+ */
+function MultiControl({
+  field,
+  value,
+  onChange,
+}: {
+  field: SpecField;
+  value: string[];
+  onChange: (value: string[]) => void;
+}) {
+  const [draft, setDraft] = useState("");
+  const options = field.options ?? [];
+  const isText = field.type === "text";
+  // Text stores labels (what a person types); enums store option values.
+  const stored = (o: { value: string; label: string }) => (isText ? o.label : o.value);
+  const has = (v: string) => value.some((x) => x.toLowerCase() === v.toLowerCase());
+  const toggle = (v: string) =>
+    onChange(has(v) ? value.filter((x) => x.toLowerCase() !== v.toLowerCase()) : [...value, v]);
+  // Typed values that are not among the suggestions, shown as removable chips.
+  const typed = isText ? value.filter((v) => !options.some((o) => o.label.toLowerCase() === v.toLowerCase())) : [];
+  const full = value.length >= MAX_VALUES;
+
+  const add = () => {
+    const v = draft.trim().replace(/\s+/g, " ");
+    if (!v) return;
+    const suggestion = options.find((o) => [o.label, o.value].some((x) => x.toLowerCase() === v.toLowerCase()));
+    const item = suggestion ? suggestion.label : v.slice(0, TEXT_MAX_LENGTH);
+    if (!has(item) && !full) onChange([...value, item]);
+    setDraft("");
+  };
+
+  return (
+    <div className="flex flex-col gap-2.5">
+      <div role="group" aria-label={field.label} className="flex flex-wrap gap-[7px]">
+        {options.map((o) => {
+          const on = has(stored(o));
+          return (
+            <button
+              key={o.value}
+              type="button"
+              aria-pressed={on}
+              disabled={!on && full}
+              onClick={() => toggle(stored(o))}
+              className={cn(chipClass(on), "inline-flex items-center gap-1.5 disabled:opacity-50")}
+            >
+              {on && <Icon name="check" size={12} />}
+              {o.label}
+            </button>
+          );
+        })}
+        {typed.map((v) => (
+          <button
+            key={v}
+            type="button"
+            aria-label={`Remove ${v}`}
+            onClick={() => toggle(v)}
+            className={cn(chipClass(true), "inline-flex items-center gap-1.5")}
+          >
+            {v}
+            <Icon name="close" size={12} />
+          </button>
+        ))}
+      </div>
+      {isText && (
+        <div className="flex gap-2">
+          <input
+            id={`spec-${field.key}`}
+            type="text"
+            autoComplete="off"
+            maxLength={TEXT_MAX_LENGTH}
+            value={draft}
+            disabled={full}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault(); // never submits the listing
+                add();
+              }
+            }}
+            placeholder={field.placeholder ?? `Add a ${field.label.toLowerCase()}`}
+            className={fieldClass}
+          />
+          <button
+            type="button"
+            onClick={add}
+            disabled={!draft.trim() || full}
+            className="shrink-0 h-[46px] px-4 rounded-[11px] border border-tn-hair bg-white text-[13px] font-bold text-tn-ink2 hover:bg-tn-paper disabled:opacity-50 cursor-pointer"
+          >
+            Add
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function FieldControl({
   field,
   value,
@@ -175,10 +292,7 @@ function FieldControl({
               aria-checked={on}
               // Clicking the selected chip clears an optional choice.
               onClick={() => onChange(on ? "" : o.value)}
-              className={cn(
-                "h-[38px] px-3.5 rounded-full text-[13px] font-bold border-[1.5px] transition-colors cursor-pointer",
-                on ? "border-tn-ink bg-tn-ink text-white" : "border-tn-hair bg-white text-tn-ink2 hover:bg-tn-paper",
-              )}
+              className={chipClass(on)}
             >
               {o.label}
             </button>
@@ -209,7 +323,8 @@ function FieldControl({
         value={value}
         onChange={onChange}
         suggestions={field.options.map((o) => o.label)}
-        placeholder={field.placeholder}
+        // Says what the box allows: one of the list, or anything typed.
+        placeholder={field.placeholder ?? `Pick or type a ${field.label.toLowerCase()}`}
         maxLength={TEXT_MAX_LENGTH}
       />
     );

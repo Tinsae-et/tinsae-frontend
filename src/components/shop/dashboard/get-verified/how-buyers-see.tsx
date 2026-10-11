@@ -19,7 +19,7 @@ type Props = {
 
 export default function HowBuyersSee({
   shopName = "Your Shop",
-  location = "Addis Ababa",
+  location = "Ethiopia",
   isVerified = false,
 }: Props) {
   const initials = getInitials(shopName);

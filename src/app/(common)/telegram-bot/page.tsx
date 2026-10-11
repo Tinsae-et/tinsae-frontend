@@ -10,11 +10,11 @@ import { TelegramFinalCta } from "@/components/telegram-bot/telegram-final-cta";
 export const metadata: Metadata = {
   title: "Telegram Bot — Keep your listings fresh in one tap | Tinsae",
   description:
-    "The Tinsae bot sends you a weekly digest on Telegram. Confirm your stock in a single tap, and fresh listings rank higher for buyers across Bole.",
+    "The Tinsae bot sends you a weekly digest on Telegram. Confirm your stock in a single tap, and fresh listings rank higher for buyers across Ethiopia.",
   openGraph: {
     title: "Telegram Bot — Keep your listings fresh in one tap | Tinsae",
     description:
-      "The Tinsae bot sends you a weekly digest on Telegram. Confirm your stock in a single tap, and fresh listings rank higher for buyers across Bole.",
+      "The Tinsae bot sends you a weekly digest on Telegram. Confirm your stock in a single tap, and fresh listings rank higher for buyers across Ethiopia.",
     url: "https://tinsae.et/telegram-bot",
     siteName: "Tinsae",
     type: "website",

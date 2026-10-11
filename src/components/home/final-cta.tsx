@@ -36,10 +36,10 @@ export function FinalCTA({
             {hasCounts ? (
               <>
                 Browse {formatCount(stats.verified_shop_products)} live listings from{" "}
-                {formatCount(stats.verified_shops)} verified shops across Bole.
+                {formatCount(stats.verified_shops)} verified shops across Ethiopia.
               </>
             ) : (
-              <>Browse live listings from verified shops across Bole.</>
+              <>Browse live listings from verified shops across Ethiopia.</>
             )}
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">

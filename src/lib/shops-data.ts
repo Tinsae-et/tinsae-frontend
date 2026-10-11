@@ -73,7 +73,7 @@ export function mapShopToDirectoryShop(shop: Shop): DirectoryShop {
     } else if (shop.city?.includes(".")) {
       hood = shop.city.split(".")[1].trim();
     } else {
-      hood = shop.city || "Bole";
+      hood = shop.city || "Ethiopia";
     }
   }
 
@@ -82,7 +82,7 @@ export function mapShopToDirectoryShop(shop: Shop): DirectoryShop {
     slug: shop.slug,
     name: shop.name,
     hood,
-    city: shop.city?.includes("·") ? shop.city.split("·")[0].trim() : (shop.city || "Addis Ababa"),
+    city: shop.city?.includes("·") ? shop.city.split("·")[0].trim() : (shop.city || "Ethiopia"),
     rating: match?.rating ?? (shop.is_verified ? 4.8 : 4.2),
     ratings:
       match?.ratings ??

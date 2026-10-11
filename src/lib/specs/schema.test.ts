@@ -264,3 +264,79 @@ describe("sizes", () => {
     expect(validateSpecs(schema, { storage: "lots" })).toHaveProperty("storage");
   });
 });
+
+describe("multiple fields", () => {
+  const watch: CategorySchema = {
+    productType: "wearable",
+    brands: [],
+    fields: [
+      {
+        key: "sensors",
+        label: "Health sensors",
+        type: "enum",
+        multiple: true,
+        required: true,
+        options: [
+          { value: "heart_rate", label: "Heart rate" },
+          { value: "ecg", label: "ECG" },
+        ],
+      },
+      {
+        key: "sizes",
+        label: "Sizes",
+        type: "text",
+        multiple: true,
+        options: [{ value: "m", label: "M" }],
+      },
+    ],
+  };
+
+  it("needs at least one value when required", () => {
+    expect(validateSpecs(watch, { sensors: [] })).toHaveProperty("sensors");
+    expect(validateSpecs(watch, { sensors: ["ecg"] })).toEqual({});
+  });
+
+  it("checks every value and rejects repeats", () => {
+    expect(validateSpecs(watch, { sensors: ["ecg", "x-ray"] })).toHaveProperty("sensors");
+    expect(validateSpecs(watch, { sensors: ["ecg"], sizes: ["M", "m"] })).toHaveProperty("sizes");
+  });
+
+  it("saves a list, and reads a saved single value as one item", () => {
+    expect(buildSpecs(watch, { sensors: ["ecg", " heart_rate "], sizes: [] })).toEqual({
+      sensors: ["ecg", "heart_rate"],
+    });
+    expect(initialSpecValues(watch, { sensors: "ecg", sizes: ["m", "XL"] })).toEqual({
+      sensors: ["ecg"],
+      sizes: ["M", "XL"],
+    });
+  });
+
+  it("reads the flag from the API", () => {
+    const raw = fromApiSchema({
+      category: "wearables",
+      product_type: "wearable",
+      brands: [],
+      fields: [
+        {
+          key: "sensors",
+          label: "Health sensors",
+          type: "enum",
+          unit: null,
+          min: null,
+          max: null,
+          placeholder: null,
+          hint: null,
+          required: false,
+          required_if: null,
+          show_if: null,
+          control: null,
+          section: "key",
+          recommended: true,
+          multiple: true,
+          options: [],
+        },
+      ],
+    });
+    expect(raw.fields[0].multiple).toBe(true);
+  });
+});

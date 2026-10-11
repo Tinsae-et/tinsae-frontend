@@ -79,7 +79,7 @@ export function AboutTab({ shop, listingsCount }: { shop: Shop; listingsCount: n
 
       <div className="border-tn-hair bg-tn-hair2 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border sm:grid-cols-2">
         <Fact icon="pin" label="Location">
-          {shop.city && shop.city !== "Addis Ababa" ? `${shop.city} · Addis Ababa` : "Addis Ababa"}
+          {shop.city || "Ethiopia"}
         </Fact>
         <Fact icon="clock" label="On Tinsae since">
           {memberSince ?? "—"}

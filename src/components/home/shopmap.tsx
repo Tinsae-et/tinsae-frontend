@@ -85,7 +85,7 @@ export function ShopMapPopUp({ item }: { item: DirectoryShop }) {
               </span>
               <span className="font-tn-mono">({item.ratings})</span>
               <span className="flex items-center gap-0.5">
-                <Icon name="pin" size={12} className="text-tn-mute" /> Bole · {item.hood}
+                <Icon name="pin" size={12} className="text-tn-mute" /> {item.hood}
               </span>
             </div>
           </div>

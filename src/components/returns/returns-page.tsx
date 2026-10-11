@@ -119,7 +119,7 @@ const faqs = [
   ],
   [
     "Can I return something just because I changed my mind?",
-    "Only if that shop offers it, and most do not. Change-of-mind returns are rare in Addis electronics retail. Because you inspect and test in person before paying, there is far less need for one than with an online order.",
+    "Only if that shop offers it, and most do not. Change-of-mind returns are rare in Ethiopian electronics retail. Because you inspect and test in person before paying, there is far less need for one than with an online order.",
   ],
   [
     "What about a manufacturer warranty — do I go to the shop?",

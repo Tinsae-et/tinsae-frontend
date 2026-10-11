@@ -312,7 +312,7 @@ export default function TelegramSetup({
             </h1>
             <p className="mt-2 text-sm leading-relaxed text-tn-mute sm:text-base">
               The bot sends a weekly digest so you can verify stock in a single
-              tap. Fresh listings rank higher for buyers across Bole.
+              tap. Fresh listings rank higher for buyers across Ethiopia.
             </p>
           </div>
 

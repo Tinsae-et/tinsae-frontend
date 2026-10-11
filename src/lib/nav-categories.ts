@@ -1,4 +1,4 @@
-import type { IconName } from "@/components/tinsae/icon";
+import { isIconName, type IconName } from "@/components/tinsae/icon";
 import { getCategories } from "@/lib/api/public";
 import type { Category } from "@/lib/types";
 
@@ -9,31 +9,38 @@ export type NavCategory = {
   subtitle: string;
   status?: "live" | "soon";
   badge?: string;
+  /** Subcategories; a category with any only groups them and takes no listings. */
+  children?: NavCategory[];
+  /** Listings are for sale or for rent: menus link straight to each side. */
+  saleOrRent?: boolean;
 };
 
-// The backend owns which categories exist, their names and their order. This
-// map only decorates them; a category the backend adds without an entry here
-// still shows, with a generic icon and no tagline.
-const CATEGORY_PRESENTATION: Record<string, { icon: IconName; subtitle: string }> = {
-  phones: { icon: "phone", subtitle: "iPhone · Samsung · Tecno · Xiaomi" },
-  laptops: { icon: "laptop", subtitle: "MacBook · Dell · ThinkPad · HP" },
-  audio: { icon: "audio", subtitle: "AirPods · JBL · Sony · Soundbars" },
-  tablets: { icon: "tablet", subtitle: "iPad · Galaxy Tab · Surface" },
-  cameras: { icon: "camera", subtitle: "Canon · Sony · Nikon · GoPro" },
-  accessories: { icon: "plug", subtitle: "Chargers · Cases · Cables · Power" },
-};
+function toNavCategory(c: Category): NavCategory {
+  const children = (c.children ?? []).map(toNavCategory);
+  return {
+    slug: c.slug,
+    label: c.name,
+    // The backend owns every category, its icon and its tagline; an unknown
+    // icon falls back to a tag, and a missing tagline lists the subcategories.
+    icon: isIconName(c.icon) ? c.icon : "tag",
+    subtitle: c.tagline || children.map((child) => child.label).join(" · "),
+    status: "live" as const,
+    ...(children.length ? { children } : {}),
+    ...(c.sale_or_rent ? { saleOrRent: true } : {}),
+  };
+}
 
-/** Top-level backend categories, in the backend's order, ready for navigation. */
+/** Top-level backend categories, in the backend's order, with their subcategories. */
 export function toNavCategories(categories: Category[]): NavCategory[] {
-  return categories
-    .filter((c) => c.parent === null)
-    .map((c) => ({
-      slug: c.slug,
-      label: c.name,
-      icon: CATEGORY_PRESENTATION[c.slug]?.icon ?? "tag",
-      subtitle: CATEGORY_PRESENTATION[c.slug]?.subtitle ?? "",
-      status: "live" as const,
-    }));
+  return categories.filter((c) => c.parent === null).map(toNavCategory);
+}
+
+/**
+ * The categories a listing can go in: every category without subcategories.
+ * A parent such as "Vehicles & Auto" is replaced by its children, in place.
+ */
+export function listableCategories(categories: NavCategory[]): NavCategory[] {
+  return categories.flatMap((c) => (c.children?.length ? c.children : [c]));
 }
 
 /**
@@ -53,34 +60,6 @@ export async function getNavCategories(): Promise<NavCategory[]> {
 // Roadmap verticals. They are not in the backend yet, so the frontend owns
 // this list until categories carry a status there.
 export const UPCOMING_CATEGORIES: NavCategory[] = [
-  {
-    icon: "car",
-    label: "Vehicles & Auto",
-    slug: "vehicles",
-    subtitle: "Cars · Bikes · Spare Parts",
-    status: "soon",
-  },
-  {
-    icon: "building",
-    label: "Property & Rentals",
-    slug: "property",
-    subtitle: "Apartments · Villas · Commercial",
-    status: "soon",
-  },
-  {
-    icon: "tag",
-    label: "Fashion & Apparel",
-    slug: "fashion",
-    subtitle: "Clothing · Shoes · Bags · Watches",
-    status: "soon",
-  },
-  {
-    icon: "home",
-    label: "Home & Furniture",
-    slug: "home",
-    subtitle: "Furniture · Office · Appliances",
-    status: "soon",
-  },
   {
     icon: "shield",
     label: "Services & Repairs",

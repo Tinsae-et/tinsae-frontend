@@ -8,7 +8,7 @@ const faqItems: [string, string][] = [
   // The first answer is the page's legal position. It must not be softened.
   [
     "Does “verified” mean Tinsae guarantees the product?",
-    "No. Verification confirms the shop is a real, registered business at a real Bole address — not a guarantee of any single item. Always inspect and test before you pay; that’s why we get you there in person.",
+    "No. Verification confirms the shop is a real, registered business at a real address — not a guarantee of any single item. Always inspect and test before you pay; that’s why we get you there in person.",
   ],
   [
     "How often is stock re-confirmed?",

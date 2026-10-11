@@ -1,6 +1,8 @@
 "use client";
 
 import type { Product } from "@/lib/types";
+import type { ProductFacets } from "@/lib/api/public";
+import type { CategorySchema } from "@/lib/specs/schema";
 import { type SearchFilters } from "@/lib/filters";
 import { FilterControls, type CategoryOption } from "./filter-controls";
 
@@ -11,6 +13,8 @@ export function FilterRail({
   categories,
   products,
   bounds,
+  schema,
+  facets,
   onChange,
   onReset,
 }: {
@@ -18,6 +22,8 @@ export function FilterRail({
   categories: CategoryOption[];
   products: Product[];
   bounds?: { min: number; max: number };
+  schema?: CategorySchema | null;
+  facets?: ProductFacets | null;
   onChange: (patch: Partial<SearchFilters>) => void;
   onReset: () => void;
 }) {
@@ -34,7 +40,15 @@ export function FilterRail({
             Reset
           </button>
         </div>
-        <FilterControls filters={filters} categories={categories} products={products} bounds={bounds} onChange={onChange} />
+        <FilterControls
+          filters={filters}
+          categories={categories}
+          products={products}
+          bounds={bounds}
+          schema={schema}
+          facets={facets}
+          onChange={onChange}
+        />
       </div>
     </aside>
   );

@@ -23,7 +23,7 @@ export function StatBand({ stats }: { stats?: ShopMetrics | null }) {
 
   const items: [string, string][] = [
     [formatCount(totalProducts), "listings live today"],
-    [formatCount(verifiedShops), "verified shops in Bole"],
+    [formatCount(verifiedShops), "verified shops across Ethiopia"],
   ];
 
   if (verifiedProducts != null && verifiedProducts > 0) {

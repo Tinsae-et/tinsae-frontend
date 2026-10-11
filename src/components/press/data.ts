@@ -9,7 +9,7 @@ export const BRAND_KIT_URL = "/assets/press/tinsae-brand-kit.zip";
 // Approved copy from the design handoff — journalists paste it verbatim, so
 // change it only with sign-off, and move BOILERPLATE_UPDATED with it.
 export const BOILERPLATE =
-  "Tinsae (ትንሳኤ, Amharic for “rising”) is a verified electronics marketplace in Addis Ababa. Buyers compare prices across local shops that have been verified in person and that reconfirm their stock every day over Telegram, then contact the shop and complete the purchase face to face. Tinsae never handles payments and takes no commission on any sale. Founded in 2022, it operates in Bole with 412 verified shops.";
+  "Tinsae (ትንሳኤ, Amharic for “rising”) is a verified electronics marketplace serving all of Ethiopia. Buyers compare prices across local shops that have been verified in person and that reconfirm their stock every day over Telegram, then contact the shop and complete the purchase face to face. Tinsae never handles payments and takes no commission on any sale. Founded in Addis Ababa in 2022, it now has 412 verified shops.";
 export const BOILERPLATE_UPDATED = "Mar 2026";
 
 // PLACEHOLDER: figures from the design, not yet checked against live metrics —

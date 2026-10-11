@@ -29,7 +29,7 @@ export const PRINCIPLES: Array<{
   {
     icon: "pin",
     accent: "#7A2EBF",
-    title: "Built for how Addis actually shops",
+    title: "Built for how Ethiopia actually shops",
     body: "Telegram, not email. Landmarks, not street addresses. Cash in hand, not checkout flows. We designed around the city as it is.",
   },
 ];
@@ -101,7 +101,7 @@ export const TEAM = [
 // PLACEHOLDER: marketing figures. Replace with getPublicStats() values (or
 // confirmed numbers) before launch.
 export const ABOUT_STATS = [
-  ["412", "verified shops in Bole"],
+  ["412", "verified shops across Ethiopia"],
   ["8,920", "listings live today"],
   ["96%", "reconfirmed within 24h"],
   ["0%", "commission, ever"],
@@ -181,7 +181,7 @@ function AboutHero() {
             <span className="text-tn-red">legible.</span>
           </h1>
           <p className="text-tn-mute mt-[22px] max-w-[520px] text-lg leading-[1.55] font-medium sm:text-[18.5px]">
-            Addis already has honest shops and fair prices. What it lacked was
+            Ethiopia already has honest shops and fair prices. What it lacked was
             proof — a way to know, before you cross town, which shop has the
             thing and what they will charge for it.
           </p>
@@ -226,12 +226,12 @@ function MissionSection() {
       <div>
         <Eyebrow>Why we built it</Eyebrow>
         <h2 className="text-tn-ink text-[32px] leading-[1.08] font-extrabold tracking-[-0.03em] sm:text-[40px]">
-          Bole runs on trust between people. We just made it visible.
+          Ethiopia runs on trust between people. We just made it visible.
         </h2>
       </div>
       <div className="text-tn-ink2 text-base leading-[1.7] font-medium sm:text-[16.5px]">
         <p>
-          Buying a phone in Addis has always been a social process. You ask a
+          Buying a phone in Ethiopia has always been a social process. You ask a
           cousin who knows a guy. You call three shops. You take a taxi across
           town on the strength of a maybe. The information exists — it just
           lives in people&apos;s heads, and it expires by lunchtime.

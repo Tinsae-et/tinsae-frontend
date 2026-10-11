@@ -53,10 +53,10 @@ function BrandPanel() {
 
       <div className="mt-8 max-w-[440px] lg:my-auto lg:pt-8 lg:pb-7">
         <p className="hidden font-tn-mono text-[11px] font-bold tracking-[0.14em] text-white/55 uppercase lg:block">
-          Bole · Addis Ababa
+          All over Ethiopia
         </p>
         <h1 className="mt-0 text-[28px] leading-[1.1] font-extrabold tracking-[-0.035em] lg:mt-4.5 lg:text-[38px]">
-          The verified way to buy electronics in&nbsp;Bole.
+          The verified way to buy electronics in&nbsp;Ethiopia.
         </h1>
         <p className="mt-4 hidden text-[15.5px] leading-[1.55] font-medium text-white/70 lg:block">
           Compare live prices across verified shops, then message the seller on

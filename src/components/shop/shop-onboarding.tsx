@@ -22,9 +22,10 @@ import {
   loadDraft,
   reducer,
   saveDraft,
+  shopLocation,
 } from "@/lib/shop/onboarding-state";
 
-export function ShopOnboarding({ userId }: { userId: string }) {
+export function ShopOnboarding({ userId, categories }: { userId: string; categories: string[] }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,8 +37,11 @@ export function ShopOnboarding({ userId }: { userId: string }) {
   // the server render, and reading it in an initialiser would make the first
   // client paint disagree with the server's and blow up hydration.
   useEffect(() => {
-    dispatch({ type: "hydrate", draft: loadDraft(userId) });
-  }, [userId]);
+    const draft = loadDraft(userId);
+    // A draft can hold a category the backend has since renamed or dropped.
+    if (draft) draft.cats = draft.cats.filter((c) => categories.includes(c));
+    dispatch({ type: "hydrate", draft });
+  }, [userId, categories]);
 
   // Save on every change once hydrated. Guarding on `hydrated` matters: without
   // it the empty initial state would overwrite the draft before it was read.
@@ -76,9 +80,9 @@ export function ShopOnboarding({ userId }: { userId: string }) {
     // see docs/registration.md §3.4.
     const res = await postAuth<{ ok: true }>("/api/auth/shop", {
       name: state.name.trim(),
-      city: `Bole · ${state.area}`,
+      city: shopLocation(state),
       phone: toE164(state.phone),
-      description: `${state.cats.join(", ")} in ${state.area}, Bole.`,
+      description: `${state.cats.join(", ")} in ${state.area.trim()}, ${state.city.trim()}.`,
     });
 
     setSubmitting(false);
@@ -158,7 +162,12 @@ export function ShopOnboarding({ userId }: { userId: string }) {
             ) : null}
 
             {state.step === DETAILS && (
-              <DetailsStep state={state} dispatch={dispatch} errors={errors} />
+              <DetailsStep
+                state={state}
+                dispatch={dispatch}
+                errors={errors}
+                categories={categories}
+              />
             )}
             {state.step === CONFIRM && (
               <ConfirmStep state={state} dispatch={dispatch} errors={errors} />

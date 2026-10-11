@@ -19,7 +19,7 @@ const verificationSteps: { icon: IconName; title: string; description: string }[
     icon: "building",
     title: "In-person store visit",
     description:
-      "Someone from Tinsae walks into the actual shop in Bole. No real storefront, no badge — it’s that simple.",
+      "Someone from Tinsae walks into the actual shop. No real storefront, no badge — it’s that simple.",
   },
 ];
 

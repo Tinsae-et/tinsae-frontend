@@ -1,5 +1,9 @@
 node_modules
 .next
+.next_bak
 .git
 .env.local
 npm-debug.log
+design_handoff_*
+.agents
+.claude

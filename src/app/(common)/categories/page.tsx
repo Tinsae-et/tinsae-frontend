@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Shirt, Sofa, Wrench } from "lucide-react";
+import { Shirt, Wrench } from "lucide-react";
 import { Icon } from "@/components/tinsae/icon";
 import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
 import { ProductCard } from "@/components/products/product-card";
@@ -12,7 +12,7 @@ import { getNavCategories } from "@/lib/nav-categories";
 export const metadata: Metadata = {
   title: "Everything on Tinsae — All Categories",
   description:
-    "Every verified category in Addis Ababa, in one marketplace. Electronics is live now — more verticals are on the way.",
+    "Every verified category across Ethiopia, in one marketplace. Electronics and vehicles are live now — more verticals are on the way.",
 };
 
 type RoadmapCategory = {
@@ -23,11 +23,6 @@ type RoadmapCategory = {
 
 const ROADMAP_CATEGORIES: RoadmapCategory[] = [
   {
-    label: "Vehicles",
-    sub: "Cars · Bikes · Parts",
-    icon: <Icon name="car" size={21} className="text-tn-mute" />,
-  },
-  {
     label: "Property",
     sub: "Rent · Sale · Land",
     icon: <Icon name="building" size={21} className="text-tn-mute" />,
@@ -36,11 +31,6 @@ const ROADMAP_CATEGORIES: RoadmapCategory[] = [
     label: "Fashion",
     sub: "Clothing · Shoes · Bags",
     icon: <Shirt className="size-5 text-tn-mute" strokeWidth={1.6} />,
-  },
-  {
-    label: "Home & Furniture",
-    sub: "Furniture · Appliances",
-    icon: <Sofa className="size-5 text-tn-mute" strokeWidth={1.6} />,
   },
   {
     label: "Services",
@@ -101,8 +91,8 @@ export default async function CategoriesPage() {
               Everything on Tinsae
             </h1>
             <p className="mt-4 max-w-[600px] text-base sm:text-[17px] leading-[1.55] text-tn-ink2">
-              Every verified category in Addis Ababa, in one marketplace. Electronics is live now —
-              more verticals are on the way.
+              Every verified category across Ethiopia, in one marketplace. Electronics and vehicles are
+              live now — more verticals are on the way.
             </p>
           </div>
 
@@ -128,7 +118,7 @@ export default async function CategoriesPage() {
         </div>
       </section>
 
-      {/* Electronics: Live Now */}
+      {/* Live categories */}
       <section className="mx-auto max-w-[1240px] px-6 pt-16 sm:px-8 lg:pt-20">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div className="max-w-[640px]">
@@ -136,18 +126,18 @@ export default async function CategoriesPage() {
               Live now
             </p>
             <h2 className="text-[28px] sm:text-[34px] font-extrabold tracking-[-0.03em] leading-[1.05] text-tn-ink">
-              Electronics
+              Shop by category
             </h2>
             <p className="mt-2.5 text-[15px] text-tn-mute leading-[1.6]">
-              Phones, laptops, audio and more — from verified shops across Bole, with stock confirmed
-              every day.
+              Electronics and vehicles from verified shops across Ethiopia, with stock confirmed every
+              day.
             </p>
           </div>
           <Link
             href="/products"
             className="inline-flex items-center gap-2 text-sm font-bold text-tn-ink hover:text-tn-red transition-colors whitespace-nowrap self-start sm:self-end"
           >
-            Browse all electronics
+            Browse all listings
             <Icon name="arrow" size={15} className="text-tn-red" />
           </Link>
         </div>
@@ -157,54 +147,163 @@ export default async function CategoriesPage() {
             const count = stats?.category_product_count?.[cat.slug] ?? null;
             const minPrice = minPriceMap.get(cat.slug) ?? null;
 
+            const subcategories = cat.children ?? [];
+            const hasSubcategories = subcategories.length > 0;
             return (
-              <Link
+              // The whole card links to the category (a stretched link under
+              // the content). A group ("Vehicles & Auto") opens a floating
+              // card on hover or focus, anchored over this one and as tall as
+              // its subcategory list needs: nothing is cut off and nothing on
+              // the page moves. `hover:z-30` lifts it above the cards after it.
+              <div
                 key={cat.slug}
-                href={`/products?category=${cat.slug}`}
-                className="group relative flex flex-col overflow-hidden rounded-[18px] border border-tn-hair bg-white p-5 sm:p-[22px_22px_20px] transition-[transform,box-shadow,border-color] duration-150 hover:-translate-y-[3px] hover:border-[#E0DDD4] hover:shadow-[0_18px_44px_rgba(11,11,11,0.09)]"
+                className="group/cat relative hover:z-30 focus-within:z-30"
               >
-                {/* Subtle Ghost Product Silhouette */}
-                <div className="pointer-events-none select-none absolute -right-3 -top-2 size-[120px] opacity-[0.05] -rotate-[8deg] flex items-center justify-center">
-                  <ProdPlaceholder kind={kindForSlug(cat.slug)} />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="inline-flex size-[50px] items-center justify-center rounded-[14px] bg-[#F7F6F2] text-tn-ink transition-colors group-hover:bg-[#F0EEE6]">
-                    <Icon name={cat.icon} size={24} />
-                  </span>
-                  {count !== null && (
-                    <span className="font-tn-mono text-xs font-semibold text-tn-mute">
-                      {formatCount(count)} listings
-                    </span>
-                  )}
-                </div>
-
-                <h3 className="mt-4 text-[21px] font-extrabold tracking-[-0.02em] text-tn-ink">
-                  {cat.label}
-                </h3>
-                <p className="mt-1 text-[13px] text-tn-mute line-clamp-1">{cat.subtitle}</p>
-
-                <div className="mt-4 pt-3.5 border-t border-tn-hair2 flex items-center justify-between">
-                  {minPrice !== null ? (
-                    <span className="flex items-baseline gap-1.5">
-                      <span className="text-[10.5px] font-bold tracking-[0.04em] uppercase text-tn-mute">
-                        From
-                      </span>
-                      <span className="font-tn-mono text-[15px] font-semibold text-tn-red">
-                        {formatETB(minPrice)}
-                      </span>
-                    </span>
-                  ) : (
-                    <span className="text-[13px] font-semibold text-tn-mute">Browse</span>
-                  )}
-                  <Icon
-                    name="arrow"
-                    size={17}
-                    className="text-tn-ink transition-transform group-hover:translate-x-1"
-                    strokeWidth={2}
+                <div className="relative flex h-full flex-col overflow-hidden rounded-[18px] border border-tn-hair bg-white p-5 sm:p-[22px_22px_20px] transition-[transform,box-shadow,border-color] duration-150 group-hover/cat:-translate-y-[3px] group-hover/cat:border-[#E0DDD4] group-hover/cat:shadow-[0_18px_44px_rgba(11,11,11,0.09)]">
+                  <Link
+                    href={`/products?category=${cat.slug}`}
+                    aria-label={cat.label}
+                    className="absolute inset-0 z-[1] rounded-[18px]"
                   />
+
+                  {/* Subtle Ghost Product Silhouette */}
+                  <div className="pointer-events-none select-none absolute -right-3 -top-2 size-[120px] opacity-[0.05] -rotate-[8deg] flex items-center justify-center">
+                    <ProdPlaceholder kind={kindForSlug(cat.slug)} />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex size-[50px] items-center justify-center rounded-[14px] bg-[#F7F6F2] text-tn-ink transition-colors group-hover/cat:bg-[#F0EEE6]">
+                      <Icon name={cat.icon} size={24} />
+                    </span>
+                    {count !== null && (
+                      <span className="font-tn-mono text-xs font-semibold text-tn-mute">
+                        {formatCount(count)} listings
+                      </span>
+                    )}
+                  </div>
+
+                  <h3 className="mt-4 flex items-center gap-1.5 text-[21px] font-extrabold tracking-[-0.02em] text-tn-ink">
+                    {cat.label}
+                    {hasSubcategories && (
+                      <Icon name="chevd" size={16} className="text-tn-mute" />
+                    )}
+                  </h3>
+                  <p className="mt-1 text-[13px] text-tn-mute line-clamp-1">{cat.subtitle}</p>
+
+                  <div className="mt-4 pt-3.5 border-t border-tn-hair2 flex items-center justify-between">
+                    {minPrice !== null ? (
+                      <span className="flex items-baseline gap-1.5">
+                        <span className="text-[10.5px] font-bold tracking-[0.04em] uppercase text-tn-mute">
+                          From
+                        </span>
+                        <span className="font-tn-mono text-[15px] font-semibold text-tn-red">
+                          {formatETB(minPrice)}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="text-[13px] font-semibold text-tn-mute">Browse</span>
+                    )}
+                    <Icon
+                      name="arrow"
+                      size={17}
+                      className="text-tn-ink transition-transform group-hover/cat:translate-x-1"
+                      strokeWidth={2}
+                    />
+                  </div>
                 </div>
-              </Link>
+
+                {/* The group's floating card. Shown after a short rest
+                    (`delay-100`) so sweeping across the grid never flashes it. */}
+                {hasSubcategories && (
+                  <div
+                    role="menu"
+                    aria-label={`${cat.label} subcategories`}
+                    className="invisible absolute inset-x-0 -top-[3px] z-10 rounded-[18px] border border-[#E0DDD4] bg-white p-5 opacity-0 shadow-[0_26px_60px_rgba(11,11,11,0.16)] transition-[opacity,visibility] duration-150 sm:p-[22px_22px_16px] group-focus-within/cat:visible group-focus-within/cat:opacity-100 group-hover/cat:visible group-hover/cat:opacity-100 group-hover/cat:delay-100"
+                  >
+                    <Link
+                      href={`/products?category=${cat.slug}`}
+                      className="group/head flex items-center justify-between"
+                    >
+                      <span className="inline-flex size-[50px] items-center justify-center rounded-[14px] bg-tn-red-soft text-tn-red">
+                        <Icon name={cat.icon} size={24} />
+                      </span>
+                      {count !== null && (
+                        <span className="font-tn-mono text-xs font-semibold text-tn-mute">
+                          {formatCount(count)} listings
+                        </span>
+                      )}
+                    </Link>
+                    <Link
+                      href={`/products?category=${cat.slug}`}
+                      className="mt-4 flex items-center gap-1.5 text-[21px] font-extrabold tracking-[-0.02em] text-tn-red"
+                    >
+                      {cat.label}
+                      <Icon name="chevd" size={16} className="rotate-180" />
+                    </Link>
+
+                    <div className="-mx-2 mt-3">
+                      {subcategories.map((child) => {
+                        const childCount = stats?.category_product_count?.[child.slug];
+                        return (
+                          <Link
+                            key={child.slug}
+                            role="menuitem"
+                            href={`/products?category=${child.slug}`}
+                            className="group/sub flex items-center gap-3 rounded-[10px] px-2 py-2 transition-colors hover:bg-tn-paper"
+                          >
+                            <Icon
+                              name={child.icon}
+                              size={17}
+                              className="shrink-0 text-tn-mute group-hover/sub:text-tn-red"
+                            />
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-[14px] font-bold text-tn-ink transition-colors group-hover/sub:text-tn-red">
+                                {child.label}
+                              </span>
+                              {child.subtitle && (
+                                <span className="block truncate text-[12px] text-tn-mute">
+                                  {child.subtitle}
+                                </span>
+                              )}
+                            </span>
+                            {childCount ? (
+                              <span className="font-tn-mono shrink-0 text-[11.5px] text-tn-mute">
+                                {formatCount(childCount)}
+                              </span>
+                            ) : null}
+                          </Link>
+                        );
+                      })}
+                    </div>
+
+                    {/* Property: renters and buyers go straight to their side. */}
+                    {cat.saleOrRent && (
+                      <div className="mt-2 grid grid-cols-2 gap-2">
+                        {[
+                          ["rent", "For rent"],
+                          ["sale", "For sale"],
+                        ].map(([value, label]) => (
+                          <Link
+                            key={value}
+                            href={`/products?category=${cat.slug}&spec_listing_type=${value}`}
+                            className="border-tn-hair text-tn-ink hover:border-tn-ink rounded-full border py-2 text-center text-[13px] font-bold transition-colors"
+                          >
+                            {label}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+
+                    <Link
+                      href={`/products?category=${cat.slug}`}
+                      className="mt-2 flex items-center justify-between border-t border-tn-hair2 pt-3.5 text-[13px] font-extrabold text-tn-ink transition-colors hover:text-tn-red"
+                    >
+                      Shop all {cat.label}
+                      <Icon name="arrow" size={17} strokeWidth={2} />
+                    </Link>
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
@@ -254,7 +353,7 @@ export default async function CategoriesPage() {
               On the roadmap
             </p>
             <h2 className="text-[28px] sm:text-[34px] font-extrabold tracking-[-0.03em] leading-[1.05] text-tn-ink">
-              More marketplaces, coming to Addis
+              More marketplaces, coming to Ethiopia
             </h2>
             <p className="mt-2.5 text-[15px] text-tn-mute leading-[1.6]">
               Tinsae is built category-agnostic. Each new vertical launches with the same verified

@@ -44,7 +44,10 @@ export function useListingSpecs({
   const context: SpecValues = { ...values, condition };
   const errors = schema ? validateSpecs(schema, context) : {};
 
-  const isDirty = Object.entries(edits).some(([key, value]) => (saved[key] ?? "") !== value);
+  // Lists compare by content: re-picking the same sizes is not an edit.
+  const same = (a: string | string[] = "", b: string | string[]) =>
+    JSON.stringify(a) === JSON.stringify(b);
+  const isDirty = Object.entries(edits).some(([key, value]) => !same(saved[key], value));
 
   /** The `specs` to send, with the free-text model/variant alongside. */
   const toPayload = (variant: string): Record<string, unknown> => {
@@ -66,7 +69,7 @@ export function useListingSpecs({
     context,
     errors,
     isDirty,
-    setValue: (key: string, value: string) => setEdits((prev) => ({ ...prev, [key]: value })),
+    setValue: (key: string, value: string | string[]) => setEdits((prev) => ({ ...prev, [key]: value })),
     toPayload,
   };
 }

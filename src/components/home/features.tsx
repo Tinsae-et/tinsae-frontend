@@ -5,7 +5,7 @@ const ITEMS: { icon: IconName; color: string; title: string; body: string }[] = 
     icon: "sort",
     color: "#CC3000",
     title: "Compare every shop at once",
-    body: "One product, all verified sellers in Bole — sorted by lowest price and freshest stock. The spread is right there.",
+    body: "One product, all verified sellers across Ethiopia — sorted by lowest price and freshest stock. The spread is right there.",
   },
   {
     icon: "shield",
@@ -29,7 +29,7 @@ export function Features() {
           Why Tinsae
         </p>
         <h2 className="text-tn-ink text-[30px] leading-[1.05] font-extrabold tracking-[-0.03em] sm:text-[44px]">
-          The honest way to shop electronics in Addis.
+          The honest way to shop electronics in Ethiopia.
         </h2>
       </div>
 
