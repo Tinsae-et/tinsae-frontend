@@ -16,6 +16,16 @@ import { cn } from "@/lib/utils";
 import { LogOut, Loader2 } from "lucide-react";
 import { formatCount, formatETB } from "@/lib/format";
 import type { ShopMetrics } from "@/lib/types";
+import NotificationDropdown, { DropdownNotification } from "../notification/Notificationbell";
+
+//mokedata
+const notifications: DropdownNotification[] = [
+  { id: "n1", label: "Price drop", title: "iPhone 15 Pro dropped ETB 4,000", timeAgo: "2h ago", unread: true },
+  { id: "n2", label: "Shop replied", title: "Henok from Bole Tech replied", timeAgo: "4h ago", unread: true },
+  { id: "n3", label: "Back in stock", title: "iPad Air 13” is back in stock", timeAgo: "1d ago", unread: false },
+];
+
+
 
 function getInitials(name?: string): string {
   if (!name || !name.trim()) return "U";
@@ -1285,14 +1295,22 @@ export function SiteHeader({
               )}
 
               {/* Notification Bell */}
-              <button
-                type="button"
-                aria-label="Notifications"
-                className="border-tn-hair text-tn-ink2 hover:text-tn-ink hover:border-tn-ink relative flex size-10 items-center justify-center rounded-full border bg-white transition-colors cursor-pointer"
-              >
-                <Icon name="bell" size={18} />
-                <span className="bg-tn-red absolute top-2.5 right-2.5 size-2 rounded-full border border-white" />
-              </button>
+              <NotificationDropdown
+                  notifications={notifications}
+                  renderTrigger={({ buttonProps, unreadCount }) => (
+                    <button
+                      {...buttonProps}
+                      type="button"
+                      aria-label="Notifications"
+                      className="border-tn-hair text-tn-ink2 hover:text-tn-ink hover:border-tn-ink relative flex size-10 cursor-pointer items-center justify-center rounded-full border bg-white transition-colors"
+                    >
+                      <Icon name="bell" size={18} />
+                      {unreadCount > 0 && (
+                        <span className="bg-tn-red absolute top-2.5 right-2.5 size-2 rounded-full border border-white" />
+                      )}
+                    </button>
+                  )}
+                />
 
               {/* Profile Avatar & Dropdown */}
               <div className="relative" ref={accountMenuRef}>
