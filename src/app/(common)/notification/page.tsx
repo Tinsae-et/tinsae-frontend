@@ -274,7 +274,7 @@ export default function NotificationsPage() {
                 </h2>
                 <ul className="space-y-3">
                   {groupItems.map((item) => (
-                    <NotificationCard key={item.id} item={item} onOpen={() => markRead(item.id)} />
+                    <NotificationCard key={item.id} item={item}  />
                   ))}
                 </ul>
                 
