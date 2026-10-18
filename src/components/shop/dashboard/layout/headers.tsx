@@ -4,6 +4,7 @@ import { Pill } from "@/components/tinsae/pill";
 import Link from "next/link";
 import { Check, Loader2 } from "lucide-react";
 import { confirmAllShopProducts } from "@/lib/api/client";
+import { NotificationBell } from "@/components/notification/notification-bell";
 
 export const OverviewHeader = ({
   setShowSidebar,
@@ -58,9 +59,7 @@ export const OverviewHeader = ({
           </span>
         </div>
 
-        <Pill kind="outline" size="sm" icon="bell">
-          3
-        </Pill>
+        <NotificationBell />
 
         <Pill
           kind="solid"

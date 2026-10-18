@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { LogOut, Loader2 } from "lucide-react";
 import { formatCount, formatETB } from "@/lib/format";
 import type { ShopMetrics } from "@/lib/types";
+import { NotificationBell } from "@/components/notification/notification-bell";
 
 function getInitials(name?: string): string {
   if (!name || !name.trim()) return "U";
@@ -1285,14 +1286,7 @@ export function SiteHeader({
               )}
 
               {/* Notification Bell */}
-              <button
-                type="button"
-                aria-label="Notifications"
-                className="border-tn-hair text-tn-ink2 hover:text-tn-ink hover:border-tn-ink relative flex size-10 items-center justify-center rounded-full border bg-white transition-colors cursor-pointer"
-              >
-                <Icon name="bell" size={18} />
-                <span className="bg-tn-red absolute top-2.5 right-2.5 size-2 rounded-full border border-white" />
-              </button>
+              <NotificationBell />
 
               {/* Profile Avatar & Dropdown */}
               <div className="relative" ref={accountMenuRef}>
