@@ -23,6 +23,8 @@ export const TYPE_META: Record<
 /**
  * One feed item. The whole card is the link: the CTA's hit area is stretched
  * over the card, so clicking anywhere marks it read and opens the target.
+ * The CTA must not lift on hover like other Pills: moving it moves the
+ * stretched hit area too, and the cursor flickers in and out at the edge.
  * Unread items sit on white with a border and a red dot; read ones sink into
  * the page.
  */
@@ -95,7 +97,7 @@ export function NotificationCard({
           <Link
             href={event.cta.href}
             onClick={() => onOpen(event.id)}
-            className="bg-tn-ink inline-flex h-10 items-center gap-2 rounded-full px-[18px] text-[13.5px] font-bold tracking-[-0.01em] whitespace-nowrap text-white shadow-[0_8px_22px_rgba(11,11,11,0.18)] transition-[transform,background] duration-150 after:absolute after:inset-0 after:rounded-[15px] hover:-translate-y-px hover:bg-black"
+            className="bg-tn-ink inline-flex h-10 items-center gap-2 rounded-full px-[18px] text-[13.5px] font-bold tracking-[-0.01em] whitespace-nowrap text-white shadow-[0_8px_22px_rgba(11,11,11,0.18)] transition-colors duration-150 after:absolute after:inset-0 after:rounded-[15px] hover:bg-black"
           >
             {event.type === "reply" && <Icon name="tg" size={17} />}
             {event.cta.label}
