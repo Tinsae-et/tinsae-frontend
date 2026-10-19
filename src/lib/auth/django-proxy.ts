@@ -32,7 +32,10 @@ import { clearSessionCookies, setAccessCookie, setRefreshCookie } from "./sessio
 export async function proxyToDjango(
   request: Request,
   path: string,
-  { search }: { search?: URLSearchParams } = {},
+  {
+    search,
+    revalidateCatalog = true,
+  }: { search?: URLSearchParams; revalidateCatalog?: boolean } = {},
 ): Promise<NextResponse> {
   const method = request.method.toUpperCase();
 
@@ -94,7 +97,9 @@ export async function proxyToDjango(
   // Public pages serve cached catalogue reads (lib/api/public). A merchant who
   // just edited a listing or their profile should see it there immediately,
   // not a minute later, so any successful write expires the cache outright.
-  if (method !== "GET" && method !== "HEAD" && upstream.ok) {
+  // Writes that can't touch the catalogue (marking a notification read) opt
+  // out, or every click would wipe it.
+  if (revalidateCatalog && method !== "GET" && method !== "HEAD" && upstream.ok) {
     revalidateTag(CATALOG_TAG, { expire: 0 });
   }
 

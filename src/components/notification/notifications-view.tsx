@@ -8,7 +8,6 @@ import { useNotifications } from "@/hooks/use-notifications";
 import {
   NOTIFICATION_FILTERS,
   NOTIFICATION_GROUPS,
-  filterCounts,
   groupFor,
   matchesFilter,
   type NotificationFilter,
@@ -32,7 +31,6 @@ export function NotificationsView({
   const { items, status, unreadCount, markRead, markAllRead, retry } = useNotifications();
   const [filter, setFilter] = useState(initialFilter);
 
-  const counts = filterCounts(items);
   const visible = items.filter((e) => matchesFilter(e, filter));
 
   // The filter lives in the URL so it survives a refresh and can be shared,
@@ -109,14 +107,18 @@ export function NotificationsView({
                   )}
                 >
                   {f.label}
-                  <span
-                    className={cn(
-                      "font-tn-mono inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-extrabold",
-                      active ? "bg-tn-red-soft text-tn-red" : "bg-tn-paper text-tn-mute",
-                    )}
-                  >
-                    {status === "loading" ? "·" : counts[f.id]}
-                  </span>
+                  {/* Only Unread has a count: it comes from the server, while
+                      the other tabs could only count the page that's loaded. */}
+                  {f.id === "unread" && (
+                    <span
+                      className={cn(
+                        "font-tn-mono inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-extrabold",
+                        active ? "bg-tn-red-soft text-tn-red" : "bg-tn-paper text-tn-mute",
+                      )}
+                    >
+                      {status === "loading" ? "·" : unreadCount}
+                    </span>
+                  )}
                 </button>
               );
             })}

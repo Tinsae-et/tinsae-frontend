@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  filterCounts,
   groupFor,
   matchesFilter,
+  notificationListParams,
   timeAgo,
-  unreadCount,
   type NotificationEvent,
 } from "./notifications";
 
@@ -64,21 +63,38 @@ describe("filters", () => {
     event({ id: "4", type: "search" }),
     event({ id: "5", type: "reply", unread: true }),
     event({ id: "6", type: "verify" }),
+    event({ id: "7", type: "message", unread: true }),
   ];
 
+  const ids = (filter: Parameters<typeof matchesFilter>[1]) =>
+    feed.filter((e) => matchesFilter(e, filter)).map((e) => e.id);
+
   it("puts both back-in-stock and selling-fast under Stock", () => {
-    expect(feed.filter((e) => matchesFilter(e, "stock")).map((e) => e.id)).toEqual(["2", "3"]);
+    expect(ids("stock")).toEqual(["2", "3"]);
   });
 
-  it("counts every tab", () => {
-    expect(filterCounts(feed)).toEqual({
-      all: 6,
-      unread: 3,
-      price: 1,
-      stock: 2,
-      searches: 1,
-      replies: 1,
-    });
-    expect(unreadCount(feed)).toBe(3);
+  it("puts shop replies and buyer messages under Replies", () => {
+    expect(ids("replies")).toEqual(["5", "7"]);
+  });
+
+  it("matches unread items under Unread", () => {
+    expect(ids("unread")).toEqual(["1", "3", "5", "7"]);
+  });
+});
+
+describe("notificationListParams", () => {
+  const forward = (qs: string) => notificationListParams(new URLSearchParams(qs)).toString();
+
+  it("keeps page and page_size when they are small integers", () => {
+    expect(forward("page=2&page_size=50")).toBe("page=2&page_size=50");
+  });
+
+  it("drops every other param", () => {
+    expect(forward("page_size=50&recipient=7&ordering=id")).toBe("page_size=50");
+  });
+
+  it("drops non-numeric or oversized values", () => {
+    expect(forward("page=abc&page_size=-1")).toBe("");
+    expect(forward("page=1e3&page_size=1000")).toBe("");
   });
 });
