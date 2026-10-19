@@ -2,12 +2,27 @@
 //
 // The type follows the design handoff's `NotificationEvent`
 // (design_handoff_all/design_handoff_notifications/README.md). The API that
-// serves it is TIN-115; until it lands, lib/api/notifications returns demo
-// data in this same shape, so only that file changes when it ships.
+// serves it is TIN-115; lib/api/notifications maps its items into this shape.
+// The backend only sends reply, message and verify today; the other types wait
+// on backend data (wishlist, price history, saved searches).
 
 import type { ProductKind } from "@/components/tinsae/prod-placeholder";
 
-export type NotificationType = "drop" | "back" | "search" | "reply" | "sold" | "verify";
+export const NOTIFICATION_TYPES = [
+  "drop",
+  "back",
+  "search",
+  "reply",
+  "sold",
+  "verify",
+  "message",
+] as const;
+
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
+
+export function isNotificationType(value: unknown): value is NotificationType {
+  return NOTIFICATION_TYPES.includes(value as NotificationType);
+}
 
 export type NotificationEvent = {
   id: string;
@@ -52,9 +67,24 @@ export function matchesFilter(event: NotificationEvent, filter: NotificationFilt
       return event.type === "back" || event.type === "sold";
     case "searches":
       return event.type === "search";
+    // A buyer's message to the shop and the shop's reply are one conversation.
     case "replies":
-      return event.type === "reply";
+      return event.type === "reply" || event.type === "message";
   }
+}
+
+/**
+ * The query the list route forwards to Django: `page` and `page_size` only,
+ * and only as small positive integers. Everything else the browser sent is
+ * dropped rather than passed through.
+ */
+export function notificationListParams(incoming: URLSearchParams): URLSearchParams {
+  const out = new URLSearchParams();
+  for (const key of ["page", "page_size"]) {
+    const value = incoming.get(key);
+    if (value && /^\d{1,3}$/.test(value)) out.set(key, value);
+  }
+  return out;
 }
 
 export type NotificationGroup = "Today" | "Yesterday" | "This week" | "Earlier";
@@ -83,17 +113,4 @@ export function timeAgo(createdAt: string, now: number = Date.now()): string {
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days}d ago`;
   return `${Math.floor(days / 7)}w ago`;
-}
-
-/** Badge numbers for the filter tabs: totals per filter, unread for "Unread". */
-export function filterCounts(events: NotificationEvent[]): Record<NotificationFilter, number> {
-  const counts = {} as Record<NotificationFilter, number>;
-  for (const { id } of NOTIFICATION_FILTERS) {
-    counts[id] = events.filter((e) => matchesFilter(e, id)).length;
-  }
-  return counts;
-}
-
-export function unreadCount(events: NotificationEvent[]): number {
-  return events.filter((e) => e.unread).length;
 }

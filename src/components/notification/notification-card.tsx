@@ -18,6 +18,7 @@ export const TYPE_META: Record<
   reply: { label: "Shop replied", icon: "tg", accent: "text-tn-telegram", tile: "bg-[#E7F4FB]" },
   sold: { label: "Selling fast", icon: "bolt", accent: "text-tn-warn", tile: "bg-[#FBF1E4]" },
   verify: { label: "Shop verified", icon: "shield", accent: "text-tn-green", tile: "bg-tn-green-soft" },
+  message: { label: "Buyer message", icon: "user", accent: "text-tn-telegram", tile: "bg-[#E7F4FB]" },
 };
 
 /**
