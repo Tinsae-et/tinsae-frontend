@@ -6,10 +6,10 @@ export function FreshListings({ products }: { products: Product[] }) {
   return (
     <section className="mx-auto mt-16 max-w-[1480px] px-6 sm:px-8 lg:mt-[88px] lg:px-12 xl:px-16">
       <SectionHead
-        eyebrow="Confirmed today"
-        title="Freshest listings across Ethiopia"
-        href="/products"
-        link="Browse all"
+        eyebrow="Confirmed in the last 48 hours"
+        title="Just confirmed in stock"
+        href="/products?fresh=true"
+        link="See all confirmed"
       />
 
       {products.length === 0 ? (

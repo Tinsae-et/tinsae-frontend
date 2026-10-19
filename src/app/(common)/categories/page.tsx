@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Shirt, Wrench } from "lucide-react";
+import { Wrench } from "lucide-react";
 import { Icon } from "@/components/tinsae/icon";
 import { ProdPlaceholder, kindForSlug } from "@/components/tinsae/prod-placeholder";
 import { ProductCard } from "@/components/products/product-card";
@@ -12,7 +12,7 @@ import { getNavCategories } from "@/lib/nav-categories";
 export const metadata: Metadata = {
   title: "Everything on Tinsae — All Categories",
   description:
-    "Every verified category across Ethiopia, in one marketplace. Electronics and vehicles are live now — more verticals are on the way.",
+    "Every verified category across Ethiopia, in one marketplace. Electronics, vehicles, property and fashion are live now — more verticals are on the way.",
 };
 
 type RoadmapCategory = {
@@ -22,16 +22,6 @@ type RoadmapCategory = {
 };
 
 const ROADMAP_CATEGORIES: RoadmapCategory[] = [
-  {
-    label: "Property",
-    sub: "Rent · Sale · Land",
-    icon: <Icon name="building" size={21} className="text-tn-mute" />,
-  },
-  {
-    label: "Fashion",
-    sub: "Clothing · Shoes · Bags",
-    icon: <Shirt className="size-5 text-tn-mute" strokeWidth={1.6} />,
-  },
   {
     label: "Services",
     sub: "Repairs · Installation",
@@ -91,8 +81,8 @@ export default async function CategoriesPage() {
               Everything on Tinsae
             </h1>
             <p className="mt-4 max-w-[600px] text-base sm:text-[17px] leading-[1.55] text-tn-ink2">
-              Every verified category across Ethiopia, in one marketplace. Electronics and vehicles are
-              live now — more verticals are on the way.
+              Every verified category across Ethiopia, in one marketplace. Electronics, vehicles,
+              property and fashion are live now — more verticals are on the way.
             </p>
           </div>
 
@@ -129,8 +119,8 @@ export default async function CategoriesPage() {
               Shop by category
             </h2>
             <p className="mt-2.5 text-[15px] text-tn-mute leading-[1.6]">
-              Electronics and vehicles from verified shops across Ethiopia, with stock confirmed every
-              day.
+              Electronics, vehicles, property and fashion from verified shops across Ethiopia, with
+              stock confirmed every day.
             </p>
           </div>
           <Link

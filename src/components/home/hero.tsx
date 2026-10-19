@@ -50,8 +50,8 @@ export function Hero({
           </h1>
 
           <p className="text-tn-mute mt-6 max-w-[500px] text-[17px] leading-relaxed font-medium sm:text-[18.5px]">
-            Compare electronics prices across verified shops all over Ethiopia that reconfirm their stock every
-            single day. No more wasted trips.
+            Phones, cars, homes, fashion and more from verified shops across Ethiopia. Every listing shows when
+            the shop last confirmed it&rsquo;s available. No more wasted trips.
           </p>
 
           <div className="mt-7 flex flex-wrap gap-3">

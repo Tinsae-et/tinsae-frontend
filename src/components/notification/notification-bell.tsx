@@ -72,10 +72,10 @@ export function NotificationBell({ className }: { className?: string }) {
         <div
           role="region"
           aria-label="Recent notifications"
-          className="border-tn-hair absolute right-0 z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border bg-white shadow-[0_18px_44px_rgba(11,11,11,0.12)]"
+          className="border-tn-hair animate-[tnRise_0.15s_ease_both] absolute right-0 z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border bg-white p-2 shadow-xl"
         >
-          <div className="flex items-center justify-between px-4 py-3">
-            <h2 className="text-tn-ink text-sm font-extrabold">Notifications</h2>
+          <div className="border-tn-hair2 flex items-center justify-between border-b px-3 py-2.5">
+            <h2 className="text-tn-ink text-[13.5px] font-extrabold">Notifications</h2>
             {unreadCount > 0 && (
               <button
                 type="button"
@@ -88,9 +88,9 @@ export function NotificationBell({ className }: { className?: string }) {
           </div>
 
           {status === "loading" ? (
-            <ul aria-busy="true" aria-label="Loading notifications" className="border-tn-hair border-t">
+            <ul aria-busy="true" aria-label="Loading notifications" className="flex flex-col gap-0.5 py-1">
               {[1, 2, 3].map((i) => (
-                <li key={i} className="border-tn-hair flex animate-pulse gap-3 border-b px-4 py-3 last:border-b-0">
+                <li key={i} className="flex animate-pulse gap-3 rounded-xl px-3 py-2.5">
                   <span className="bg-tn-paper size-8 shrink-0 rounded-lg" />
                   <span className="flex-1 space-y-1.5">
                     <span className="bg-tn-paper block h-2.5 w-24 rounded" />
@@ -100,19 +100,19 @@ export function NotificationBell({ className }: { className?: string }) {
               ))}
             </ul>
           ) : status === "error" ? (
-            <p className="border-tn-hair text-tn-mute border-t px-4 py-8 text-center text-xs">
+            <p className="text-tn-mute px-3 py-8 text-center text-[13px]">
               Couldn&apos;t load notifications. We&apos;ll try again shortly.
             </p>
           ) : recent.length === 0 ? (
-            <p className="border-tn-hair text-tn-mute border-t px-4 py-8 text-center text-xs">
+            <p className="text-tn-mute px-3 py-8 text-center text-[13px]">
               No alerts yet. Save an item or a search to get notified.
             </p>
           ) : (
-            <ul className="border-tn-hair border-t">
+            <ul className="flex flex-col gap-0.5 py-1">
               {recent.map((n) => {
                 const meta = TYPE_META[n.type];
                 return (
-                  <li key={n.id} className="border-tn-hair border-b last:border-b-0">
+                  <li key={n.id}>
                     <Link
                       href={n.cta.href}
                       onClick={() => {
@@ -120,7 +120,7 @@ export function NotificationBell({ className }: { className?: string }) {
                         setOpen(false);
                       }}
                       className={cn(
-                        "hover:bg-tn-paper focus-visible:bg-tn-paper relative flex gap-3 px-4 py-3 transition-colors focus-visible:outline-none",
+                        "hover:bg-tn-paper focus-visible:bg-tn-paper relative flex gap-3 rounded-xl px-3 py-2.5 transition-colors focus-visible:outline-none",
                         !n.unread && "opacity-80",
                       )}
                     >
@@ -134,13 +134,13 @@ export function NotificationBell({ className }: { className?: string }) {
                         <Icon name={meta.icon} size={15} />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="text-tn-mute block text-[10px] tracking-wide">
+                        <span className="text-tn-mute block text-[10.5px] tracking-wide">
                           <span className={cn("font-bold uppercase", meta.accent)}>{meta.label}</span>
                           <span className="font-tn-mono"> · {timeAgo(n.createdAt)}</span>
                         </span>
                         <span
                           className={cn(
-                            "mt-0.5 line-clamp-2 block text-xs leading-snug",
+                            "mt-0.5 line-clamp-2 block text-[13px] leading-snug",
                             n.unread ? "text-tn-ink font-bold" : "text-tn-ink2",
                           )}
                         >
@@ -159,13 +159,16 @@ export function NotificationBell({ className }: { className?: string }) {
             </ul>
           )}
 
-          <Link
-            href="/notifications"
-            onClick={() => setOpen(false)}
-            className="border-tn-hair text-tn-ink hover:bg-tn-paper block border-t px-4 py-3 text-center text-xs font-bold transition-colors"
-          >
-            View all notifications
-          </Link>
+          <div className="border-tn-hair2 border-t pt-1">
+            <Link
+              href="/notifications"
+              onClick={() => setOpen(false)}
+              className="text-tn-red flex items-center justify-between rounded-xl bg-[#FAF9F6] px-3 py-2.5 text-[13px] font-bold transition-colors hover:bg-[#F4F2EC]"
+            >
+              View all notifications
+              <Icon name="arrow" size={15} />
+            </Link>
+          </div>
         </div>
       )}
     </div>
