@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { formatETB } from "@/lib/format";
 import { resolveProductImages } from "@/lib/product-images";
 import type { AuthShop } from "@/lib/auth/types";
-import type { Inquiry, InquiryMessage } from "@/lib/types";
+import type { Inquiry } from "@/lib/types";
 
 function formatRelativeTime(iso?: string): string {
   if (!iso) return "";
@@ -55,7 +55,7 @@ function getInitials(name?: string): string {
 type TabKey = "all" | "unread" | "open" | "closed";
 
 export default function ShopInquiriesClient({
-  shop,
+  shop: _shop,
   initialSelectedId,
 }: {
   shop: AuthShop;
@@ -67,7 +67,9 @@ export default function ShopInquiriesClient({
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabKey>("all");
-  const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(
+    initialSelectedId ?? null
+  );
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);
   const [closing, setClosing] = useState(false);
@@ -78,89 +80,91 @@ export default function ShopInquiriesClient({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const fetchInquiries = useCallback(async () => {
-    try {
-      const res = await fetch("/api/inquiries/shop", { cache: "no-store" });
-      if (res.ok) {
-        const data = await res.json();
-        const list: Inquiry[] = Array.isArray(data)
-          ? data
-          : data.results || [];
-        setInquiries(list);
+  const activeId = searchParams.get("id") || selectedId;
+  const selectedInquiry = useMemo(
+    () => inquiries.find((i) => String(i.id) === String(activeId)) ?? null,
+    [inquiries, activeId]
+  );
 
-        // Keep selected inquiry in sync
-        setSelectedInquiry((curr) => {
-          if (!curr) return null;
-          const fresh = list.find((i) => i.id === curr.id);
-          return fresh ?? curr;
-        });
-      }
-    } catch {
-      // ignore network errors
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchInquiries();
-  }, [fetchInquiries]);
-
-  // Open drawer if deep-linked via initialSelectedId or ?id=
-  useEffect(() => {
-    const targetId = initialSelectedId || searchParams.get("id");
-    if (targetId && inquiries.length > 0) {
-      const found = inquiries.find((i) => String(i.id) === String(targetId));
-      if (found) {
-        setSelectedInquiry(found);
-        if (found.shop_unread > 0) {
-          fetch(`/api/inquiries/shop/${found.id}`).catch(() => {});
-          setInquiries((prev) =>
-            prev.map((item) =>
-              item.id === found.id ? { ...item, shop_unread: 0 } : item
-            )
-          );
-        }
-      }
-    }
-  }, [initialSelectedId, searchParams, inquiries]);
-
-  // Scroll to bottom when conversation messages change
-  useEffect(() => {
-    if (selectedInquiry) {
-      scrollToBottom();
-    }
-  }, [selectedInquiry?.messages?.length]);
+  const handleCloseDrawer = useCallback(() => {
+    setSelectedId(null);
+    router.replace("/shop/dashboard/inquiries");
+  }, [router]);
 
   // Escape key closes detail drawer
   useEffect(() => {
+    if (!selectedInquiry) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && selectedInquiry) {
+      if (e.key === "Escape") {
         handleCloseDrawer();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedInquiry]);
+  }, [selectedInquiry, handleCloseDrawer]);
+
+  // Scroll to bottom when conversation messages change
+  const messageCount = selectedInquiry?.messages?.length ?? 0;
+  useEffect(() => {
+    if (messageCount > 0) {
+      scrollToBottom();
+    }
+  }, [messageCount]);
+
+  // Fetch inquiries on mount / param changes
+  useEffect(() => {
+    let ignore = false;
+    const targetId = searchParams.get("id") || initialSelectedId;
+
+    fetch("/api/inquiries/shop", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        if (ignore) return;
+        const list: Inquiry[] = Array.isArray(data) ? data : data.results || [];
+        setInquiries(list);
+
+        if (targetId) {
+          const found = list.find((i) => String(i.id) === String(targetId));
+          if (found && found.shop_unread > 0) {
+            fetch(`/api/inquiries/shop/${found.id}`)
+              .then(() => {
+                if (ignore) return;
+                setInquiries((prev) =>
+                  prev.map((item) =>
+                    item.id === found.id ? { ...item, shop_unread: 0 } : item
+                  )
+                );
+              })
+              .catch(() => {});
+          }
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!ignore) setLoading(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [searchParams, initialSelectedId]);
 
   const handleSelectInquiry = (inquiry: Inquiry) => {
-    setSelectedInquiry(inquiry);
+    setSelectedId(String(inquiry.id));
     router.replace(`/shop/dashboard/inquiries?id=${inquiry.id}`);
 
     // Mark as read immediately on open
     if (inquiry.shop_unread > 0) {
-      fetch(`/api/inquiries/shop/${inquiry.id}`).catch(() => {});
-      setInquiries((prev) =>
-        prev.map((item) =>
-          item.id === inquiry.id ? { ...item, shop_unread: 0 } : item
-        )
-      );
+      fetch(`/api/inquiries/shop/${inquiry.id}`)
+        .then(() => {
+          setInquiries((prev) =>
+            prev.map((item) =>
+              item.id === inquiry.id ? { ...item, shop_unread: 0 } : item
+            )
+          );
+        })
+        .catch(() => {});
     }
-  };
-
-  const handleCloseDrawer = () => {
-    setSelectedInquiry(null);
-    router.replace("/shop/dashboard/inquiries");
   };
 
   const handleSendReply = async (e: React.FormEvent) => {
@@ -180,7 +184,6 @@ export default function ShopInquiriesClient({
 
       if (res.ok) {
         const updated: Inquiry = await res.json();
-        setSelectedInquiry(updated);
         setInquiries((prev) =>
           prev.map((item) => (item.id === updated.id ? updated : item))
         );
@@ -203,7 +206,6 @@ export default function ShopInquiriesClient({
       });
       if (res.ok) {
         const updated: Inquiry = await res.json();
-        setSelectedInquiry(updated);
         setInquiries((prev) =>
           prev.map((item) => (item.id === updated.id ? updated : item))
         );

@@ -3,8 +3,10 @@ import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Pencil } from "lucide-react";
 import { getCategories, getCategorySchema, getProduct, getShop } from "@/lib/api/public";
 import { getCurrentUser } from "@/lib/auth/session";
+import type { AuthUser } from "@/lib/auth/types";
 import { formatSpecSections, type SpecRow, type SpecSections } from "@/lib/specs/display";
 import { parseSizeGb } from "@/lib/specs/schema";
 import { SITE_URL } from "@/lib/config";
@@ -252,14 +254,16 @@ function ShopComparison({
   now,
   specs,
   hasCondition,
+  isOwner = false,
 }: {
   product: Product;
   shop?: Shop | null;
-  currentUser?: unknown;
+  currentUser?: AuthUser | null;
   now: number;
   specs: SpecSections;
   /** False for property: the row says "For sale" / "For rent" instead. */
   hasCondition: boolean;
+  isOwner?: boolean;
 }) {
   const isAuthenticated = Boolean(currentUser);
   const f = freshness(
@@ -363,6 +367,7 @@ function ShopComparison({
               shop={shop}
               product={product}
               isAuthenticated={isAuthenticated}
+              isOwner={isOwner}
             />
           </div>
 
@@ -458,7 +463,16 @@ function ShopComparison({
                   </span>
                 )}
               </span>
-              {shop ? (
+              {isOwner ? (
+                <Pill
+                  kind="outline"
+                  size="sm"
+                  href={`/shop/dashboard/listings/edit?slug=${product.slug}`}
+                  className="h-9 px-4 text-xs font-bold"
+                >
+                  Edit listing
+                </Pill>
+              ) : shop ? (
                 <TrackedContactAction
                   shop={shop}
                   product={{
@@ -538,6 +552,13 @@ export default async function ProductDetailPage({ params }: Props) {
       ? getShop(product.shop_slug).catch(() => null)
       : Promise.resolve(null),
   ]);
+  const isOwner = Boolean(
+    currentUser?.shops?.some(
+      (s) =>
+        s.slug === product.shop_slug ||
+        (shop && (s.slug === shop.slug || s.id === String(shop.id))),
+    ),
+  );
   const specSections = formatSpecSections(schema, product.specs);
 
   // A subcategory's group ("Vehicles & Auto" for Cars) for the breadcrumb; the
@@ -615,6 +636,30 @@ export default async function ProductDetailPage({ params }: Props) {
         <span className="text-tn-ink">{productName}</span>
       </nav>
 
+      {isOwner && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-tn-hair bg-tn-paper px-4 py-3 sm:px-5">
+          <div className="flex items-center gap-2.5 text-[13.5px] font-medium text-tn-ink2">
+            <span className="size-2 rounded-full bg-tn-green" />
+            <span>You are previewing your own listing as visitors see it.</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/shop/dashboard/listings/edit?slug=${product.slug}`}
+              className="inline-flex items-center gap-1.5 rounded-full bg-tn-ink px-3.5 py-1.5 text-xs font-bold text-white transition-transform hover:-translate-y-px"
+            >
+              <Pencil className="size-3.5" />
+              Edit listing
+            </Link>
+            <Link
+              href="/shop/dashboard/listings"
+              className="inline-flex items-center gap-1.5 rounded-full border border-tn-hair bg-white px-3.5 py-1.5 text-xs font-bold text-tn-ink transition-transform hover:-translate-y-px"
+            >
+              Dashboard
+            </Link>
+          </div>
+        </div>
+      )}
+
       <div className="pt-5">
         <ShopComparison
           product={product}
@@ -623,6 +668,7 @@ export default async function ProductDetailPage({ params }: Props) {
           now={now}
           specs={specSections}
           hasCondition={schema?.hasCondition !== false}
+          isOwner={isOwner}
         />
       </div>
 
