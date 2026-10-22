@@ -6,7 +6,8 @@ import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { TabsBar } from "@/components/shop-profile/tabs-bar";
 import { ShareButton } from "@/components/shop-profile/share-button";
 import { getPublicShopProducts, getShop } from "@/lib/api/public";
-import { Pill } from "@/components/tinsae/pill";
+import { getCurrentUser } from "@/lib/auth/session";
+import { TrackedContactAction } from "@/components/shops/tracked-contact-action";
 import { getInitials, getShopColor } from "@/lib/shops-data";
 import { normalizeImageUrl } from "@/lib/format";
 import Image from "next/image";
@@ -74,13 +75,14 @@ export default async function ShopProfilePage({ params }: Props) {
 
   // Independent reads, so in parallel. The listings are fetched server-side
   // for indexing and a fast first paint.
-  const [shop, initialProducts] = await Promise.all([
+  const [shop, initialProducts, currentUser] = await Promise.all([
     getShop(slug).catch(() => null),
     getPublicShopProducts(slug, {
       page: 1,
       pageSize: 12,
       ordering: "-created_at",
     }).catch(() => null),
+    getCurrentUser(),
   ]);
 
   if (!shop || shop.slug !== slug) {
@@ -98,20 +100,6 @@ export default async function ShopProfilePage({ params }: Props) {
   const coverUrl = normalizeImageUrl(coverPhoto?.url);
   const logoUrl = normalizeImageUrl(shop.logo);
   const totalCount = initialProducts?.count ?? 0;
-
-  const phone = shop.phone;
-
-  let contactHref = "#";
-  let contactLabel = "Contact on Telegram";
-  let contactIcon: "tg" | "phone" = "tg";
-
-  if (phone && phone.startsWith("@")) {
-    contactHref = `https://t.me/${phone.slice(1)}`;
-  } else if (phone) {
-    contactHref = `tel:${phone}`;
-    contactLabel = "Call shop";
-    contactIcon = "phone";
-  }
 
   const memberYear = shop.created_at
     ? new Date(shop.created_at).getFullYear()
@@ -213,9 +201,11 @@ export default async function ShopProfilePage({ params }: Props) {
           <div className="flex items-center gap-2.5 pb-1">
             <ShareButton shopName={shop.name} />
 
-            <Pill kind="solid" size="md" icon={contactIcon} href={contactHref}>
-              {contactLabel}
-            </Pill>
+            <TrackedContactAction
+              shop={shop}
+              isAuthenticated={Boolean(currentUser)}
+              size="md"
+            />
           </div>
         </div>
 

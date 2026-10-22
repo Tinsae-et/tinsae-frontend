@@ -3,7 +3,8 @@ import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCategories, getCategorySchema, getProduct } from "@/lib/api/public";
+import { getCategories, getCategorySchema, getProduct, getShop } from "@/lib/api/public";
+import { getCurrentUser } from "@/lib/auth/session";
 import { formatSpecSections, type SpecRow, type SpecSections } from "@/lib/specs/display";
 import { parseSizeGb } from "@/lib/specs/schema";
 import { SITE_URL } from "@/lib/config";
@@ -18,7 +19,7 @@ import {
 } from "@/lib/format";
 import { CONDITION_OPTIONS } from "@/lib/filters";
 import { cn } from "@/lib/utils";
-import type { Product } from "@/lib/types";
+import type { Product, Shop } from "@/lib/types";
 import { kindForSlug } from "@/components/tinsae/prod-placeholder";
 import { ProductGallery } from "@/components/products/product-gallery";
 import { SimilarProductsInfinite } from "@/components/products/similar-products-infinite";
@@ -28,6 +29,7 @@ import { ProductCardSkeleton } from "@/components/products/product-card";
 import { Pill } from "@/components/tinsae/pill";
 import { Icon } from "@/components/tinsae/icon";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
+import { TrackedContactAction } from "@/components/shops/tracked-contact-action";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -245,16 +247,21 @@ function SpecBlock({ title, rows }: { title: string; rows: SpecRow[] }) {
 
 function ShopComparison({
   product,
+  shop,
+  currentUser,
   now,
   specs,
   hasCondition,
 }: {
   product: Product;
+  shop?: Shop | null;
+  currentUser?: unknown;
   now: number;
   specs: SpecSections;
   /** False for property: the row says "For sale" / "For rent" instead. */
   hasCondition: boolean;
 }) {
+  const isAuthenticated = Boolean(currentUser);
   const f = freshness(
     product.last_confirmed_at,
     product.confirmation_status,
@@ -350,7 +357,13 @@ function ShopComparison({
                 <b>{product.shop_verified ? "1 verified shop" : "1 shop"}</b>
               </p>
             </div>
-            <ProductDetailActions slug={product.slug} title={product.title} />
+            <ProductDetailActions
+              slug={product.slug}
+              title={product.title}
+              shop={shop}
+              product={product}
+              isAuthenticated={isAuthenticated}
+            />
           </div>
 
           {/* freshness */}
@@ -445,16 +458,32 @@ function ShopComparison({
                   </span>
                 )}
               </span>
-              {/* The shop page carries the real contact details (Telegram or
-                  phone); this button used to have no href at all. */}
-              <Pill
-                kind="solid"
-                size="sm"
-                icon="tg"
-                href={product.shop_slug ? `/shops/${product.shop_slug}` : undefined}
-              >
-                Contact
-              </Pill>
+              {shop ? (
+                <TrackedContactAction
+                  shop={shop}
+                  product={{
+                    id: product.id,
+                    title: product.title,
+                    slug: product.slug,
+                  }}
+                  isAuthenticated={isAuthenticated}
+                  size="sm"
+                  label="Contact"
+                />
+              ) : (
+                <Pill
+                  kind="solid"
+                  size="sm"
+                  icon="tg"
+                  href={
+                    product.shop_slug
+                      ? `/shops/${product.shop_slug}`
+                      : undefined
+                  }
+                >
+                  Contact
+                </Pill>
+              )}
             </div>
           </div>
         </div>
@@ -499,17 +528,23 @@ export default async function ProductDetailPage({ params }: Props) {
 
   // Labels, order and units come from the category's schema; without one the
   // specs still render with their stored keys and values.
-  const schema = product.category?.slug
-    ? await getCategorySchema(product.category.slug).catch(() => null)
-    : null;
+  const [schema, categoriesData, currentUser, shop] = await Promise.all([
+    product.category?.slug
+      ? getCategorySchema(product.category.slug).catch(() => null)
+      : Promise.resolve(null),
+    getCategories().catch(() => null),
+    getCurrentUser(),
+    product.shop_slug
+      ? getShop(product.shop_slug).catch(() => null)
+      : Promise.resolve(null),
+  ]);
   const specSections = formatSpecSections(schema, product.specs);
 
   // A subcategory's group ("Vehicles & Auto" for Cars) for the breadcrumb; the
   // product carries only the parent's id, the category list (cached) its name.
   const parentId = product.category?.parent ?? null;
   const parentCategory = parentId
-    ? ((await getCategories().catch(() => null))?.results.find((c) => c.id === parentId) ??
-      null)
+    ? (categoriesData?.results.find((c) => c.id === parentId) ?? null)
     : null;
 
   // Server component: freshness is relative to request time, rendered once.
@@ -583,6 +618,8 @@ export default async function ProductDetailPage({ params }: Props) {
       <div className="pt-5">
         <ShopComparison
           product={product}
+          shop={shop}
+          currentUser={currentUser}
           now={now}
           specs={specSections}
           hasCondition={schema?.hasCondition !== false}
