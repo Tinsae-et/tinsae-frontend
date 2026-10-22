@@ -4,14 +4,38 @@ import { useCompare } from "@/hooks/use-compare";
 import { useSaved } from "@/hooks/use-saved";
 import { Pill } from "@/components/tinsae/pill";
 import { Icon } from "@/components/tinsae/icon";
+import { TrackedContactAction } from "@/components/shops/tracked-contact-action";
 import { cn } from "@/lib/utils";
+
+type ShopInfo = {
+  id?: number;
+  name: string;
+  slug: string;
+  phone?: string;
+  has_phone?: boolean;
+  telegram_username?: string | null;
+  is_verified?: boolean;
+  city?: string;
+};
+
+type ProductInfo = {
+  id?: number;
+  title: string;
+  slug: string;
+};
 
 export function ProductDetailActions({
   slug,
   title,
+  shop,
+  product,
+  isAuthenticated = false,
 }: {
   slug: string;
   title: string;
+  shop?: ShopInfo | null;
+  product?: ProductInfo | null;
+  isAuthenticated?: boolean;
 }) {
   const { isInCompare, toggleCompare } = useCompare();
   const inCompare = isInCompare(slug);
@@ -20,9 +44,20 @@ export function ProductDetailActions({
 
   return (
     <div className="flex flex-col gap-2.5 sm:w-[220px]">
-      <Pill kind="solid" size="lg" icon="tg">
-        Contact best shop
-      </Pill>
+      {shop ? (
+        <TrackedContactAction
+          shop={shop}
+          product={product ?? { title, slug }}
+          isAuthenticated={isAuthenticated}
+          size="lg"
+          kind="solid"
+          label="Contact shop"
+        />
+      ) : (
+        <Pill kind="solid" size="lg" icon="tg">
+          Contact best shop
+        </Pill>
+      )}
 
       <button
         type="button"
