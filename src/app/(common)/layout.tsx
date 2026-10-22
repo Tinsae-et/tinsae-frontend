@@ -22,7 +22,7 @@ export default async function RootLayout({
     <CompareProvider>
       <div className="flex min-h-full flex-col bg-white">
         <SiteHeader user={user} stats={stats} categories={categories} />
-        <div className="flex-1">{children}</div>
+        <div className="flex-1 min-h-0 flex flex-col">{children}</div>
         <SiteFooter />
         <CompareDock />
         <CompareToast />
