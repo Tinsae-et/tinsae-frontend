@@ -28,8 +28,8 @@ export default function DashboardHeader({
       {pathname === "/shop/dashboard/listings" && (
         <ListingHeader setShowSidebar={setShowSidebar} shopSlug={shopSlug} />
       )}
-      {pathname === "/shop/dashboard/inquiries" && (
-        <InquiriesHeader setShowSidebar={setShowSidebar}/>
+      {pathname.startsWith("/shop/dashboard/inquiries") && (
+        <InquiriesHeader setShowSidebar={setShowSidebar} />
       )}
       {(pathname === "/shop/dashboard/listings/new" ||
         pathname === "/shop/dashboard/listings/edit") && (

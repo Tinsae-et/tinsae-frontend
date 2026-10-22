@@ -81,6 +81,16 @@ const nextConfig: NextConfig = {
         destination: "/shop/dashboard/shop-setting",
         permanent: true,
       },
+      {
+        source: "/inquiries/:id",
+        destination: "/messages?inquiry=:id",
+        permanent: false,
+      },
+      {
+        source: "/inquiries",
+        destination: "/messages",
+        permanent: false,
+      },
     ];
   },
   async headers() {

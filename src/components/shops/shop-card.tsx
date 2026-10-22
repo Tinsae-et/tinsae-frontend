@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Icon } from "@/components/tinsae/icon";
 import { Pill } from "@/components/tinsae/pill";
+import { TrackedContactAction } from "@/components/shops/tracked-contact-action";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { normalizeImageUrl } from "@/lib/format";
 import { getInitials, getShopColor } from "@/lib/shops-data";
@@ -81,10 +82,14 @@ export function ShopCard({ shop }: { shop: Shop }) {
           <Pill kind="outline" size="sm" icon="eye" href={`/shops/${shop.slug}`} className="flex-1">
             View shop
           </Pill>
-          {shop.phone && (
-            <Pill kind="solid" size="sm" icon="phone" href={`tel:${shop.phone}`} className="flex-1">
-              Call
-            </Pill>
+          {(shop.phone || shop.has_phone || shop.telegram_username) && (
+            <TrackedContactAction
+              shop={shop}
+              size="sm"
+              kind="solid"
+              className="flex-1"
+              label={shop.telegram_username ? "Telegram" : "Contact"}
+            />
           )}
         </div>
       </div>

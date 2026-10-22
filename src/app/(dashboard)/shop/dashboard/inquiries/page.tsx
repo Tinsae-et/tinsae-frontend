@@ -1,29 +1,22 @@
-import { getShopInquiries } from "@/lib/api/server";
-import { InquiriesPage } from "@/components/shop/dashboard/inquiries/inquiries-page";
+import type { Metadata } from "next";
+import { requireMerchant } from "@/lib/auth/merchant";
+import ShopInquiriesClient from "@/components/shop/dashboard/inquiries/shop-inquiries-client";
 
-type PageProps = {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-};
+export const metadata: Metadata = { title: "Inquiries & Leads — Tinsae" };
 
-export default async function LeadsPage({ searchParams }: PageProps) {
-  const query = await searchParams;
-  const params = new URLSearchParams();
-
-  for (const [key, value] of Object.entries(query)) {
-    if (typeof value === "string") {
-      params.set(key, value);
-    } else {
-      value?.forEach((item) => params.append(key, item));
-    }
-  }
-
-  const queryString = params.toString();
-  const path = `inquiries/shop/${queryString ? `?${queryString}` : ""}`;
-  const inquiries = await getShopInquiries(path);
+export default async function ShopInquiriesPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ id?: string }>;
+}) {
+  const [{ id } = {}, { shop }] = await Promise.all([
+    searchParams ?? Promise.resolve({} as { id?: string }),
+    requireMerchant(),
+  ]);
 
   return (
-    <section>
-      <InquiriesPage inquiries={inquiries} />
+    <section className="w-full">
+      <ShopInquiriesClient shop={shop} initialSelectedId={id} />
     </section>
   );
 }

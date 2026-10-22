@@ -7,7 +7,7 @@ import "server-only";
 // deliberately no refresh-and-retry: a Server Component cannot write cookies,
 // so a rotated refresh token would be lost and the session silently ended.
 // The proxy has already refreshed the access token before any page renders.
-import { Inquiry, type Paginated, type Shop, type ShopPhoto, type ShopProduct, type ShopProductImage, type TelegramState } from "../types";
+import type { Paginated, Shop, ShopPhoto, ShopProduct, ShopProductImage, TelegramState } from "../types";
 import type { VerificationStateResponse } from "../verification";
 import { SERVER_API_URL } from "../config";
 import { readSession } from "../auth/session";
@@ -84,20 +84,4 @@ export async function getShopCover(shopSlug: string): Promise<ShopPhoto | null> 
   );
   const photos = Array.isArray(data) ? data : (data.results ?? []);
   return photos.find((photo) => photo.is_cover) ?? null;
-}
-
-export async function getShopInquiries(path: string, ): Promise<Inquiry[]> {
-  const data = await getAsUser<Inquiry[] | Paginated<Inquiry>>(
-    path,
-    "inquiries",
-  );
-  return Array.isArray(data) ? data : data.results;
-}
-
-export async function unreadCount(): Promise<{unread_count: number}> {
-  const data = await getAsUser<{unread_count: number}>(
-    "inquiries/shop/unread/",
-    "unreads"
-  )
-  return data
 }

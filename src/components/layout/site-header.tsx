@@ -1285,6 +1285,15 @@ export function SiteHeader({
                 </Link>
               )}
 
+              {/* Messages Link */}
+              <Link
+                href="/messages"
+                aria-label="Messages"
+                className="border-tn-hair text-tn-ink2 hover:text-tn-ink hover:border-tn-ink relative flex size-10 cursor-pointer items-center justify-center rounded-full border bg-white transition-colors"
+              >
+                <Icon name="msg" size={17} />
+              </Link>
+
               {/* Notification Bell */}
               <NotificationBell />
 
@@ -1396,6 +1405,18 @@ export function SiteHeader({
                           </Link>
                         </>
                       )}
+                      <Link
+                        href="/messages"
+                        onClick={() => setAccountMenuOpen(false)}
+                        className="text-tn-ink2 hover:bg-tn-paper hover:text-tn-ink flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13.5px] font-semibold transition-colors"
+                      >
+                        <Icon
+                          name="msg"
+                          size={16}
+                          className="text-tn-mute"
+                        />
+                        <span>Messages</span>
+                      </Link>
                     </div>
 
                     <div className="border-tn-hair2 border-t pt-1">
@@ -1636,6 +1657,14 @@ export function SiteHeader({
                     </>
                   ) : (
                     <div className="flex flex-col w-full gap-2">
+                      <Link
+                        href="/messages"
+                        onClick={() => setDrawerOpen(false)}
+                        className="bg-tn-paper text-tn-ink inline-flex h-[46px] w-full items-center justify-center gap-2 rounded-full text-[14.5px] font-bold"
+                      >
+                        <Icon name="msg" size={16} />
+                        <span>Messages</span>
+                      </Link>
                       <Link
                         href="/account/settings"
                         onClick={() => setDrawerOpen(false)}
