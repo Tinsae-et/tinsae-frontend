@@ -27,11 +27,16 @@ export default function ContactForm({
   onDirtyChange,
 }: Props) {
   const [phone, setPhone] = useState<string>(shop.phone ?? "");
+  const [telegramUsername, setTelegramUsername] = useState<string>(
+    shop.telegram_username ?? "",
+  );
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  const dirty = phone !== (shop.phone ?? "");
+  const dirty =
+    phone !== (shop.phone ?? "") ||
+    telegramUsername !== (shop.telegram_username ?? "");
   useEffect(() => {
     onDirtyChange?.(dirty);
   }, [dirty, onDirtyChange]);
@@ -48,8 +53,12 @@ export default function ContactForm({
 
     setSaving(true);
     try {
-      const updated = await updateShopProfile(slug, { phone: cleanPhone });
+      const updated = await updateShopProfile(slug, {
+        phone: cleanPhone,
+        telegram_username: telegramUsername.trim() || null,
+      });
       setPhone(updated.phone ?? cleanPhone);
+      setTelegramUsername(updated.telegram_username ?? "");
       onShopUpdated?.(updated);
       setFieldErrors({});
       setFeedback({ type: "success", message: "Contact details saved." });
@@ -61,7 +70,7 @@ export default function ContactForm({
         message: saveErrorMessage(
           err,
           fields,
-          "Couldn't save your phone number. Please try again.",
+          "Couldn't save your contact details. Please try again.",
         ),
       });
     } finally {
@@ -92,7 +101,7 @@ export default function ContactForm({
         <Field
           label="Phone"
           error={fieldErrors.phone}
-          hint={<>Shown only after a buyer taps &ldquo;reveal&rdquo;.</>}
+          hint={<>Shown only to signed-in buyers when they tap &ldquo;reveal&rdquo;.</>}
         >
           <input
             type="tel"
@@ -105,6 +114,26 @@ export default function ContactForm({
               if (feedback) setFeedback(null);
             }}
             placeholder="+251 9X XXX XXXX"
+            className={`${inputClass} font-tn-mono`}
+          />
+        </Field>
+
+        <Field
+          label="Telegram username"
+          error={fieldErrors.telegram_username}
+          hint={<>Direct link for buyers on Telegram (e.g. username or @username).</>}
+        >
+          <input
+            type="text"
+            name="telegram_username"
+            value={telegramUsername}
+            aria-invalid={Boolean(fieldErrors.telegram_username) || undefined}
+            onChange={(e) => {
+              setTelegramUsername(e.target.value);
+              setFieldErrors((prev) => ({ ...prev, telegram_username: "" }));
+              if (feedback) setFeedback(null);
+            }}
+            placeholder="@yourshop"
             className={`${inputClass} font-tn-mono`}
           />
         </Field>

@@ -9,8 +9,8 @@ export function CompareDock() {
   const pathname = usePathname();
   const { slugs, count, maxItems, clearCompare } = useCompare();
 
-  // Do not show dock on the /compare page itself or if no items are selected
-  if (count === 0 || pathname === "/compare") return null;
+  // Do not show dock on the /compare page, messages page, or if no items are selected
+  if (count === 0 || pathname === "/compare" || pathname?.startsWith("/messages")) return null;
 
   return (
     <div

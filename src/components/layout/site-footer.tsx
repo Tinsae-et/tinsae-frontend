@@ -1,5 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const COLUMNS: [string, string[]][] = [
   ["Buy", ["How it works", "Verified shops", "Trust & safety", "Browse all"]],
@@ -9,6 +12,13 @@ const COLUMNS: [string, string[]][] = [
 ];
 
 export function SiteFooter() {
+  const pathname = usePathname();
+
+  // Hide the marketing footer on the full-screen messaging surface
+  if (pathname?.startsWith("/messages")) {
+    return null;
+  }
+
   return (
     <footer className="border-tn-hair mt-20 border-t">
       <div className="mx-auto grid max-w-[1480px] grid-cols-2 gap-8 px-6 py-14 sm:px-8 md:grid-cols-4 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr] lg:px-12 xl:px-16">

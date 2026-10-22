@@ -50,7 +50,7 @@ export function Pill({
   download?: boolean;
   /** Open `href` in a new tab — for links that leave the site. */
   newTab?: boolean;
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
   type?: "button" | "submit";
   disabled?: boolean;
   children: React.ReactNode;

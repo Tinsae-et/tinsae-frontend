@@ -345,3 +345,55 @@ export function TelegramHeader({
     </div>
   );
 }
+
+export function InquiriesHeader({
+  setShowSidebar,
+  telegramUsername,
+}: {
+  setShowSidebar?: (val: boolean) => void;
+  telegramUsername?: string;
+}) {
+  return (
+    <div className="w-full flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        {setShowSidebar && (
+          <button
+            type="button"
+            onClick={() => setShowSidebar(true)}
+            className="lg:hidden p-1 text-tn-ink hover:text-tn-red cursor-pointer"
+            aria-label="Open sidebar"
+          >
+            <Icon name="menu" size={22} />
+          </button>
+        )}
+        <div className="flex flex-col">
+          <span className="text-[11px] font-bold uppercase tracking-[0.05em] text-tn-mute leading-none">
+            PIPELINE
+          </span>
+          <h1 className="text-[19px] font-extrabold tracking-[-0.025em] text-tn-ink leading-tight mt-0.5">
+            Inquiries
+          </h1>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2.5">
+        <div className="hidden md:flex h-[42px] px-4 rounded-full border border-tn-hair bg-white items-center gap-2 text-[13px] text-tn-ink shadow-[0_2px_8px_rgba(11,11,11,0.04)]">
+          <Icon name="tg" size={15} className="text-[#229ED9]" />
+          <span className="font-tn-mono text-xs text-tn-mute">Synced just now</span>
+        </div>
+        <NotificationBell />
+        {telegramUsername ? (
+          <a
+            href={`https://t.me/${telegramUsername.replace(/^@/, "")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-[38px] items-center gap-2 rounded-full bg-[#229ED9] px-4 text-xs font-bold text-white shadow-xs transition hover:opacity-95"
+          >
+            <Icon name="tg" size={15} />
+            <span className="hidden sm:inline">Open Telegram</span>
+          </a>
+        ) : null}
+      </div>
+    </div>
+  );
+}

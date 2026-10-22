@@ -24,6 +24,7 @@ type NavLinkItem = {
 const NAVLINKS: NavLinkItem[] = [
   { to: "/shop/dashboard/overview", text: "Overview", icon: "home" },
   { to: "/shop/dashboard/listings", text: "Listings", icon: "box" },
+  { to: "/shop/dashboard/inquiries", text: "Inquiries", icon: "msg" },
   { to: "/shop/dashboard/listings/new", text: "Add product", icon: "plus" },
   { to: "/shop/dashboard/shop-setting", text: "Shop settings", icon: "user" },
   { to: "/shop/dashboard/telegram", text: "Telegram setup", icon: "tg" },
@@ -96,10 +97,16 @@ function SideBar({
   shop: AuthShop;
 }) {
   const [teleState, setTeleState] = useState<TelegramState | null>(null);
+  const [unreadInquiries, setUnreadInquiries] = useState<number>(0);
 
   useEffect(() => {
     getTelegramState(shop.slug)
       .then(setTeleState)
+      .catch(() => {});
+
+    fetch("/api/inquiries/shop/unreads")
+      .then((r) => (r.ok ? r.json() : { unread_count: 0 }))
+      .then((data) => setUnreadInquiries(data.unread_count ?? 0))
       .catch(() => {});
   }, [shop.slug]);
 
@@ -160,7 +167,13 @@ function SideBar({
         </div>
 
         {/* Navigation */}
-        <Links links={NAVLINKS} />
+        <Links
+          links={NAVLINKS.map((link) =>
+            link.to === "/shop/dashboard/inquiries" && unreadInquiries > 0
+              ? { ...link, count: unreadInquiries }
+              : link,
+          )}
+        />
 
         {/* Sign out */}
         <div className="px-3 mt-1 pt-1 border-t border-tn-hair2">
