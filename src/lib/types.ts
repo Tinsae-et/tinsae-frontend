@@ -48,6 +48,7 @@ export type Product = {
   price: string;
   currency: string;
   condition?: string | null;
+  shop_id?: number;
   shop_name: string;
   shop_slug?: string;
   shop_verified: boolean;
@@ -89,6 +90,8 @@ export type Shop = {
   categories?: string[];
   photos?: ShopPhoto[];
   phone?: string;
+  has_phone?: boolean;
+  telegram_username?: string | null;
   latitude?: string | number | null;
   longitude?: string | number | null;
   telegram_chat_id?: string | null;
@@ -173,6 +176,7 @@ export type ShopProfile = {
   name?: string;
   description?: string;
   phone?: string;
+  telegram_username?: string | null;
   city?: string;
   address?: string;
   categories?: string[];
@@ -193,4 +197,46 @@ export type TelegramConnectResult = {
   deep_link: string | null;
   bot_username: string;
   expires_at: string;
+};
+
+export type ContactChannel = "phone" | "telegram" | "in_app";
+
+export type ContactIntentRequest = {
+  channel: ContactChannel;
+  shop?: number | string;
+  product?: number | string;
+  honeypot?: string;
+};
+
+export type ContactIntentResponse = {
+  channel: ContactChannel;
+  target: string;
+  phone?: string;
+  telegram_url?: string;
+};
+
+export type InquirySenderRole = "buyer" | "shop";
+export type InquiryStatus = "open" | "closed";
+
+export type InquiryMessage = {
+  id: number;
+  inquiry: number;
+  body: string;
+  sent_via: "web" | "telegram";
+  sender_role: InquirySenderRole;
+  created_at?: string;
+};
+
+export type Inquiry = {
+  id: number;
+  buyer: number;
+  buyer_name?: string;
+  shop: Shop;
+  product: Product | null;
+  status: InquiryStatus;
+  last_message_at: string;
+  last_sender_role: InquirySenderRole;
+  buyer_unread: number;
+  shop_unread: number;
+  messages: InquiryMessage[];
 };
