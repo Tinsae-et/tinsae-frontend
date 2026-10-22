@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import React from "react";
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Pencil } from "lucide-react";
 import { Icon } from "@/components/tinsae/icon";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { TabsBar } from "@/components/shop-profile/tabs-bar";
@@ -10,6 +12,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { TrackedContactAction } from "@/components/shops/tracked-contact-action";
 import { getInitials, getShopColor } from "@/lib/shops-data";
 import { normalizeImageUrl } from "@/lib/format";
+import { Pill } from "@/components/tinsae/pill";
 import Image from "next/image";
 
 type Stat = {
@@ -89,6 +92,12 @@ export default async function ShopProfilePage({ params }: Props) {
     notFound();
   }
 
+  const isOwner = Boolean(
+    currentUser?.shops?.some(
+      (s) => s.slug === shop.slug || s.id === String(shop.id),
+    ),
+  );
+
   // Only real data from the API is shown here. Ratings, reviews, response
   // rate and opening hours used to fall back to invented numbers (4.9 stars,
   // 296 reviews, 98% replies) for every shop; they stay hidden until the
@@ -120,6 +129,33 @@ export default async function ShopProfilePage({ params }: Props) {
 
   return (
     <section className="bg-tn-white text-tn-ink min-h-screen w-full">
+      {/* ── Owner Preview Banner ── */}
+      {isOwner && (
+        <div className="border-b border-tn-hair bg-tn-paper px-6 py-2.5 sm:px-8 lg:px-12 xl:px-16">
+          <div className="mx-auto flex max-w-[1480px] flex-wrap items-center justify-between gap-3 text-xs font-semibold">
+            <div className="flex items-center gap-2 text-tn-ink2">
+              <span className="size-2 rounded-full bg-tn-green" />
+              <span>You are previewing your shop profile as visitors see it.</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/shop/dashboard/shop-setting"
+                className="inline-flex items-center gap-1.5 rounded-full bg-tn-ink px-3 py-1 font-bold text-white transition-transform hover:-translate-y-px"
+              >
+                <Pencil className="size-3" />
+                Edit settings
+              </Link>
+              <Link
+                href="/shop/dashboard/overview"
+                className="inline-flex items-center gap-1.5 rounded-full border border-tn-hair bg-white px-3 py-1 font-bold text-tn-ink transition-transform hover:-translate-y-px"
+              >
+                Dashboard
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Cover ── */}
       <div
         className="relative h-[172px] w-full overflow-hidden"
@@ -201,11 +237,22 @@ export default async function ShopProfilePage({ params }: Props) {
           <div className="flex items-center gap-2.5 pb-1">
             <ShareButton shopName={shop.name} />
 
-            <TrackedContactAction
-              shop={shop}
-              isAuthenticated={Boolean(currentUser)}
-              size="md"
-            />
+            {isOwner ? (
+              <Pill
+                kind="solid"
+                size="md"
+                href="/shop/dashboard/shop-setting"
+              >
+                <Pencil className="size-4" />
+                <span>Edit shop</span>
+              </Pill>
+            ) : (
+              <TrackedContactAction
+                shop={shop}
+                isAuthenticated={Boolean(currentUser)}
+                size="md"
+              />
+            )}
           </div>
         </div>
 
