@@ -7,7 +7,7 @@ import { SortDropdown } from "@/components/tinsae/sort-dropdown";
 import type { ShopProductQuery } from "@/lib/api/public";
 import { getPublicShopProducts } from "@/lib/api/public";
 import { ProductCard, ProductCardSkeleton } from "../products/product-card";
-import type { Product, Paginated } from "@/lib/types";
+import type { Product, Paginated, Shop } from "@/lib/types";
 
 const PAGE_SIZE = 12;
 
@@ -21,10 +21,12 @@ const LISTING_SORT_OPTIONS = [
 export function ListingSection({
   slug,
   shopSlug,
+  shop,
   initialProducts,
 }: {
   slug?: string;
   shopSlug?: string;
+  shop?: Shop;
   initialProducts?: Paginated<Product> | null;
 }) {
   const resolvedSlug = (shopSlug || slug) ?? "";
@@ -276,7 +278,14 @@ export function ListingSection({
       </div>
 
       {/* Category chips */}
-      <CategoryChips total={total} query={query} setQuery={setQuery} />
+      <CategoryChips
+        total={total}
+        query={query}
+        setQuery={setQuery}
+        shop={shop}
+        products={products}
+        initialProducts={initialProducts}
+      />
 
       {/* Listing cards */}
       <div className="mt-6 grid grid-cols-2 gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

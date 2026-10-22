@@ -18,7 +18,7 @@ export function MainSection({
   return (
     <div className="grid grid-cols-1 items-start gap-7 py-8 lg:grid-cols-[1fr_320px]">
       <div className={tab === "listings" ? "block" : "hidden"}>
-        <ListingSection slug={shop.slug} initialProducts={initialProducts} />
+        <ListingSection slug={shop.slug} shop={shop} initialProducts={initialProducts} />
       </div>
       {tab === "about" && (
         <AboutTab shop={shop} listingsCount={initialProducts?.count ?? 0} />
