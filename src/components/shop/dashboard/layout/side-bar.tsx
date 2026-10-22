@@ -13,7 +13,6 @@ import type { AuthShop } from "@/lib/auth/types";
 import { getInitials } from "@/lib/shops-data";
 import { getTelegramState } from "@/lib/api/client";
 import type { TelegramState } from "@/lib/types";
-
 type NavLinkItem = {
   to: string;
   text: string;
@@ -25,6 +24,7 @@ const NAVLINKS: NavLinkItem[] = [
   { to: "/shop/dashboard/overview", text: "Overview", icon: "home" },
   { to: "/shop/dashboard/listings", text: "Listings", icon: "box" },
   { to: "/shop/dashboard/listings/new", text: "Add product", icon: "plus" },
+  { to: "/shop/dashboard/inquiries", text: "Inquiries", icon: "msg" },
   { to: "/shop/dashboard/shop-setting", text: "Shop settings", icon: "user" },
   { to: "/shop/dashboard/telegram", text: "Telegram setup", icon: "tg" },
   { to: "/shop/dashboard/get-verified", text: "Get verified", icon: "shield" },

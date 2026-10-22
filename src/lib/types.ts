@@ -1,6 +1,8 @@
 // Shapes returned by tinsae-backend (catalog + shops apps).
 // Kept in step with catalog/serializers.py.
 
+import { AuthUser } from "./auth/types";
+
 export type Paginated<T> = {
   count: number;
   next: string | null;
@@ -194,3 +196,24 @@ export type TelegramConnectResult = {
   bot_username: string;
   expires_at: string;
 };
+
+export type Inquiry = {
+  id: number;
+  buyer: AuthUser;
+  shop: Shop;
+  product: Product;
+  status: string;
+  last_message_at: string;
+  last_sender_role: string;
+  buyer_unread: number;
+  shop_unread: number;
+  messages: Message[];
+}
+
+export type Message = {
+  id: number;
+  inquiry: number;
+  body: string;
+  sent_via: string;
+  sender_role: string;
+}
