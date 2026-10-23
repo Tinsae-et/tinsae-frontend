@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useMemo, useState } from "react";
 import type { ShopProductQuery } from "@/lib/api/public";
 import { useCategories } from "@/hooks/use-categories";
 import type { NavCategory } from "@/lib/nav-categories";
@@ -13,12 +13,26 @@ function formatSlug(slug: string): string {
     .join(" ");
 }
 
+const EMPTY: Product[] = [];
+
+/** `prev` plus any categories in `products`; the same map when nothing is new. */
+function withCategories(prev: Map<string, string>, products: Product[]): Map<string, string> {
+  let next = prev;
+  for (const p of products) {
+    if (p.category?.slug && !next.has(p.category.slug)) {
+      if (next === prev) next = new Map(prev);
+      next.set(p.category.slug, p.category.name);
+    }
+  }
+  return next;
+}
+
 export function CategoryChips({
   query,
   setQuery,
   total,
   shop,
-  products = [],
+  products = EMPTY,
   initialProducts,
 }: {
   query: ShopProductQuery;
@@ -51,21 +65,19 @@ export function CategoryChips({
     return map;
   }, [allCategories]);
 
-  // Accumulate discovered product categories so chips do not vanish when filtering down
-  const discoveredProductCategoriesRef = useRef<Map<string, string>>(new Map());
+  // Categories seen in any results so far, so chips don't vanish when a filter
+  // narrows the list. Kept in state and updated during render when `products`
+  // changes; the ref it replaces was filled in an effect, a render too late.
+  const [discovered, setDiscovered] = useState(() =>
+    withCategories(new Map(), [...(initialProducts?.results ?? []), ...products]),
+  );
+  const [seenProducts, setSeenProducts] = useState(products);
+  if (products !== seenProducts) {
+    setSeenProducts(products);
+    setDiscovered((prev) => withCategories(prev, products));
+  }
 
-  useEffect(() => {
-    for (const p of initialProducts?.results ?? []) {
-      if (p.category?.slug) {
-        discoveredProductCategoriesRef.current.set(p.category.slug, p.category.name);
-      }
-    }
-    for (const p of products) {
-      if (p.category?.slug) {
-        discoveredProductCategoriesRef.current.set(p.category.slug, p.category.name);
-      }
-    }
-  }, [initialProducts, products]);
+  const shopCategories = shop?.categories;
 
   // Chips consist of:
   // 1. Exact categories registered by the shop (shop.categories)
@@ -88,14 +100,14 @@ export function CategoryChips({
     };
 
     // 1. Shop registered categories
-    if (shop?.categories && Array.isArray(shop.categories)) {
-      for (const cat of shop.categories) {
+    if (Array.isArray(shopCategories)) {
+      for (const cat of shopCategories) {
         addCategory(cat);
       }
     }
 
     // 2. Discovered product categories
-    discoveredProductCategoriesRef.current.forEach((name, slug) => {
+    discovered.forEach((name, slug) => {
       addCategory(slug, name);
     });
 
@@ -121,7 +133,7 @@ export function CategoryChips({
     }
 
     return [];
-  }, [shop?.categories, navCategoryMap, currentCategory, products, initialProducts]);
+  }, [shopCategories, navCategoryMap, discovered, currentCategory, products, initialProducts]);
 
   if (chips.length <= 1) {
     return null;

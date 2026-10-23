@@ -97,6 +97,9 @@ export function useInquiries(role: InquiryRole, selectedId: number | null) {
   }, [role, markRead]);
 
   useEffect(() => {
+    // refresh() sets state only after its await, once the list arrives; the
+    // rule doesn't follow the await and reads it as a synchronous setState.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void refresh();
     const onVisible = () => {
       if (document.visibilityState === "visible") void refresh();
@@ -111,6 +114,8 @@ export function useInquiries(role: InquiryRole, selectedId: number | null) {
 
   // Opening a thread reads it (and so clears its unread count) once.
   useEffect(() => {
+    // Same as above: markRead sets state only after getInquiry resolves.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (selectedId !== null) void markRead(selectedId);
   }, [selectedId, markRead]);
 
