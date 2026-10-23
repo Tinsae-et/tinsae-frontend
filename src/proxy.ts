@@ -19,7 +19,9 @@ function isProtectedRoute(pathname: string): boolean {
     pathname.startsWith("/dashboard/") ||
     pathname.startsWith("/shop/dashboard") ||
     pathname === "/shop/onboarding" ||
-    pathname.startsWith("/account")
+    pathname.startsWith("/account") ||
+    pathname === "/messages" ||
+    pathname.startsWith("/messages/")
   );
 }
 

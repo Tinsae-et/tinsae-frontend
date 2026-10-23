@@ -1,4 +1,7 @@
-import { proxyToDjango } from "@/lib/auth/django-proxy";
+import { NextResponse } from "next/server";
+
+import { djangoPath, proxyToDjango } from "@/lib/auth/django-proxy";
+import { isInquiryId } from "@/lib/inquiries";
 
 /**
  * Retrieves a single inquiry thread for the authenticated buyer.
@@ -9,8 +12,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  return proxyToDjango(request, `inquiries/buyer/${id}/`, {
+  if (!isInquiryId(id)) {
+    return NextResponse.json({ detail: "Not found." }, { status: 404 });
+  }
+  return proxyToDjango(request, djangoPath("inquiries", "buyer", id), {
     revalidateCatalog: false,
   });
 }
-

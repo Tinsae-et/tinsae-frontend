@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Icon } from "@/components/tinsae/icon";
 import { Pill } from "@/components/tinsae/pill";
 import { getShops, type ShopArea } from "@/lib/api/public";
+import { getCurrentUser } from "@/lib/auth/session";
 import {
   DIRECTORY_PAGE_SIZE,
   DIRECTORY_SORTS,
@@ -111,14 +112,18 @@ export function DirectoryControls({ query, areas }: { query: DirectoryQuery; are
 /** The results for one query. Rendered under a Suspense boundary keyed on the query. */
 export async function DirectoryResults({ query }: { query: DirectoryQuery }) {
   let data;
+  let currentUser;
   try {
-    data = await getShops({
-      verifiedOnly: true,
-      city: query.area,
-      ordering: DIRECTORY_SORTS[query.sort].ordering,
-      page: query.page,
-      pageSize: DIRECTORY_PAGE_SIZE,
-    });
+    [data, currentUser] = await Promise.all([
+      getShops({
+        verifiedOnly: true,
+        city: query.area,
+        ordering: DIRECTORY_SORTS[query.sort].ordering,
+        page: query.page,
+        pageSize: DIRECTORY_PAGE_SIZE,
+      }),
+      getCurrentUser(),
+    ]);
   } catch {
     // Past the last page the API answers 404; anything else is an outage.
     // Neither is "no shops", so neither shows the empty state.
@@ -176,7 +181,7 @@ export async function DirectoryResults({ query }: { query: DirectoryQuery }) {
       </p>
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
         {data.results.map((shop) => (
-          <ShopCard key={shop.id} shop={shop} />
+          <ShopCard key={shop.id} shop={shop} isAuthenticated={Boolean(currentUser)} />
         ))}
       </div>
       {pages > 1 && <Pager query={query} pages={pages} />}

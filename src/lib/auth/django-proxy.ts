@@ -28,6 +28,16 @@ import { clearSessionCookies, setAccessCookie, setRefreshCookie } from "./sessio
  *    client dressed up as JSON.
  *
  * Django still decides whether this user may touch `path`.
+ *
+ * Two opt-ins, both off by default:
+ *  - `anonymous`: an endpoint Django also serves to signed-out visitors (the
+ *    contact-intent log). Without a usable session the call goes out without a
+ *    token instead of answering 401; a session that just expired still has its
+ *    cookies cleared.
+ *  - `forwardClient`: pass the browser's address and user agent on, for
+ *    endpoints that throttle or filter bots by them. Same trust model as the
+ *    auth driver: the edge proxy owns X-Forwarded-For (see CLAUDE.md,
+ *    "Client IP").
  */
 export async function proxyToDjango(
   request: Request,
@@ -35,7 +45,14 @@ export async function proxyToDjango(
   {
     search,
     revalidateCatalog = true,
-  }: { search?: URLSearchParams; revalidateCatalog?: boolean } = {},
+    anonymous = false,
+    forwardClient = false,
+  }: {
+    search?: URLSearchParams;
+    revalidateCatalog?: boolean;
+    anonymous?: boolean;
+    forwardClient?: boolean;
+  } = {},
 ): Promise<NextResponse> {
   const method = request.method.toUpperCase();
 
@@ -50,13 +67,28 @@ export async function proxyToDjango(
   } catch {
     return NextResponse.json({ detail: "Malformed request body." }, { status: 400 });
   }
+  if (forwardClient) {
+    init.headers = { ...(init.headers as Record<string, string> | undefined), ...clientHeaders(request) };
+  }
 
   const qs = search?.toString();
   const target = `${SERVER_API_URL}/api/v1/${path}${qs ? `?${qs}` : ""}`;
 
   let result: Awaited<ReturnType<typeof authedFetch>>;
+  let expired = false;
   try {
     result = await authedFetch(target, init);
+    if (!result.ok && anonymous) {
+      expired = result.reason === "expired";
+      result = {
+        ok: true,
+        response: await fetch(target, {
+          ...init,
+          cache: "no-store",
+          signal: AbortSignal.timeout(ANONYMOUS_TIMEOUT_MS),
+        }),
+      };
+    }
   } catch (error) {
     console.error("[api] Django unreachable", method, path, error);
     return NextResponse.json(
@@ -93,6 +125,7 @@ export async function proxyToDjango(
     setAccessCookie(res, result.rotated.access);
     if (result.rotated.refresh) setRefreshCookie(res, result.rotated.refresh);
   }
+  if (expired) clearSessionCookies(res);
 
   // Public pages serve cached catalogue reads (lib/api/public). A merchant who
   // just edited a listing or their profile should see it there immediately,
@@ -104,6 +137,20 @@ export async function proxyToDjango(
   }
 
   return res;
+}
+
+/** Matches authedFetch's ceiling, so both paths fail at the same point. */
+const ANONYMOUS_TIMEOUT_MS = 10_000;
+
+/** The browser's address and user agent, for `forwardClient`. */
+function clientHeaders(request: Request): Record<string, string> {
+  const out: Record<string, string> = {};
+  const forwardedFor =
+    request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip");
+  const userAgent = request.headers.get("user-agent");
+  if (forwardedFor) out["X-Forwarded-For"] = forwardedFor;
+  if (userAgent) out["User-Agent"] = userAgent;
+  return out;
 }
 
 /** The body to send upstream, re-encoded; throws on malformed JSON. */
@@ -123,6 +170,21 @@ async function forwardBody(request: Request, method: string): Promise<RequestIni
     headers: { "content-type": "application/json" },
     body: JSON.stringify(JSON.parse(raw)),
   };
+}
+
+/**
+ * The same request with a body the route has already checked, for routes that
+ * validate before proxying. Only the headers proxyToDjango reads are carried
+ * over (the session itself travels in cookies, read via next/headers), so the
+ * original's Content-Length can't disagree with the new body.
+ */
+export function withVettedBody(request: Request, body: unknown): Request {
+  const headers = new Headers({ "content-type": "application/json" });
+  for (const name of ["origin", "host", "x-forwarded-for", "x-real-ip", "user-agent"]) {
+    const value = request.headers.get(name);
+    if (value) headers.set(name, value);
+  }
+  return new Request(request.url, { method: request.method, headers, body: JSON.stringify(body) });
 }
 
 /** Encodes each segment of a path built from route params. */

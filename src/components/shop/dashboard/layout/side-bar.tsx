@@ -12,6 +12,8 @@ import { LogoutButton } from "@/components/auth/logout-button";
 import type { AuthShop } from "@/lib/auth/types";
 import { getInitials } from "@/lib/shops-data";
 import { getTelegramState } from "@/lib/api/client";
+import { getUnreadInquiryCount } from "@/lib/api/inquiries";
+import { INQUIRIES_READ_EVENT, INQUIRY_POLL_MS } from "@/hooks/use-inquiries";
 import type { TelegramState } from "@/lib/types";
 
 type NavLinkItem = {
@@ -103,12 +105,28 @@ function SideBar({
     getTelegramState(shop.slug)
       .then(setTeleState)
       .catch(() => {});
-
-    fetch("/api/inquiries/shop/unreads")
-      .then((r) => (r.ok ? r.json() : { unread_count: 0 }))
-      .then((data) => setUnreadInquiries(data.unread_count ?? 0))
-      .catch(() => {});
   }, [shop.slug]);
+
+  // The sidebar outlives page changes, so the badge polls like the inboxes do
+  // and refetches as soon as an inbox reads a thread. A failed poll keeps the
+  // last count.
+  useEffect(() => {
+    const load = () => {
+      if (document.visibilityState !== "visible") return;
+      getUnreadInquiryCount("shop")
+        .then(setUnreadInquiries)
+        .catch(() => {});
+    };
+    load();
+    const timer = setInterval(load, INQUIRY_POLL_MS);
+    window.addEventListener(INQUIRIES_READ_EVENT, load);
+    document.addEventListener("visibilitychange", load);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener(INQUIRIES_READ_EVENT, load);
+      document.removeEventListener("visibilitychange", load);
+    };
+  }, []);
 
   const isConnected = teleState?.status === "connected";
   const isBlocked = teleState?.status === "blocked";

@@ -483,6 +483,8 @@ function ShopComparison({
                   isAuthenticated={isAuthenticated}
                   size="sm"
                   label="Contact"
+                  // The hero's button (ProductDetailActions) reopens a saved draft.
+                  restoreDraft={false}
                 />
               ) : (
                 <Pill

@@ -80,7 +80,61 @@ describe("POST /api/inquiries/message", () => {
     const res = await POST(req);
     expect(res.status).toBe(401);
     const data = await res.json();
-    expect(data.detail).toContain("Please sign in");
+    expect(data.detail).toContain("Sign in");
+  });
+
+  it("rejects a non-text or over-long body without calling Django", async () => {
+    for (const body of [42, "x".repeat(501)]) {
+      const req = makeRequest({
+        origin: "https://tinsae.test",
+        body: JSON.stringify({ shop: "test-shop", body }),
+        contentType: "application/json",
+      });
+      const res = await POST(req);
+      expect(res.status).toBe(400);
+    }
+    expect(authedFetch).not.toHaveBeenCalled();
+  });
+
+  it("rejects a malformed shop reference", async () => {
+    const req = makeRequest({
+      origin: "https://tinsae.test",
+      body: JSON.stringify({ shop: "../admin", body: "Hello" }),
+      contentType: "application/json",
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+    expect(authedFetch).not.toHaveBeenCalled();
+  });
+
+  it("answers 502 when Django is unreachable", async () => {
+    authedFetch.mockRejectedValue(new TypeError("fetch failed"));
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const req = makeRequest({
+      origin: "https://tinsae.test",
+      body: JSON.stringify({ shop: "test-shop", body: "Hello" }),
+      contentType: "application/json",
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(502);
+  });
+
+  it("forwards only the known fields", async () => {
+    authedFetch.mockResolvedValue({
+      ok: true,
+      response: new Response(JSON.stringify({ id: 5 }), {
+        status: 201,
+        headers: { "content-type": "application/json" },
+      }),
+    });
+    const req = makeRequest({
+      origin: "https://tinsae.test",
+      body: JSON.stringify({ shop: 3, body: "  Hello  ", buyer: 999, status: "closed" }),
+      contentType: "application/json",
+    });
+    await POST(req);
+    const sent = JSON.parse(String(authedFetch.mock.calls[0][1]?.body));
+    expect(sent).toEqual({ shop: 3, body: "Hello" });
   });
 
   it("forwards message successfully when authenticated", async () => {
