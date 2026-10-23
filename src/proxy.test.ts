@@ -89,6 +89,16 @@ describe("proxy", () => {
     expect(res.headers.getSetCookie()).toEqual([]);
   });
 
+  it("sends a signed-out visitor from /messages to sign in, keeping the thread", async () => {
+    const proxy = await loadProxy();
+    const res = await proxy(request("/messages/42", {}));
+
+    expect(res.status).toBe(307);
+    const location = new URL(res.headers.get("location")!);
+    expect(location.pathname).toBe("/signin");
+    expect(location.searchParams.get("next")).toBe("/messages/42");
+  });
+
   it("does not bounce /signin to the dashboard on cookie presence alone", async () => {
     const proxy = await loadProxy();
     const res = await proxy(request("/signin", { "__Host-tinsae_refresh": "stale" }));
