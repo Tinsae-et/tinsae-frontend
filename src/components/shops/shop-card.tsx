@@ -12,7 +12,14 @@ import type { Shop } from "@/lib/types";
 // rate, response time, distance and "confirmed today" have no data behind
 // them yet, so they are left out rather than invented.
 
-export function ShopCard({ shop }: { shop: Shop }) {
+export function ShopCard({
+  shop,
+  isAuthenticated = false,
+}: {
+  shop: Shop;
+  /** Without it the contact dialog asks a signed-in buyer to sign in. */
+  isAuthenticated?: boolean;
+}) {
   const color = getShopColor(shop.name);
   const logo = normalizeImageUrl(shop.logo);
   const products = shop.active_listings_count ?? 0;
@@ -85,6 +92,7 @@ export function ShopCard({ shop }: { shop: Shop }) {
           {(shop.phone || shop.has_phone || shop.telegram_username) && (
             <TrackedContactAction
               shop={shop}
+              isAuthenticated={isAuthenticated}
               size="sm"
               kind="solid"
               className="flex-1"

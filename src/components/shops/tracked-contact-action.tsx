@@ -8,8 +8,10 @@ import { Icon } from "@/components/tinsae/icon";
 import { Pill } from "@/components/tinsae/pill";
 import { VerifiedBadge } from "@/components/tinsae/verified-badge";
 import { useModal } from "@/hooks/use-modal";
+import { recordContactIntent, startInquiry } from "@/lib/api/inquiries";
+import { MESSAGE_MAX_LENGTH, safeContactTarget } from "@/lib/inquiries";
 import { cn } from "@/lib/utils";
-import type { ContactChannel, ContactIntentResponse } from "@/lib/types";
+import type { ContactChannel } from "@/lib/types";
 
 const emptySubscribe = () => () => {};
 function useIsMounted() {
@@ -45,7 +47,38 @@ type Props = {
   kind?: "solid" | "dark" | "outline" | "ghost" | "light";
   className?: string;
   label?: string;
+  /**
+   * Reopen with the buyer's unsent message after they come back from signing
+   * in. Turn it off on a second button for the same shop and listing on one
+   * page, or both dialogs would open.
+   */
+  restoreDraft?: boolean;
 };
+
+// A signed-out buyer can write their message first; "Sign in to send" keeps
+// it in sessionStorage (an unsent draft — CLAUDE.md allows that) and the
+// dialog reopens with it once they're back. Never sent automatically: they
+// press send themselves.
+const draftKey = (shop: ShopInfo, product?: ProductInfo) =>
+  `tinsae:contact-draft:${shop.slug}:${product?.slug ?? ""}`;
+
+function readDraft(key: string): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeDraft(key: string, value: string | null) {
+  try {
+    if (value) window.sessionStorage.setItem(key, value);
+    else window.sessionStorage.removeItem(key);
+  } catch {
+    // Private mode or storage blocked: the draft just isn't kept.
+  }
+}
 
 export function TrackedContactAction({
   shop,
@@ -55,10 +88,22 @@ export function TrackedContactAction({
   kind = "solid",
   className,
   label,
+  restoreDraft = true,
 }: Props) {
   const mounted = useIsMounted();
-  const [open, setOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"message" | "telegram" | "phone">("message");
+  const pathname = usePathname();
+  const key = draftKey(shop, product);
+
+  // Read once, on the client, before the first paint of the dialog. The
+  // dialog only renders after mount, so this can't cause a hydration mismatch.
+  const [draft] = useState(() => (restoreDraft && isAuthenticated ? readDraft(key) : null));
+  const [open, setOpen] = useState(Boolean(draft));
+  const [messageText, setMessageText] = useState(
+    draft ??
+      (product ? `Hi, is "${product.title}" still available?` : "Hi, I'm interested in your listings."),
+  );
+  const [sending, setSending] = useState(false);
+  const [sentId, setSentId] = useState<number | "unknown" | null>(null);
   const [loadingChannel, setLoadingChannel] = useState<ContactChannel | null>(null);
   const [revealedPhone, setRevealedPhone] = useState<string | null>(
     shop.phone?.trim() ? shop.phone : null,
@@ -66,20 +111,17 @@ export function TrackedContactAction({
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [honeypot, setHoneypot] = useState("");
-  const pathname = usePathname();
 
-  const [messageText, setMessageText] = useState(
-    product ? `Hi, is "${product.title}" still available?` : "Hi, I am interested in your listings.",
-  );
-  const [sendingMessage, setSendingMessage] = useState(false);
-  const [messageSent, setMessageSent] = useState(false);
-
-  const modalRef = useModal<HTMLDivElement>(open, () => setOpen(false));
+  const close = () => {
+    setOpen(false);
+    writeDraft(key, null);
+  };
+  const modalRef = useModal<HTMLDivElement>(mounted && open, close);
 
   const hasPhoneOption = Boolean(shop.has_phone || shop.phone?.trim());
   const hasTelegramOption = Boolean(shop.telegram_username?.trim());
+  const signinHref = `/signin?next=${encodeURIComponent(pathname || `/shops/${shop.slug}`)}`;
 
-  // Default trigger button icon & label
   const buttonIcon = hasTelegramOption ? "tg" : hasPhoneOption ? "phone" : "msg";
   const buttonLabel = label || (hasTelegramOption ? "Contact on Telegram" : "Contact shop");
 
@@ -93,78 +135,58 @@ export function TrackedContactAction({
   const handleContactIntent = async (channel: ContactChannel) => {
     setError(null);
     setLoadingChannel(channel);
-
     try {
-      const res = await fetch("/api/inquiries/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          channel,
-          shop: shop.id ?? shop.slug,
-          product: product?.id ?? product?.slug,
-          honeypot,
-        }),
+      const data = await recordContactIntent({
+        channel,
+        shop: shop.id ?? shop.slug,
+        product: product?.id ?? product?.slug,
+        honeypot,
       });
-
-      const data = (await res.json()) as ContactIntentResponse & { detail?: string };
-
-      if (!res.ok) {
-        throw new Error(data.detail || "Unable to reach the shop right now.");
-      }
-
-      if (channel === "telegram" && data.target) {
-        window.open(data.target, "_blank", "noopener,noreferrer");
-        setOpen(false);
-      } else if (channel === "phone" && data.target) {
+      const target = safeContactTarget(data.target);
+      if (!target) throw new Error("We couldn't open that contact link.");
+      if (channel === "phone") {
         if (data.phone) setRevealedPhone(data.phone);
-        window.location.href = data.target;
+        window.location.href = target;
+      } else {
+        window.open(target, "_blank", "noopener,noreferrer");
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to record contact.";
-      setError(msg);
+      setError(err instanceof Error ? err.message : "Unable to reach the shop right now.");
     } finally {
       setLoadingChannel(null);
     }
   };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!messageText.trim()) return;
-
+  const handleSendMessage = async () => {
+    const body = messageText.trim();
+    if (!body || sending) return;
     setError(null);
-    setSendingMessage(true);
-
+    setSending(true);
     try {
-      const res = await fetch("/api/inquiries/message", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          shop: shop.id ?? shop.slug,
-          product: product?.id ?? product?.slug,
-          body: messageText.trim(),
-          honeypot,
-        }),
+      const data = await startInquiry({
+        shop: shop.id ?? shop.slug,
+        product: product?.id ?? product?.slug,
+        body,
+        honeypot,
       });
-
-      const data = (await res.json()) as { id?: number; detail?: string };
-      if (!res.ok) {
-        throw new Error(data.detail || "Unable to send message right now.");
-      }
-
-      setMessageSent(true);
+      writeDraft(key, null);
+      setSentId(typeof data.id === "number" ? data.id : "unknown");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to send message.";
-      setError(msg);
+      setError(err instanceof Error ? err.message : "Unable to send your message right now.");
     } finally {
-      setSendingMessage(false);
+      setSending(false);
     }
   };
 
-  const handleCopyPhone = (number: string) => {
+  const handleCopyPhone = async (number: string) => {
     if (!navigator.clipboard) return;
-    navigator.clipboard.writeText(number);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(number);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard refused; the number is on screen to copy by hand.
+    }
   };
 
   return (
@@ -187,10 +209,10 @@ export function TrackedContactAction({
         createPortal(
           <div
             role="presentation"
-            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in"
+            className="animate-in fade-in fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs duration-200"
             onClick={(e) => {
               e.stopPropagation();
-              if (e.target === e.currentTarget) setOpen(false);
+              if (e.target === e.currentTarget) close();
             }}
           >
             <div
@@ -199,7 +221,7 @@ export function TrackedContactAction({
               aria-modal="true"
               aria-labelledby="contact-modal-title"
               onClick={(e) => e.stopPropagation()}
-              className="border-tn-hair relative w-full max-w-lg overflow-hidden rounded-[24px] border bg-white p-6 shadow-2xl sm:p-7 animate-in zoom-in-95 duration-150"
+              className="border-tn-hair animate-in zoom-in-95 relative max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-[24px] border bg-white p-6 shadow-2xl duration-150 sm:p-7"
             >
               {/* Honeypot field for bot trapping */}
               <input
@@ -213,7 +235,7 @@ export function TrackedContactAction({
                 className="sr-only absolute -left-[9999px] opacity-0"
               />
 
-              {/* Modal Header */}
+              {/* Header */}
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -227,7 +249,7 @@ export function TrackedContactAction({
                   </div>
                   {product && (
                     <p className="text-tn-ink2 mt-1 truncate text-xs font-semibold">
-                      Regarding: {product.title}
+                      About: {product.title}
                     </p>
                   )}
                   {shop.city && (
@@ -237,275 +259,217 @@ export function TrackedContactAction({
                     </p>
                   )}
                 </div>
-
                 <button
                   type="button"
-                  onClick={() => setOpen(false)}
-                  className="text-tn-mute hover:text-tn-ink hover:bg-tn-paper rounded-full p-2 transition-colors cursor-pointer"
+                  onClick={close}
+                  className="text-tn-mute hover:text-tn-ink hover:bg-tn-paper cursor-pointer rounded-full p-2 transition-colors"
                   aria-label="Close dialog"
                 >
                   <Icon name="close" size={18} />
                 </button>
               </div>
 
-              {/* Error Message */}
               {error && (
-                <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-800">
+                <div
+                  role="alert"
+                  className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-800"
+                >
                   {error}
                 </div>
               )}
 
-              {/* Segmented Control Tabs */}
-              <div className="bg-tn-paper mt-5 flex rounded-2xl p-1 text-xs font-bold">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("message")}
-                  className={cn(
-                    "flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 transition-all cursor-pointer",
-                    activeTab === "message"
-                      ? "bg-white text-tn-ink shadow-xs"
-                      : "text-tn-mute hover:text-tn-ink",
-                  )}
-                >
-                  <Icon name="msg" size={15} />
-                  <span>Message</span>
-                </button>
-
-                {hasTelegramOption && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("telegram")}
-                    className={cn(
-                      "flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 transition-all cursor-pointer",
-                      activeTab === "telegram"
-                        ? "bg-white text-tn-ink shadow-xs"
-                        : "text-tn-mute hover:text-tn-ink",
-                    )}
-                  >
-                    <Icon name="tg" size={15} />
-                    <span>Telegram</span>
-                  </button>
-                )}
-
-                {hasPhoneOption && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("phone")}
-                    className={cn(
-                      "flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 transition-all cursor-pointer",
-                      activeTab === "phone"
-                        ? "bg-white text-tn-ink shadow-xs"
-                        : "text-tn-mute hover:text-tn-ink",
-                    )}
-                  >
-                    <Icon name="phone" size={15} />
-                    <span>Phone</span>
-                  </button>
-                )}
-              </div>
-
-              {/* Active Tab Body */}
-              <div className="mt-4">
-                {/* TAB 1: IN-APP MESSAGE */}
-                {activeTab === "message" && (
-                  <div>
-                    {messageSent ? (
-                      <div className="rounded-2xl border border-tn-green/30 bg-tn-green-soft p-5 text-center">
-                        <div className="flex items-center justify-center gap-2 text-tn-green font-bold text-sm">
-                          <Icon name="check" size={18} />
-                          <span>Message sent to {shop.name}!</span>
-                        </div>
-                        <p className="text-tn-ink2 mt-2 text-xs leading-relaxed">
-                          The merchant has been notified. You can review and continue your conversation in your account messages.
-                        </p>
-                        <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-                          <Link
-                            href="/messages"
-                            onClick={() => setOpen(false)}
-                            className="bg-tn-ink hover:bg-black inline-flex h-9 items-center rounded-full px-4 text-xs font-bold text-white transition-colors"
-                          >
-                            View your messages →
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={() => setOpen(false)}
-                            className="border-tn-hair hover:border-tn-ink bg-white inline-flex h-9 items-center rounded-full border px-4 text-xs font-bold text-tn-ink transition-colors cursor-pointer"
-                          >
-                            Close
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="border-tn-hair rounded-2xl border bg-tn-paper/40 p-4">
-                        {/* Quick-reply chips */}
-                        <div className="mb-3">
-                          <span className="text-tn-mute mb-1.5 block text-[11px] font-bold uppercase tracking-wider">
-                            Suggested Questions
-                          </span>
-                          <div className="flex flex-wrap gap-1.5">
-                            {quickChips.map((chip) => (
-                              <button
-                                key={chip}
-                                type="button"
-                                onClick={() => setMessageText(chip)}
-                                className="border-tn-hair hover:border-tn-ink hover:bg-white text-tn-ink2 rounded-full border bg-white/80 px-2.5 py-1 text-[11px] font-medium transition-colors cursor-pointer"
-                              >
-                                {chip}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Textarea */}
-                        <div className="relative">
-                          <textarea
-                            rows={3}
-                            maxLength={500}
-                            value={messageText}
-                            onChange={(e) => setMessageText(e.target.value)}
-                            disabled={!isAuthenticated || sendingMessage}
-                            placeholder={`Write a question for ${shop.name}...`}
-                            className="border-tn-hair focus:border-tn-ink text-tn-ink placeholder:text-tn-mute w-full resize-none rounded-xl border bg-white p-3 text-sm focus:outline-none disabled:bg-neutral-50 disabled:opacity-75"
-                          />
-                          <div className="font-tn-mono text-tn-mute absolute bottom-2.5 right-3 text-[10px]">
-                            {messageText.length}/500
-                          </div>
-                        </div>
-
-                        {/* Action row */}
-                        <div className="mt-3 flex items-center justify-between">
-                          {isAuthenticated ? (
-                            <button
-                              type="button"
-                              onClick={handleSendMessage}
-                              disabled={sendingMessage || !messageText.trim()}
-                              className="bg-tn-red hover:bg-tn-red-dark inline-flex h-9 items-center justify-center rounded-full px-5 text-xs font-bold text-white shadow-sm transition-colors disabled:opacity-50 cursor-pointer"
-                            >
-                              {sendingMessage ? "Sending…" : "Send message"}
-                            </button>
-                          ) : (
-                            <Link
-                              href={`/signin?next=${encodeURIComponent(pathname || `/shops/${shop.slug}`)}`}
-                              className="border-tn-hair hover:border-tn-ink bg-white inline-flex h-9 items-center rounded-full border px-4 text-xs font-bold text-tn-ink transition-colors"
-                            >
-                              Sign in to message
-                            </Link>
-                          )}
-                          <span className="text-tn-mute text-[11px]">Direct on Tinsae</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* TAB 2: TELEGRAM */}
-                {activeTab === "telegram" && hasTelegramOption && (
-                  <div className="border-tn-hair rounded-2xl border bg-tn-paper/30 p-5">
-                    <div className="flex items-center gap-3.5">
-                      <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[#229ED9]/15 text-[#229ED9]">
-                        <Icon name="tg" size={26} />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-tn-ink font-bold text-base">
-                          Telegram Merchant Chat
-                        </div>
-                        <div className="text-tn-mute font-tn-mono text-xs truncate">
-                          @{shop.telegram_username}
-                        </div>
-                      </div>
+              {/* Message — the main way to reach the shop */}
+              <div className="mt-5">
+                {sentId !== null ? (
+                  <div className="border-tn-green/30 bg-tn-green-soft rounded-2xl border p-5 text-center">
+                    <div className="text-tn-green flex items-center justify-center gap-2 text-sm font-bold">
+                      <Icon name="check" size={18} />
+                      <span>Sent to {shop.name}</span>
                     </div>
-
-                    <p className="text-tn-ink2 mt-3.5 text-xs leading-relaxed">
-                      Chat directly with {shop.name} on Telegram. Ideal for instant replies, asking for real photos, and voice messages.
+                    <p className="text-tn-ink2 mt-2 text-xs leading-relaxed">
+                      The shop has been notified. Their reply will appear in Messages and in your
+                      notifications.
                     </p>
-
-                    <div className="mt-5">
+                    <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+                      <Link
+                        href={sentId === "unknown" ? "/messages" : `/messages/${sentId}`}
+                        onClick={() => setOpen(false)}
+                        className="bg-tn-ink inline-flex h-9 items-center rounded-full px-4 text-xs font-bold text-white transition-colors hover:bg-black"
+                      >
+                        Open conversation →
+                      </Link>
                       <button
                         type="button"
-                        onClick={() => handleContactIntent("telegram")}
-                        disabled={loadingChannel !== null}
-                        className="bg-[#229ED9] hover:bg-[#1f8ec4] inline-flex w-full h-10 items-center justify-center gap-2 rounded-xl text-xs font-bold text-white shadow-sm transition-colors cursor-pointer disabled:opacity-50"
+                        onClick={close}
+                        className="border-tn-hair hover:border-tn-ink text-tn-ink inline-flex h-9 cursor-pointer items-center rounded-full border bg-white px-4 text-xs font-bold transition-colors"
                       >
-                        <Icon name="tg" size={16} />
-                        <span>{loadingChannel === "telegram" ? "Opening…" : "Open Telegram Chat"}</span>
+                        Done
                       </button>
                     </div>
                   </div>
-                )}
+                ) : (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      void handleSendMessage();
+                    }}
+                    className="border-tn-hair bg-tn-paper/40 rounded-2xl border p-4"
+                  >
+                    <label
+                      htmlFor="contact-message"
+                      className="text-tn-ink mb-2 block text-sm font-extrabold"
+                    >
+                      Send a message
+                    </label>
+                    <div className="mb-3 flex flex-wrap gap-1.5">
+                      {quickChips.map((chip) => (
+                        <button
+                          key={chip}
+                          type="button"
+                          onClick={() => setMessageText(chip)}
+                          className="border-tn-hair hover:border-tn-ink text-tn-ink2 cursor-pointer rounded-full border bg-white/80 px-2.5 py-1 text-[11px] font-medium transition-colors hover:bg-white"
+                        >
+                          {chip}
+                        </button>
+                      ))}
+                    </div>
 
-                {/* TAB 3: PHONE */}
-                {activeTab === "phone" && hasPhoneOption && (
-                  <div className="border-tn-hair rounded-2xl border bg-tn-paper/30 p-5">
-                    <div className="flex items-center gap-3.5">
-                      <span className="bg-tn-green-soft text-tn-green flex size-12 shrink-0 items-center justify-center rounded-2xl">
-                        <Icon name="phone" size={24} />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-tn-ink font-bold text-base">
-                          Direct Phone Call
-                        </div>
-                        <div className="font-tn-mono text-tn-ink2 text-xs font-semibold">
-                          {revealedPhone || "Number hidden (Sign-in required)"}
-                        </div>
+                    <div className="relative">
+                      <textarea
+                        id="contact-message"
+                        rows={3}
+                        maxLength={MESSAGE_MAX_LENGTH}
+                        value={messageText}
+                        onChange={(e) => setMessageText(e.target.value)}
+                        disabled={sending}
+                        placeholder={`Write a question for ${shop.name}…`}
+                        className="border-tn-hair focus:border-tn-ink text-tn-ink placeholder:text-tn-mute w-full resize-none rounded-xl border bg-white p-3 pb-6 text-sm focus:outline-none disabled:opacity-75"
+                      />
+                      <div className="font-tn-mono text-tn-mute absolute right-3 bottom-2.5 text-[10px]">
+                        {messageText.length}/{MESSAGE_MAX_LENGTH}
                       </div>
                     </div>
 
-                    {isAuthenticated ? (
-                      <div className="mt-4">
-                        <div className="flex flex-wrap items-center gap-2.5">
-                          <button
-                            type="button"
-                            onClick={() => handleContactIntent("phone")}
-                            disabled={loadingChannel !== null}
-                            className="bg-tn-ink hover:bg-black inline-flex flex-1 h-10 items-center justify-center gap-2 rounded-xl px-4 text-xs font-bold text-white transition-colors cursor-pointer disabled:opacity-50"
-                          >
-                            <Icon name="phone" size={16} />
-                            <span>
-                              {loadingChannel === "phone"
-                                ? "Dialing…"
-                                : revealedPhone
-                                  ? "Call Shop"
-                                  : "Reveal & Call"}
-                            </span>
-                          </button>
-
-                          {revealedPhone && (
-                            <button
-                              type="button"
-                              onClick={() => handleCopyPhone(revealedPhone)}
-                              className="border-tn-hair hover:border-tn-ink bg-white inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border px-3.5 text-xs font-bold text-tn-ink transition-colors cursor-pointer"
-                            >
-                              <Icon name={copied ? "check" : "box"} size={15} className={copied ? "text-tn-green" : "text-tn-mute"} />
-                              <span>{copied ? "Copied!" : "Copy"}</span>
-                            </button>
-                          )}
-                        </div>
-                        <p className="text-tn-mute mt-3 text-[11px] leading-relaxed">
-                          Direct phone call connects via your mobile network or device dialer.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="mt-4">
-                        <p className="text-tn-mute text-xs leading-relaxed">
-                          To protect verified Addis merchants from automated telephone harvesting and telemarketing scrapers, phone numbers are visible only to signed-in buyers.
-                        </p>
-                        <div className="mt-4">
-                          <Link
-                            href={`/signin?next=${encodeURIComponent(pathname || `/shops/${shop.slug}`)}`}
-                            className="bg-tn-ink hover:bg-black inline-flex w-full h-10 items-center justify-center rounded-xl text-xs font-bold text-white transition-colors"
-                          >
-                            Sign in to reveal number
-                          </Link>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                      {isAuthenticated ? (
+                        <button
+                          type="submit"
+                          disabled={sending || !messageText.trim()}
+                          className="bg-tn-red hover:bg-tn-red-dark inline-flex h-9 cursor-pointer items-center justify-center rounded-full px-5 text-xs font-bold text-white shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {sending ? "Sending…" : "Send message"}
+                        </button>
+                      ) : (
+                        <Link
+                          href={signinHref}
+                          onClick={() => writeDraft(key, messageText.trim() || null)}
+                          className="bg-tn-red hover:bg-tn-red-dark inline-flex h-9 items-center rounded-full px-5 text-xs font-bold text-white transition-colors"
+                        >
+                          Sign in to send
+                        </Link>
+                      )}
+                      <span className="text-tn-mute text-[11px]">
+                        {isAuthenticated ? "Replies arrive in Messages" : "We'll keep your message"}
+                      </span>
+                    </div>
+                  </form>
                 )}
               </div>
 
-              {/* Trust disclaimer */}
-              <p className="text-tn-mute mt-6 border-t border-tn-hair2 pt-4 text-center text-[11px] leading-relaxed">
-                Tinsae connects you directly with Addis merchants. Always inspect items in person before payment.
+              {/* Other ways to reach the shop */}
+              {(hasPhoneOption || hasTelegramOption) && (
+                <div className="mt-5">
+                  <p className="text-tn-mute mb-2 text-[11px] font-bold tracking-wider uppercase">
+                    Or reach them directly
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {hasPhoneOption && (
+                      <div className="border-tn-hair flex flex-wrap items-center justify-between gap-2 rounded-2xl border p-3">
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <span className="bg-tn-green-soft text-tn-green flex size-9 shrink-0 items-center justify-center rounded-xl">
+                            <Icon name="phone" size={17} />
+                          </span>
+                          <div className="min-w-0">
+                            <div className="text-tn-ink text-sm font-bold">Phone</div>
+                            <div className="font-tn-mono text-tn-ink2 truncate text-xs">
+                              {revealedPhone || (isAuthenticated ? "Tap to reveal" : "Shown after sign-in")}
+                            </div>
+                          </div>
+                        </div>
+                        {isAuthenticated ? (
+                          <div className="flex items-center gap-1.5">
+                            {revealedPhone && (
+                              <button
+                                type="button"
+                                onClick={() => void handleCopyPhone(revealedPhone)}
+                                className="border-tn-hair hover:border-tn-ink text-tn-ink inline-flex h-9 cursor-pointer items-center gap-1 rounded-full border bg-white px-3 text-xs font-bold transition-colors"
+                              >
+                                <Icon
+                                  name={copied ? "check" : "box"}
+                                  size={13}
+                                  className={copied ? "text-tn-green" : "text-tn-mute"}
+                                />
+                                {copied ? "Copied" : "Copy"}
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => void handleContactIntent("phone")}
+                              disabled={loadingChannel !== null}
+                              className="bg-tn-ink inline-flex h-9 cursor-pointer items-center rounded-full px-4 text-xs font-bold text-white transition-colors hover:bg-black disabled:opacity-50"
+                            >
+                              {loadingChannel === "phone" ? "Dialing…" : revealedPhone ? "Call" : "Reveal & call"}
+                            </button>
+                          </div>
+                        ) : (
+                          <Link
+                            href={signinHref}
+                            onClick={() => writeDraft(key, messageText.trim() || null)}
+                            className="border-tn-hair hover:border-tn-ink text-tn-ink inline-flex h-9 items-center rounded-full border bg-white px-4 text-xs font-bold transition-colors"
+                          >
+                            Sign in to see
+                          </Link>
+                        )}
+                      </div>
+                    )}
+
+                    {hasTelegramOption && (
+                      <div className="border-tn-hair flex flex-wrap items-center justify-between gap-2 rounded-2xl border p-3">
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#229ED9]/15 text-[#229ED9]">
+                            <Icon name="tg" size={18} />
+                          </span>
+                          <div className="min-w-0">
+                            <div className="text-tn-ink text-sm font-bold">Telegram</div>
+                            <div className="font-tn-mono text-tn-mute truncate text-xs">
+                              @{shop.telegram_username}
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => void handleContactIntent("telegram")}
+                          disabled={loadingChannel !== null}
+                          className={cn(
+                            "inline-flex h-9 cursor-pointer items-center rounded-full bg-[#229ED9] px-4 text-xs font-bold text-white transition-colors hover:bg-[#1f8ec4] disabled:opacity-50",
+                          )}
+                        >
+                          {loadingChannel === "telegram" ? "Opening…" : "Open chat"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  {!isAuthenticated && hasPhoneOption && (
+                    <p className="text-tn-mute mt-2 text-[11px] leading-relaxed">
+                      Numbers are shown only to signed-in buyers, to protect shops from scrapers
+                      and spam calls.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <p className="text-tn-mute border-tn-hair2 mt-6 border-t pt-4 text-center text-[11px] leading-relaxed">
+                Tinsae never handles payment. Inspect the item in the shop before you pay.
               </p>
             </div>
           </div>,
