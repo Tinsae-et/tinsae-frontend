@@ -148,18 +148,52 @@ describe("Buyer Inquiries Route Handlers", () => {
   });
 });
 
+describe("Inquiry id allowlist", () => {
+  const routes = [
+    (id: string) => getInquiryThread(makeRequest("https://tinsae.test/x"), { params: Promise.resolve({ id }) }),
+    (id: string) => getShopInquiryThread(makeRequest("https://tinsae.test/x"), { params: Promise.resolve({ id }) }),
+    (id: string) =>
+      replyInquiry(makeRequest("https://tinsae.test/x", "POST", { origin: "https://tinsae.test" }), {
+        params: Promise.resolve({ id }),
+      }),
+    (id: string) =>
+      replyShopInquiry(makeRequest("https://tinsae.test/x", "POST", { origin: "https://tinsae.test" }), {
+        params: Promise.resolve({ id }),
+      }),
+    (id: string) =>
+      closeInquiry(makeRequest("https://tinsae.test/x", "POST", { origin: "https://tinsae.test" }), {
+        params: Promise.resolve({ id }),
+      }),
+    (id: string) =>
+      closeShopInquiry(makeRequest("https://tinsae.test/x", "POST", { origin: "https://tinsae.test" }), {
+        params: Promise.resolve({ id }),
+      }),
+  ];
+
+  it("answers 404 for a non-numeric id without calling Django", async () => {
+    for (const call of routes) {
+      for (const id of ["../../shops/x", "1/close", "abc", ""]) {
+        const res = await call(id);
+        expect(res.status).toBe(404);
+      }
+    }
+    expect(authedFetch).not.toHaveBeenCalled();
+  });
+});
+
 describe("Shop Inquiries Route Handlers", () => {
   it("GET /api/inquiries/shop proxies to Django inquiries/shop/", async () => {
     authedFetch.mockResolvedValue(
       mockDjangoResponse([{ id: 1, shop: { name: "Addis Shop" }, messages: [] }]),
     );
 
-    const req = makeRequest("https://tinsae.test/api/inquiries/shop?open=1");
+    const req = makeRequest("https://tinsae.test/api/inquiries/shop?status=open&open=1");
     const res = await getShopInquiries(req);
 
     expect(res.status).toBe(200);
+    // Only allow-listed params reach Django.
     expect(authedFetch).toHaveBeenCalledWith(
-      expect.stringContaining("/api/v1/inquiries/shop/?open=1"),
+      expect.stringMatching(/\/api\/v1\/inquiries\/shop\/\?status=open$/),
       expect.anything(),
     );
   });

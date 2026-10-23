@@ -1,4 +1,7 @@
-import { proxyToDjango } from "@/lib/auth/django-proxy";
+import { NextResponse } from "next/server";
+
+import { djangoPath, proxyToDjango } from "@/lib/auth/django-proxy";
+import { isInquiryId } from "@/lib/inquiries";
 
 /**
  * Sends a merchant reply to an inquiry thread.
@@ -9,8 +12,10 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  return proxyToDjango(request, `inquiries/shop/${id}/reply/`, {
+  if (!isInquiryId(id)) {
+    return NextResponse.json({ detail: "Not found." }, { status: 404 });
+  }
+  return proxyToDjango(request, djangoPath("inquiries", "shop", id, "reply"), {
     revalidateCatalog: false,
   });
 }
-
